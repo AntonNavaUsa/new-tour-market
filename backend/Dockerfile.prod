@@ -21,11 +21,12 @@ WORKDIR /app
 COPY package*.json ./
 COPY --from=build /app/prisma ./prisma
 
-RUN npm ci --only=production
+# Install all deps (incl. prisma CLI) and generate client
+RUN npm ci && npx prisma generate
 
 COPY --from=build /app/dist ./dist
-COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
 
 EXPOSE 3000
 
-CMD ["node", "dist/main"]
+# Run migrations then start the app
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main"]

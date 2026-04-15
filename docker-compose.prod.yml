@@ -1,0 +1,76 @@
+services:
+  travelio-postgres:
+    image: postgres:16-alpine
+    container_name: travelio-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - postgres_prod_data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5440:5432"
+    networks:
+      - travelio-net
+
+  travelio-minio:
+    image: minio/minio:latest
+    container_name: travelio-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio_prod_data:/data
+    ports:
+      - "0.0.0.0:9010:9000"
+      - "127.0.0.1:9011:9001"
+    networks:
+      - travelio-net
+
+  travelio-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    container_name: travelio-backend
+    restart: unless-stopped
+    depends_on:
+      - travelio-postgres
+      - travelio-minio
+    environment:
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@travelio-postgres:5432/${DB_NAME}
+      JWT_SECRET: ${JWT_SECRET}
+      MINIO_ENDPOINT: travelio-minio
+      MINIO_PORT: 9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      MINIO_USE_SSL: "false"
+      MINIO_BUCKET: ${MINIO_BUCKET}
+      MINIO_PUBLIC_URL: http://${SERVER_IP}:9010
+    ports:
+      - "127.0.0.1:3010:3000"
+    networks:
+      - travelio-net
+
+  travelio-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: travelio-frontend
+    restart: unless-stopped
+    depends_on:
+      - travelio-backend
+    ports:
+      - "0.0.0.0:8090:80"
+    networks:
+      - travelio-net
+
+volumes:
+  postgres_prod_data:
+  minio_prod_data:
+
+networks:
+  travelio-net:
+    driver: bridge

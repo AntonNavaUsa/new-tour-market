@@ -118,7 +118,10 @@ export class FilesService {
       );
 
       // Возврат URL
-      const url = `http://${this.configService.get('MINIO_ENDPOINT')}:${this.configService.get('MINIO_PORT')}/${bucket}/${filename}`;
+      const minioPublicUrl = this.configService.get('MINIO_PUBLIC_URL');
+      const url = minioPublicUrl
+        ? `${minioPublicUrl}/${bucket}/${filename}`
+        : `http://${this.configService.get('MINIO_ENDPOINT')}:${this.configService.get('MINIO_PORT')}/${bucket}/${filename}`;
       
       this.logger.log(`Image uploaded successfully: ${url}`);
       return url;
