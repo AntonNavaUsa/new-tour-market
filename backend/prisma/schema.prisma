@@ -1,0 +1,374 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  PARTNER
+  HOTEL_OWNER
+  USER
+}
+
+enum OrderStatus {
+  PREORDER         // 0 - Предзаказ (неоплачен, ожидает оплату до 20 мин)
+  CONFIRMED        // 1 - Подтверждено (может быть без оплаты)
+  PAID             // 2 - Оплачено
+  CANCELLED        // 3 - Отменено
+  EXPIRED          // 4 - Истек (>20 мин без оплаты)
+}
+
+enum PaymentStatus {
+  PENDING          // Ожидает оплаты
+  PROCESSING       // В процессе обработки
+  SUCCEEDED        // Успешно
+  FAILED           // Неудача
+  CANCELLED        // Отменено
+}
+
+enum CardStatus {
+  DRAFT            // Черновик
+  PUBLISHED        // Опубликовано
+  ARCHIVED         // Архивировано
+}
+
+enum PricingType {
+  PER_GROUP        // За всё (фиксированная цена за группу)
+  PER_PERSON       // За человека (по тарифам)
+}
+
+model User {
+  id            String    @id @default(uuid())
+  name          String
+  email         String    @unique
+  phone         String?
+  passwordHash  String    @map("password_hash")
+  role          UserRole  @default(USER)
+  emailVerified Boolean   @default(false) @map("email_verified")
+  
+  partnerId     String?   @map("partner_id")
+  partner       Partner?  @relation(fields: [partnerId], references: [id])
+  
+  hotelId       String?   @map("hotel_id")
+  // hotel      Hotel?    @relation(fields: [hotelId], references: [id]) // Future feature
+  
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  
+  // Relations
+  cards         Card[]
+  orders        Order[]
+  payments      Payment[]
+  
+  @@map("users")
+}
+
+model Partner {
+  id          String   @id @default(uuid())
+  title       String
+  description String?  @db.Text
+  contacts    Json?    // {phone, email, website, address}
+  logoUrl     String?  @map("logo_url")
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  users       User[]
+  cards       Card[]
+  
+  @@map("partners")
+}
+
+model Location {
+  id        String   @id @default(uuid())
+  urlSlug   String   @unique @map("url_slug")
+  country   String
+  region    String?
+  city      String
+  language  String   @default("ru")
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  cards     Card[]
+  
+  @@index([urlSlug])
+  @@map("locations")
+}
+
+model CardType {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  slug      String   @unique
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  
+  // Relations
+  cards     Card[]
+  
+  @@map("card_types")
+}
+
+model TariffType {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?  @db.Text
+  ageFrom     Int?     @map("age_from")
+  ageTo       Int?     @map("age_to")
+  sortOrder   Int      @default(0) @map("sort_order")
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+  
+  // Relations
+  tickets     Ticket[]
+  
+  @@map("tariff_types")
+}
+
+model Card {
+  id              String      @id @default(uuid())
+  userId          String      @map("user_id")
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  locationId      String      @map("location_id")
+  location        Location    @relation(fields: [locationId], references: [id])
+  
+  cardTypeId      String      @map("card_type_id")
+  cardType        CardType    @relation(fields: [cardTypeId], references: [id])
+  
+  partnerId       String?     @map("partner_id")
+  partner         Partner?    @relation(fields: [partnerId], references: [id])
+  
+  title           String
+  description     String      @db.Text
+  shortDescription String?    @db.Text @map("short_description")
+  
+  headPhotoUrl    String?     @map("head_photo_url")
+  
+  tags            Json?       // Array of tags for filtering
+  
+  pricingConfig   Json?       @map("pricing_config") // Additional pricing metadata
+  scheduleConfig  Json?       @map("schedule_config") // Additional schedule metadata
+  includedItems   Json?       @map("included_items")     // Array of included items
+  notIncludedItems Json?      @map("not_included_items") // Array of not included items
+  
+  status          CardStatus  @default(DRAFT)
+  position        Int         @default(0) // For sorting in lists
+  
+  duration        Int?        // Duration in minutes
+  minParticipants Int?        @map("min_participants")
+  maxParticipants Int?        @map("max_participants")
+  
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+  
+  // Relations
+  tickets         Ticket[]
+  schedules       Schedule[]
+  slideshowPhotos SlideshowPhoto[]
+  expressions     Expression[]
+  orders          Order[]
+  
+  @@index([locationId])
+  @@index([userId])
+  @@index([status])
+  @@index([cardTypeId])
+  @@map("cards")
+}
+
+model Ticket {
+  id          String   @id @default(uuid())
+  cardId      String   @map("card_id")
+  card        Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  
+  title       String
+  description String?  @db.Text
+  isMain      Boolean  @default(false) @map("is_main") // Main ticket type
+  position    Int      @default(0)
+  
+  typeConfig    Json?         @map("type_config") // Additional config {ageFrom, ageTo, etc}
+  pricingType   PricingType   @default(PER_PERSON) @map("pricing_type")
+  tariffTypeId  String?       @map("tariff_type_id")
+  tariffType    TariffType?   @relation(fields: [tariffTypeId], references: [id])
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  prices      Price[]
+  orderTickets OrderTicket[]
+  
+  @@index([cardId])
+  @@map("tickets")
+}
+
+model Price {
+  id              String   @id @default(uuid())
+  ticketId        String   @map("ticket_id")
+  ticket          Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  
+  dateFrom        DateTime @map("date_from") @db.Date
+  dateTo          DateTime @map("date_to") @db.Date
+  
+  adultPrice      Decimal  @map("adult_price") @db.Decimal(10, 2)
+  childPrice      Decimal? @map("child_price") @db.Decimal(10, 2)
+  minPrice        Decimal? @map("min_price") @db.Decimal(10, 2)
+  
+  availableSlots  Int?     @map("available_slots") // Max bookings for this period
+  
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  orderTickets    OrderTicket[]
+  
+  @@index([ticketId])
+  @@index([dateFrom, dateTo])
+  @@map("prices")
+}
+
+model Schedule {
+  id              String   @id @default(uuid())
+  cardId          String   @map("card_id")
+  card            Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  
+  // Weekly schedule: {monday: {active: true, times: ['09:00', '14:00']}, ...}
+  weeklySchedule  Json     @map("weekly_schedule")
+  
+  // Special dates (holidays, closures): [{date_from, date_to, times, is_closed}]
+  specialDates    Json     @default("[]") @map("special_dates")
+  
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  
+  @@unique([cardId])
+  @@map("schedules")
+}
+
+model Order {
+  id            String      @id @default(uuid())
+  userId        String      @map("user_id")
+  user          User        @relation(fields: [userId], references: [id])
+  
+  cardId        String      @map("card_id")
+  card          Card        @relation(fields: [cardId], references: [id])
+  
+  date          DateTime    @db.Date
+  time          String?     // Format: "HH:MM"
+  
+  quantity      Int         @default(1) // Total number of participants
+  amount        Decimal     @db.Decimal(10, 2) // Total order amount
+  
+  status        OrderStatus @default(PREORDER)
+  expired       Boolean     @default(false)
+  
+  promocodeId   String?     @map("promocode_id")
+  // promocode  Promocode?  @relation(fields: [promocodeId], references: [id]) // Future feature
+  
+  customerName  String?     @map("customer_name")
+  customerEmail String?     @map("customer_email")
+  customerPhone String?     @map("customer_phone")
+  
+  notes         String?     @db.Text
+  
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+  expiresAt     DateTime?   @map("expires_at") // For preorder expiration tracking
+  
+  // Relations
+  orderTickets  OrderTicket[]
+  payments      Payment[]
+  
+  @@index([userId])
+  @@index([cardId])
+  @@index([status])
+  @@index([date])
+  @@map("orders")
+}
+
+model OrderTicket {
+  id            String   @id @default(uuid())
+  orderId       String   @map("order_id")
+  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  priceId       String   @map("price_id")
+  price         Price    @relation(fields: [priceId], references: [id])
+  
+  ticketId      String   @map("ticket_id")
+  ticket        Ticket   @relation(fields: [ticketId], references: [id])
+  
+  quantity      Int      @default(1)
+  
+  // Snapshot of price at time of booking (for historical accuracy)
+  priceSnapshot Json     @map("price_snapshot") // {adult_price, child_price, ticket_title}
+  
+  createdAt     DateTime @default(now()) @map("created_at")
+  
+  @@index([orderId])
+  @@map("order_tickets")
+}
+
+model Payment {
+  id                String        @id @default(uuid())
+  userId            String        @map("user_id")
+  user              User          @relation(fields: [userId], references: [id])
+  
+  orderId           String        @map("order_id")
+  order             Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  amount            Decimal       @db.Decimal(10, 2)
+  
+  paymentIdExternal String?       @unique @map("payment_id_external") // YooKassa payment ID
+  status            PaymentStatus @default(PENDING)
+  
+  confirmationToken String?       @map("confirmation_token") // YooKassa confirmation token
+  
+  metadata          Json?         // Additional payment data from YooKassa
+  
+  createdAt         DateTime      @default(now()) @map("created_at")
+  updatedAt         DateTime      @updatedAt @map("updated_at")
+  paidAt            DateTime?     @map("paid_at")
+  
+  @@index([orderId])
+  @@index([paymentIdExternal])
+  @@map("payments")
+}
+
+model SlideshowPhoto {
+  id        String   @id @default(uuid())
+  cardId    String   @map("card_id")
+  card      Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  
+  url       String
+  sortOrder Int      @default(0) @map("sort_order")
+  caption   String?
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  
+  @@index([cardId, sortOrder])
+  @@map("slideshow_photos")
+}
+
+model Expression {
+  id        String   @id @default(uuid())
+  cardId    String   @map("card_id")
+  card      Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  
+  photoUrl  String   @map("photo_url")
+  sortOrder Int      @default(0) @map("sort_order")
+  title     String?
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  
+  @@index([cardId, sortOrder])
+  @@map("expressions")
+}

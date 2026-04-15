@@ -1,0 +1,123 @@
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: travelio-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-travelio}
+      POSTGRES_USER: ${POSTGRES_USER:-travelio}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-travelio_secret}
+    ports:
+      - "${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - travelio-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-travelio}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MinIO S3-compatible storage
+  minio:
+    image: minio/minio:latest
+    container_name: travelio-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minio_admin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minio_secret}
+    ports:
+      - "${MINIO_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - travelio-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  # Mailpit - SMTP server for development
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: travelio-mailpit
+    restart: unless-stopped
+    ports:
+      - "${MAILPIT_SMTP_PORT:-1025}:1025"
+      - "${MAILPIT_UI_PORT:-8025}:8025"
+    networks:
+      - travelio-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8025/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Backend (NestJS) - uncomment after initialization
+  # backend:
+  #   build:
+  #     context: ./backend
+  #     dockerfile: Dockerfile
+  #   container_name: travelio-backend
+  #   restart: unless-stopped
+  #   environment:
+  #     DATABASE_URL: postgresql://${POSTGRES_USER:-travelio}:${POSTGRES_PASSWORD:-travelio_secret}@postgres:5432/${POSTGRES_DB:-travelio}
+  #     JWT_SECRET: ${JWT_SECRET}
+  #     JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+  #     MINIO_ENDPOINT: minio
+  #     MINIO_PORT: 9000
+  #     MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-minio_admin}
+  #     MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minio_secret}
+  #     SMTP_HOST: mailpit
+  #     SMTP_PORT: 1025
+  #     YOOKASSA_SHOP_ID: ${YOOKASSA_SHOP_ID}
+  #     YOOKASSA_SECRET_KEY: ${YOOKASSA_SECRET_KEY}
+  #     NODE_ENV: ${NODE_ENV:-development}
+  #   ports:
+  #     - "${BACKEND_PORT:-3000}:3000"
+  #   volumes:
+  #     - ./backend:/app
+  #     - /app/node_modules
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     minio:
+  #       condition: service_healthy
+  #     mailpit:
+  #       condition: service_started
+  #   networks:
+  #     - travelio-network
+  #   command: npm run start:dev
+
+  # Frontend (React + Vite) - uncomment after initialization
+  # frontend:
+  #   build:
+  #     context: ./frontend
+  #     dockerfile: Dockerfile.dev
+  #   container_name: travelio-frontend
+  #   restart: unless-stopped
+  #   environment:
+  #     VITE_API_URL: http://localhost:${BACKEND_PORT:-3000}
+  #   ports:
+  #     - "${FRONTEND_PORT:-5173}:5173"
+  #   volumes:
+  #     - ./frontend:/app
+  #     - /app/node_modules
+  #   depends_on:
+  #     - backend
+  #   networks:
+  #     - travelio-network
+  #   command: npm run dev -- --host
+
+networks:
+  travelio-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  minio_data:
