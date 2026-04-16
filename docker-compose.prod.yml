@@ -36,6 +36,7 @@ services:
       dockerfile: Dockerfile.prod
     container_name: travelio-backend
     restart: unless-stopped
+    command: sh -c "npx prisma migrate deploy && node dist/src/main"
     depends_on:
       - travelio-postgres
       - travelio-minio
