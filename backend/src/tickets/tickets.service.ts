@@ -166,10 +166,11 @@ export class TicketsService {
       throw new BadRequestException('dateFrom must be before dateTo');
     }
 
-    // Check for overlapping price periods
+    // Check for overlapping price periods (exclude archived)
     const overlappingPrices = await this.prisma.price.findFirst({
       where: {
         ticketId,
+        isArchived: false,
         OR: [
           {
             AND: [
@@ -208,6 +209,7 @@ export class TicketsService {
         childPrice: dto.childPrice,
         minPrice: dto.minPrice,
         availableSlots: dto.availableSlots,
+        groupTiers: dto.groupTiers ? (dto.groupTiers as any) : undefined,
       },
     });
 
@@ -249,6 +251,7 @@ export class TicketsService {
         childPrice: dto.childPrice,
         minPrice: dto.minPrice,
         availableSlots: dto.availableSlots,
+        groupTiers: dto.groupTiers !== undefined ? (dto.groupTiers as any) : undefined,
       },
     });
 
@@ -279,14 +282,45 @@ export class TicketsService {
     });
 
     if (ordersWithPrice > 0) {
-      throw new BadRequestException('Cannot delete price that has been used in orders');
+      // Archive instead of delete to preserve order history
+      const archived = await this.prisma.price.update({
+        where: { id: priceId },
+        data: { isArchived: true },
+      });
+      return { message: 'Price archived', archived: true, price: archived };
     }
 
     await this.prisma.price.delete({
       where: { id: priceId },
     });
 
-    return { message: 'Price deleted successfully' };
+    return { message: 'Price deleted successfully', archived: false };
+  }
+
+  async unarchivePrice(priceId: string, userId: string, userRole: UserRole) {
+    const price = await this.prisma.price.findUnique({
+      where: { id: priceId },
+      include: {
+        ticket: {
+          include: { card: true },
+        },
+      },
+    });
+
+    if (!price) {
+      throw new NotFoundException('Price not found');
+    }
+
+    if (userRole !== UserRole.ADMIN && price.ticket.card.userId !== userId) {
+      throw new ForbiddenException('You do not have permission to modify this price');
+    }
+
+    const restored = await this.prisma.price.update({
+      where: { id: priceId },
+      data: { isArchived: false },
+    });
+
+    return restored;
   }
 
   async getPrices(ticketId: string, filters: PriceFilterDto) {
@@ -312,6 +346,7 @@ export class TicketsService {
     const price = await this.prisma.price.findFirst({
       where: {
         ticketId,
+        isArchived: false,
         dateFrom: { lte: date },
         dateTo: { gte: date },
       },
@@ -375,8 +410,9 @@ export class TicketsService {
         },
         prices: {
           where: includeExpired
-            ? {}
+            ? { isArchived: false }
             : {
+                isArchived: false,
                 dateTo: {
                   gte: new Date(),
                 },

@@ -1,5 +1,5 @@
 import api from '../axios';
-import type { Ticket, Price, PricingType } from '../../types';
+import type { Ticket, Price, PricingType, GroupTier } from '../../types';
 
 export interface CreateTicketPayload {
   title: string;
@@ -18,6 +18,7 @@ export interface CreatePricePayload {
   childPrice?: number;
   minPrice?: number;
   availableSlots?: number;
+  groupTiers?: GroupTier[];
 }
 
 export const ticketsApi = {
@@ -55,7 +56,13 @@ export const ticketsApi = {
     return response.data;
   },
 
-  deletePrice: async (priceId: string): Promise<void> => {
-    await api.delete(`/api/tickets/prices/${priceId}`);
+  deletePrice: async (priceId: string): Promise<{ message: string; archived: boolean }> => {
+    const response = await api.delete<{ message: string; archived: boolean }>(`/api/tickets/prices/${priceId}`);
+    return response.data;
+  },
+
+  unarchivePrice: async (priceId: string): Promise<Price> => {
+    const response = await api.patch<Price>(`/api/tickets/prices/${priceId}/unarchive`);
+    return response.data;
   },
 };

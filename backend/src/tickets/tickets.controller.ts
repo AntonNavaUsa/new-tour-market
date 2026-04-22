@@ -127,13 +127,26 @@ export class TicketsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.PARTNER)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Delete price' })
+  @ApiOperation({ summary: 'Delete price (archives if used in orders)' })
   async deletePrice(
     @Param('priceId') priceId: string,
     @CurrentUser('id') userId: string,
     @CurrentUser('role') userRole: UserRole,
   ) {
     return this.ticketsService.deletePrice(priceId, userId, userRole);
+  }
+
+  @Patch('prices/:priceId/unarchive')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.PARTNER)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Restore archived price' })
+  async unarchivePrice(
+    @Param('priceId') priceId: string,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('role') userRole: UserRole,
+  ) {
+    return this.ticketsService.unarchivePrice(priceId, userId, userRole);
   }
 
   @Post(':ticketId/check-availability')

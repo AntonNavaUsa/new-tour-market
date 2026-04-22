@@ -1,4 +1,5 @@
-import { IsObject, IsDateString, IsArray, IsBoolean, IsOptional, IsString } from 'class-validator';
+import { IsObject, IsDate, IsArray, IsBoolean, IsOptional, IsString } from 'class-validator';
+import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdateWeeklyScheduleDto {
@@ -27,11 +28,13 @@ export class UpdateWeeklyScheduleDto {
 
 export class AddSpecialDateDto {
   @ApiProperty({ example: '2024-12-31' })
-  @IsDateString()
+  @Type(() => Date)
+  @IsDate()
   dateFrom: Date;
 
   @ApiProperty({ example: '2024-12-31' })
-  @IsDateString()
+  @Type(() => Date)
+  @IsDate()
   dateTo: Date;
 
   @ApiProperty({ example: ['10:00', '15:00'], required: false })
@@ -53,6 +56,7 @@ export class AddSpecialDateDto {
 
 export class GetAvailableTimesDto {
   @ApiProperty({ example: '2024-06-15' })
-  @IsDateString()
+  @Type(() => Date)
+  @IsDate()
   date: Date;
 }

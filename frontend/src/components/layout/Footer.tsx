@@ -8,9 +8,9 @@ export function Footer() {
       <div className="container py-8 md:py-12">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
           <div>
-            <h3 className="text-lg font-semibold mb-4">Travelio</h3>
+            <h3 className="text-lg font-semibold mb-4">Сезон приключений!</h3>
             <p className="text-sm text-muted-foreground">
-              Маркетплейс туристических услуг
+              Треккинги, походы и горные туры
             </p>
           </div>
 
@@ -19,17 +19,22 @@ export function Footer() {
             <ul className="space-y-2 text-sm">
               <li>
                 <Link to="/tours" className="text-muted-foreground hover:text-foreground transition-colors">
-                  Все туры
+                  Все походы
                 </Link>
               </li>
               <li>
-                <Link to="/tours?type=excursion" className="text-muted-foreground hover:text-foreground transition-colors">
-                  Экскурсии
+                <Link to="/tours?type=trekking" className="text-muted-foreground hover:text-foreground transition-colors">
+                  Треккинги
                 </Link>
               </li>
               <li>
-                <Link to="/tours?type=adventure" className="text-muted-foreground hover:text-foreground transition-colors">
-                  Приключения
+                <Link to="/tours?type=hiking" className="text-muted-foreground hover:text-foreground transition-colors">
+                  Пешие походы
+                </Link>
+              </li>
+              <li>
+                <Link to="/tours?type=expedition" className="text-muted-foreground hover:text-foreground transition-colors">
+                  Экспедиции
                 </Link>
               </li>
             </ul>
@@ -79,7 +84,7 @@ export function Footer() {
         </div>
 
         <div className="mt-8 border-t pt-8 text-center text-sm text-muted-foreground">
-          <p>&copy; {currentYear} Travelio. Все права защищены.</p>
+          <p>&copy; {currentYear} Сезон приключений! Все права защищены.</p>
         </div>
       </div>
     </footer>

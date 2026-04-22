@@ -134,8 +134,8 @@ export class CardsService {
           tickets: {
             include: {
               prices: {
-                orderBy: { createdAt: 'desc' },
-                take: 1,
+                where: { isArchived: false },
+                orderBy: { adultPrice: 'asc' },
               },
             },
           },
@@ -173,8 +173,9 @@ export class CardsService {
           include: {
             prices: {
               where: includeAll
-                ? {}
+                ? { isArchived: false }
                 : {
+                    isArchived: false,
                     dateTo: {
                       gte: new Date(),
                     },

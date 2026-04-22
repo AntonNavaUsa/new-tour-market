@@ -8,10 +8,34 @@ import {
   Min,
   IsObject,
   IsEnum,
+  IsArray,
+  ValidateNested,
 } from 'class-validator';
 import { ApiProperty, PartialType } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { PricingType } from '@prisma/client';
+
+export class GroupTierDto {
+  @ApiProperty({ example: 1 })
+  @IsInt()
+  @Min(1)
+  minPeople: number;
+
+  @ApiProperty({ example: 2, nullable: true, required: false })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  maxPeople?: number | null;
+
+  @ApiProperty({ example: 14000 })
+  @IsNumber()
+  @Min(0)
+  price: number;
+
+  @ApiProperty({ enum: ['fixed', 'per_person'], example: 'fixed' })
+  @IsEnum(['fixed', 'per_person'])
+  priceType: 'fixed' | 'per_person';
+}
 
 export class CreateTicketDto {
   @ApiProperty({ example: 'Взрослый билет' })
@@ -86,6 +110,21 @@ export class CreatePriceDto {
   @IsInt()
   @Min(1)
   availableSlots?: number;
+
+  @ApiProperty({
+    type: [GroupTierDto],
+    required: false,
+    example: [
+      { minPeople: 1, maxPeople: 2, price: 14000, priceType: 'fixed' },
+      { minPeople: 3, maxPeople: 5, price: 5500, priceType: 'per_person' },
+      { minPeople: 6, maxPeople: null, price: 5000, priceType: 'per_person' },
+    ],
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => GroupTierDto)
+  groupTiers?: GroupTierDto[];
 }
 
 export class PriceFilterDto {

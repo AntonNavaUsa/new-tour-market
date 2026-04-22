@@ -11,7 +11,7 @@ export function Header() {
       <div className="container flex h-16 items-center justify-between">
         <div className="flex items-center gap-6">
           <Link to="/" className="flex items-center space-x-2">
-            <span className="text-2xl font-bold text-primary">Travelio</span>
+            <span className="text-2xl font-bold text-primary">Сезон приключений!</span>
           </Link>
           
           <nav className="hidden md:flex items-center space-x-6 text-sm font-medium">
@@ -19,8 +19,9 @@ export function Header() {
               to="/tours" 
               className="transition-colors hover:text-foreground/80 text-foreground"
             >
-              Туры
+              Походы и треккинги
             </Link>
+
             {isAuthenticated && user?.role === 'ADMIN' && (
               <div className="flex items-center space-x-4">
                 <span className="text-foreground/60">|</span>

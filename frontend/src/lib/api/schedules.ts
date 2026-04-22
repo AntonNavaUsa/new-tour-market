@@ -2,7 +2,7 @@ import api from '../axios';
 
 export interface WeeklyDaySchedule {
   active: boolean;
-  times: string[]; // [timeFrom, timeTo] — two-element array
+  times: string[]; // Array of start times, e.g., ['09:00', '12:00', '15:00']
 }
 
 export interface WeeklySchedulePayload {

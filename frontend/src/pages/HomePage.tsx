@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
-import { MapPin, Clock, Users, Shield } from 'lucide-react';
+import { Mountain, Clock, Users, Shield } from 'lucide-react';
 
 export function HomePage() {
   return (
@@ -11,21 +11,21 @@ export function HomePage() {
         <div className="container">
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="text-4xl font-bold tracking-tight sm:text-6xl mb-6">
-              Откройте мир удивительных путешествий
+              Треккинги и походы в горы
             </h1>
             <p className="text-xl text-muted-foreground mb-8">
-              Маркетплейс туристических услуг - от экскурсий до приключений. 
-              Бронируйте онлайн и наслаждайтесь незабываемыми впечатлениями.
+              Организуем походы, треккинги и горные экспедиции в Красной Поляне.
+              Бронируйте с опытными гидами онлайн — для новичков и опытных туристов.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link to="/tours">
                 <Button size="lg" className="w-full sm:w-auto">
-                  Посмотреть туры
+                  Найти поход
                 </Button>
               </Link>
               <Link to="/about">
                 <Button size="lg" variant="outline" className="w-full sm:w-auto">
-                  Узнать больше
+                  О нас
                 </Button>
               </Link>
             </div>
@@ -39,19 +39,19 @@ export function HomePage() {
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold mb-4">Почему выбирают нас</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Мы создали платформу, которая делает бронирование туров простым и безопасным
+              Мы специализируемся на треккингах и походах — для тех, кто хочет не просто отдыхать, а приключаться
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <Card>
               <CardHeader>
-                <MapPin className="h-10 w-10 text-primary mb-2" />
-                <CardTitle className="text-xl">Широкий выбор</CardTitle>
+                <Mountain className="h-10 w-10 text-primary mb-2" />
+                <CardTitle className="text-xl">Только треккинги</CardTitle>
               </CardHeader>
               <CardContent>
                 <CardDescription>
-                  Сотни туров и экскурсий в разных локациях от проверенных партнеров
+                  Пешие походы, горные тропы и многодневные экспедиции — ничего лишнего
                 </CardDescription>
               </CardContent>
             </Card>
@@ -59,11 +59,11 @@ export function HomePage() {
             <Card>
               <CardHeader>
                 <Clock className="h-10 w-10 text-primary mb-2" />
-                <CardTitle className="text-xl">Мгновенное бронирование</CardTitle>
+                <CardTitle className="text-xl">Опытные гиды</CardTitle>
               </CardHeader>
               <CardContent>
                 <CardDescription>
-                  Забронируйте тур онлайн за несколько минут без звонков и ожидания
+                  Все маршруты ведут сертифицированные гиды с знанием местности и техники безопасности
                 </CardDescription>
               </CardContent>
             </Card>
@@ -83,11 +83,11 @@ export function HomePage() {
             <Card>
               <CardHeader>
                 <Users className="h-10 w-10 text-primary mb-2" />
-                <CardTitle className="text-xl">Отзывы туристов</CardTitle>
+                <CardTitle className="text-xl">Группы и соло</CardTitle>
               </CardHeader>
               <CardContent>
                 <CardDescription>
-                  Реальные отзывы от путешественников помогут сделать правильный выбор
+                  Сберные группы для новичков и индивидуальные маршруты для опытных туристов
                 </CardDescription>
               </CardContent>
             </Card>
@@ -99,13 +99,13 @@ export function HomePage() {
       <section className="bg-primary/5 py-16 md:py-24">
         <div className="container">
           <div className="max-w-3xl mx-auto text-center">
-            <h2 className="text-3xl font-bold mb-4">Готовы начать путешествие?</h2>
+            <h2 className="text-3xl font-bold mb-4">Готовы к первому походу?</h2>
             <p className="text-xl text-muted-foreground mb-8">
-              Присоединяйтесь к тысячам довольных путешественников
+              Для новичков и опытных — найдите свой маршрут в каталоге
             </p>
             <Link to="/tours">
               <Button size="lg">
-                Найти тур
+                Смотреть походы
               </Button>
             </Link>
           </div>

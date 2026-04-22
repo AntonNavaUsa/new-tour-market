@@ -98,7 +98,29 @@ export class OrdersService {
         );
       }
 
-      const ticketPrice = Number(price.adultPrice) * ticketOrder.quantity;
+      // Calculate price considering group tiers
+      let ticketPrice: number;
+      const groupTiers = price.groupTiers as Array<{
+        minPeople: number;
+        maxPeople: number | null;
+        price: number;
+        priceType: 'fixed' | 'per_person';
+      }> | null;
+
+      if (groupTiers && groupTiers.length > 0) {
+        const people = ticketOrder.quantity;
+        const tier = groupTiers.find(
+          (t) => people >= t.minPeople && (t.maxPeople == null || people <= t.maxPeople),
+        );
+        if (!tier) {
+          throw new BadRequestException(
+            `No pricing tier found for ${people} people on ticket "${ticket.title}"`,
+          );
+        }
+        ticketPrice = tier.priceType === 'fixed' ? tier.price : tier.price * people;
+      } else {
+        ticketPrice = Number(price.adultPrice) * ticketOrder.quantity;
+      }
       totalAmount += ticketPrice;
 
       ticketDetails.push({
@@ -109,6 +131,8 @@ export class OrdersService {
           ticketTitle: ticket.title,
           adultPrice: price.adultPrice,
           childPrice: price.childPrice,
+          groupTiers: price.groupTiers,
+          calculatedTotal: ticketPrice,
         },
       });
     }
@@ -126,6 +150,8 @@ export class OrdersService {
         time: dto.time,
         quantity: dto.tickets.reduce((sum, t) => sum + t.quantity, 0),
         amount: totalAmount,
+        prepaymentPercent: 20,
+        prepaymentAmount: Math.ceil((totalAmount * 0.2) / 100) * 100,
         status: OrderStatus.PREORDER,
         expiresAt,
         customerName: dto.customerName,

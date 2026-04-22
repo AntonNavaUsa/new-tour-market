@@ -6,14 +6,19 @@ import { Button } from '../components/ui/button';
 import { formatPrice, formatDateTime } from '../lib/utils';
 import { OrderStatus } from '../types';
 
-const statusConfig = {
-  [OrderStatus.PENDING]: {
-    label: 'Ожидает подтверждения',
-    icon: AlertCircle,
+const statusConfig: Record<string, { label: string; icon: any; className: string }> = {
+  [OrderStatus.PREORDER]: {
+    label: 'Ожидает оплаты',
+    icon: Clock,
     className: 'text-yellow-600',
   },
   [OrderStatus.CONFIRMED]: {
     label: 'Подтверждён',
+    icon: CheckCircle,
+    className: 'text-blue-600',
+  },
+  [OrderStatus.PAID]: {
+    label: 'Оплачен',
     icon: CheckCircle,
     className: 'text-green-600',
   },
@@ -22,10 +27,15 @@ const statusConfig = {
     icon: XCircle,
     className: 'text-red-600',
   },
+  [OrderStatus.EXPIRED]: {
+    label: 'Истёк',
+    icon: AlertCircle,
+    className: 'text-muted-foreground',
+  },
   [OrderStatus.COMPLETED]: {
     label: 'Завершён',
     icon: CheckCircle,
-    className: 'text-blue-600',
+    className: 'text-green-600',
   },
 };
 
@@ -35,7 +45,7 @@ export function OrdersPage() {
     queryFn: () => ordersApi.getMyOrders(),
   });
 
-  const handleCancelOrder = async (orderId: number) => {
+  const handleCancelOrder = async (orderId: string) => {
     if (confirm('Вы уверены, что хотите отменить этот заказ?')) {
       try {
         await ordersApi.cancelOrder(orderId);
@@ -85,7 +95,11 @@ export function OrdersPage() {
 
       <div className="space-y-6">
         {orders.map((order) => {
-          const status = statusConfig[order.status];
+          const status = statusConfig[order.status] ?? {
+            label: order.status,
+            icon: AlertCircle,
+            className: 'text-muted-foreground',
+          };
           const StatusIcon = status.icon;
 
           return (
@@ -112,8 +126,8 @@ export function OrdersPage() {
                     <div>
                       <div className="text-sm text-muted-foreground">Дата и время</div>
                       <div className="font-medium">
-                        {order.schedule
-                          ? `${formatDateTime(order.schedule.date)} в ${order.schedule.time}`
+                        {order.date
+                          ? `${formatDateTime(order.date)}${order.time ? ' в ' + order.time : ''}`
                           : 'Не указано'}
                       </div>
                     </div>
@@ -122,7 +136,11 @@ export function OrdersPage() {
                       <div className="space-y-1">
                         {order.orderTickets?.map((ot) => (
                           <div key={ot.id}>
-                            {ot.ticket?.name}: {ot.quantity} шт. × {formatPrice(ot.price)}
+                            {ot.ticket?.title ?? ot.priceSnapshot?.ticketTitle ?? 'Билет'}:
+                            {' '}{ot.quantity} шт.
+                            {ot.priceSnapshot?.calculatedTotal
+                              ? ` — ${formatPrice(ot.priceSnapshot.calculatedTotal)}`
+                              : null}
                           </div>
                         ))}
                       </div>
@@ -139,13 +157,29 @@ export function OrdersPage() {
                     <div>
                       <div className="text-sm text-muted-foreground">Общая сумма</div>
                       <div className="text-2xl font-bold text-primary">
-                        {formatPrice(order.totalAmount)}
+                        {formatPrice(Number(order.amount))}
                       </div>
+                      {order.prepaymentAmount && (
+                        <>
+                          <div className="text-sm text-muted-foreground mt-1">
+                            Предоплата (оплачено онлайн):{' '}
+                            <span className="font-medium text-foreground">
+                              {formatPrice(Number(order.prepaymentAmount))}
+                            </span>
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            Остаток к оплате на месте:{' '}
+                            <span className="font-medium text-foreground">
+                              {formatPrice(Number(order.amount) - Number(order.prepaymentAmount))}
+                            </span>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
 
-                {order.status === OrderStatus.PENDING && (
+                {(order.status === OrderStatus.PREORDER || order.status === OrderStatus.CONFIRMED) && (
                   <div className="mt-6 flex gap-3">
                     <Button
                       variant="destructive"
@@ -153,10 +187,12 @@ export function OrdersPage() {
                     >
                       Отменить заказ
                     </Button>
-                    {order.payment && (
+                    {order.payments?.[0] && (
                       <Button asChild>
                         <a
-                          href={order.payment.paymentUrl || '#'}
+                          href={(order.payments[0] as any).confirmationToken
+                            ? `#payment-${order.payments[0].id}`
+                            : '#'}
                           target="_blank"
                           rel="noopener noreferrer"
                         >

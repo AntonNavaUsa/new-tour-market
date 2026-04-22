@@ -19,6 +19,7 @@ import { AdminCardTypesPage } from './pages/AdminCardTypesPage';
 import { AdminCardTypeFormPage } from './pages/AdminCardTypeFormPage';
 import { AdminTariffTypesPage } from './pages/AdminTariffTypesPage';
 import { AdminTariffTypeFormPage } from './pages/AdminTariffTypeFormPage';
+import { KrasnayaPolyanaSpringPage } from './pages/KrasnayaPolyanaSpringPage';
 import { UserRole } from './types';
 
 function App() {
@@ -35,6 +36,8 @@ function App() {
         <Route path="/tours" element={<ToursPage />} />
         <Route path="/tours/:id" element={<TourDetailPage />} />
         <Route path="/booking/:id" element={<BookingPage />} />
+        {/* SEO Guides / Landings */}
+        <Route path="/guides/krasnaya-polyana-spring" element={<KrasnayaPolyanaSpringPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         

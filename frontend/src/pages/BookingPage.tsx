@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import { formatPrice, formatDate } from '../lib/utils';
+import { formatPrice, formatDate, formatDuration, calculateTicketPrice, formatTierLabel } from '../lib/utils';
 import { ChevronLeft, Minus, Plus } from 'lucide-react';
 import { handleApiError } from '../lib/axios';
 import type { Price, Ticket } from '../types';
@@ -146,7 +146,9 @@ export function BookingPage() {
   const totalAmount = Object.entries(ticketQuantities).reduce(
     (sum, [ticketId, quantity]) => {
       const selectedTicket = availableTickets.find((item) => item.ticket.id === ticketId);
-      return sum + Number(selectedTicket?.price.adultPrice || 0) * quantity;
+      if (!selectedTicket || quantity === 0) return sum;
+      const calculated = calculateTicketPrice(selectedTicket.price, Number(quantity));
+      return sum + (calculated ?? 0);
     },
     0
   );
@@ -231,7 +233,7 @@ export function BookingPage() {
                   </div>
                   <p className="text-sm text-muted-foreground">
                     {[card.location?.city, card.location?.country].filter(Boolean).join(', ') || 'Локация уточняется'}
-                    {card.duration ? ` • ${card.duration} мин` : ''}
+                    {card.duration ? ` • ${formatDuration(card.duration)}` : ''}
                   </p>
                 </div>
               </CardContent>
@@ -243,46 +245,64 @@ export function BookingPage() {
                 <CardTitle>Выбор билетов</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {availableTickets.map(({ ticket, price }) => (
+                {availableTickets.map(({ ticket, price }) => {
+                  const qty = ticketQuantities[ticket.id] || 0;
+                  const hasGroupTiers = price.groupTiers && price.groupTiers.length > 0;
+                  const calculatedPrice = qty > 0 ? calculateTicketPrice(price, qty) : null;
+                  const noTierForQty = hasGroupTiers && qty > 0 && calculatedPrice === null;
+
+                  return (
                   <div
                     key={ticket.id}
-                    className="flex items-center justify-between p-4 border rounded-lg"
+                    className="p-4 border rounded-lg space-y-3"
                   >
-                    <div className="flex-1">
-                      <div className="font-semibold">{ticket.title}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {formatPrice(Number(price.adultPrice))}
-                        {price.availableSlots !== null ? ` • Доступно: ${price.availableSlots}` : ''}
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <div className="font-semibold">{ticket.title}</div>
+                        {hasGroupTiers ? (
+                          <div className="mt-1 space-y-0.5">
+                            {price.groupTiers!.map((t, i) => (
+                              <div key={i} className="text-xs text-muted-foreground">{formatTierLabel(t)}</div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-sm text-muted-foreground">
+                            {formatPrice(Number(price.adultPrice))} / чел.
+                            {price.availableSlots !== null ? ` • Доступно: ${price.availableSlots}` : ''}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3 shrink-0">
+                        <Button
+                          type="button" variant="outline" size="sm"
+                          onClick={() => updateQuantity(ticket.id, -1)}
+                          disabled={!ticketQuantities[ticket.id]}
+                        >
+                          <Minus className="h-4 w-4" />
+                        </Button>
+                        <span className="w-8 text-center font-semibold">{qty}</span>
+                        <Button
+                          type="button" variant="outline" size="sm"
+                          onClick={() => updateQuantity(ticket.id, 1)}
+                          disabled={
+                            price.availableSlots !== null &&
+                            qty >= price.availableSlots
+                          }
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => updateQuantity(ticket.id, -1)}
-                        disabled={!ticketQuantities[ticket.id]}
-                      >
-                        <Minus className="h-4 w-4" />
-                      </Button>
-                      <span className="w-8 text-center font-semibold">
-                        {ticketQuantities[ticket.id] || 0}
-                      </span>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => updateQuantity(ticket.id, 1)}
-                        disabled={
-                          price.availableSlots !== null &&
-                          (ticketQuantities[ticket.id] || 0) >= price.availableSlots
-                        }
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </div>
+                    {qty > 0 && (
+                      <div className={`text-sm font-medium ${noTierForQty ? 'text-destructive' : 'text-primary'}`}>
+                        {noTierForQty
+                          ? `Нет тарифа для ${qty} человек`
+                          : `Итого: ${formatPrice(calculatedPrice!)}`}
+                      </div>
+                    )}
                   </div>
-                ))}
+                  );
+                })}
               </CardContent>
             </Card>
 
@@ -353,12 +373,14 @@ export function BookingPage() {
                     );
                     if (!selectedTicket) return null;
 
+                    const lineTotal = calculateTicketPrice(selectedTicket.price, Number(quantity)) ?? 0;
+
                     return (
                       <div key={ticketId} className="flex justify-between text-sm">
                         <span>
                           {selectedTicket.ticket.title} x{quantity}
                         </span>
-                        <span>{formatPrice(Number(selectedTicket.price.adultPrice) * quantity)}</span>
+                        <span>{formatPrice(lineTotal)}</span>
                       </div>
                     );
                   })}
@@ -366,7 +388,15 @@ export function BookingPage() {
                 <div className="border-t pt-4">
                   <div className="flex justify-between font-semibold text-lg">
                     <span>Всего</span>
-                    <span className="text-primary">{formatPrice(totalAmount)}</span>
+                    <span>{formatPrice(totalAmount)}</span>
+                  </div>
+                  <div className="flex justify-between font-semibold text-lg text-primary mt-1">
+                    <span>К оплате сейчас (20%)</span>
+                    <span>{formatPrice(Math.ceil(totalAmount * 0.2 / 100) * 100)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm text-muted-foreground mt-1">
+                    <span>Остаток на месте</span>
+                    <span>{formatPrice(totalAmount - Math.ceil(totalAmount * 0.2 / 100) * 100)}</span>
                   </div>
                   <p className="text-sm text-muted-foreground mt-1">
                     {totalTickets} {totalTickets === 1 ? 'билет' : 'билетов'}
@@ -385,7 +415,7 @@ export function BookingPage() {
                   size="lg"
                   disabled={isSubmitting || totalTickets === 0}
                 >
-                  {isSubmitting ? 'Обработка...' : 'Перейти к оплате'}
+                  {isSubmitting ? 'Обработка...' : `Оплатить предоплату ${formatPrice(Math.ceil(totalAmount * 0.2 / 100) * 100)}`}
                 </Button>
               </CardContent>
             </Card>

@@ -9,6 +9,7 @@ import {
   Save,
   Plus,
   Trash2,
+  RotateCcw,
   Image as ImageIcon,
   MoveUp,
   MoveDown,
@@ -22,8 +23,9 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { RichTextEditor } from '../components/RichTextEditor';
-import type { CardStatus, CreateCardRequest, UpdateCardRequest, SlideshowPhoto, Ticket, Price } from '../types';
+import type { CardStatus, CreateCardRequest, UpdateCardRequest, SlideshowPhoto, Ticket, Price, GroupTier } from '../types';
 import { PricingType } from '../types';
+import { formatTierLabel } from '../lib/utils';
 import type { WeeklySchedulePayload } from '../lib/api/schedules';
 
 const formSchema = z.object({
@@ -329,7 +331,11 @@ interface PriceFormState {
   adultPrice: string;
   minPrice: string;
   availableSlots: string;
+  pricingMode: 'simple' | 'group';
+  groupTiers: GroupTier[];
 }
+
+const emptyTier = (): GroupTier => ({ minPeople: 1, maxPeople: null, price: 0, priceType: 'per_person' });
 
 const emptyPriceForm = (): PriceFormState => ({
   dateFrom: '',
@@ -337,7 +343,77 @@ const emptyPriceForm = (): PriceFormState => ({
   adultPrice: '',
   minPrice: '',
   availableSlots: '',
+  pricingMode: 'simple',
+  groupTiers: [],
 });
+
+function TierEditor({
+  tiers,
+  onChange,
+}: {
+  tiers: GroupTier[];
+  onChange: (tiers: GroupTier[]) => void;
+}) {
+  const update = (i: number, field: keyof GroupTier, value: any) => {
+    const next = tiers.map((t, idx) => (idx === i ? { ...t, [field]: value } : t));
+    onChange(next);
+  };
+
+  return (
+    <div className="space-y-2">
+      {tiers.map((tier, i) => (
+        <div key={i} className="grid grid-cols-[1fr_1fr_1.5fr_1.5fr_auto] gap-2 items-end">
+          <div className="space-y-1">
+            <Label className="text-xs">Мин. чел.</Label>
+            <Input
+              type="number" min="1" value={tier.minPeople}
+              onChange={(e) => update(i, 'minPeople', parseInt(e.target.value) || 1)}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Макс. чел.</Label>
+            <Input
+              type="number" min="1" placeholder="∞"
+              value={tier.maxPeople ?? ''}
+              onChange={(e) => update(i, 'maxPeople', e.target.value ? parseInt(e.target.value) : null)}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Цена (₽)</Label>
+            <Input
+              type="number" min="0" value={tier.price || ''}
+              onChange={(e) => update(i, 'price', parseFloat(e.target.value) || 0)}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Тип цены</Label>
+            <select
+              value={tier.priceType}
+              onChange={(e) => update(i, 'priceType', e.target.value)}
+              className="h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
+            >
+              <option value="per_person">за чел. (цена × кол-во)</option>
+              <option value="fixed">за группу (фиксированно)</option>
+            </select>
+          </div>
+          <Button
+            type="button" variant="ghost" size="sm" className="h-9 px-2 text-destructive hover:text-destructive"
+            onClick={() => onChange(tiers.filter((_, idx) => idx !== i))}
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      ))}
+      <Button
+        type="button" variant="outline" size="sm"
+        onClick={() => onChange([...tiers, emptyTier()])}
+      >
+        <Plus className="mr-1.5 h-3.5 w-3.5" />
+        Добавить тариф
+      </Button>
+    </div>
+  );
+}
 
 function PriceRowEditor({
   initial,
@@ -355,9 +431,16 @@ function PriceRowEditor({
   const set = (field: keyof PriceFormState) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setValues((v) => ({ ...v, [field]: e.target.value }));
 
+  const isValid =
+    values.dateFrom &&
+    values.dateTo &&
+    (values.pricingMode === 'simple'
+      ? !!values.adultPrice
+      : values.groupTiers.length > 0 && values.groupTiers.every((t) => t.price > 0));
+
   return (
-    <div className="rounded-md border border-primary/40 bg-muted/30 p-4">
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="rounded-md border border-primary/40 bg-muted/30 p-4 space-y-4">
+      <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-1">
           <Label className="text-xs">Дата с *</Label>
           <Input type="date" value={values.dateFrom} onChange={set('dateFrom')} />
@@ -367,23 +450,51 @@ function PriceRowEditor({
           <Input type="date" value={values.dateTo} onChange={set('dateTo')} />
         </div>
         <div className="space-y-1">
-          <Label className="text-xs">Цена (₽) *</Label>
-          <Input type="number" min="0" step="0.01" placeholder="2500" value={values.adultPrice} onChange={set('adultPrice')} />
-        </div>
-        <div className="space-y-1">
-          <Label className="text-xs">Минимальная цена (₽)</Label>
-          <Input type="number" min="0" step="0.01" placeholder="1500" value={values.minPrice} onChange={set('minPrice')} />
-        </div>
-        <div className="space-y-1">
           <Label className="text-xs">Мест (макс.)</Label>
           <Input type="number" min="1" placeholder="20" value={values.availableSlots} onChange={set('availableSlots')} />
         </div>
       </div>
-      <div className="mt-3 flex gap-2">
-        <Button
+
+      {/* Pricing mode toggle */}
+      <div className="flex gap-2">
+        <button
           type="button"
-          size="sm"
-          disabled={isSaving || !values.dateFrom || !values.dateTo || !values.adultPrice}
+          onClick={() => setValues((v) => ({ ...v, pricingMode: 'simple' }))}
+          className={`px-3 py-1 rounded-full text-xs border transition ${values.pricingMode === 'simple' ? 'bg-primary text-primary-foreground border-primary' : 'border-input hover:border-primary/50'}`}
+        >
+          Простая цена
+        </button>
+        <button
+          type="button"
+          onClick={() => setValues((v) => ({ ...v, pricingMode: 'group', groupTiers: v.groupTiers.length ? v.groupTiers : [emptyTier()] }))}
+          className={`px-3 py-1 rounded-full text-xs border transition ${values.pricingMode === 'group' ? 'bg-primary text-primary-foreground border-primary' : 'border-input hover:border-primary/50'}`}
+        >
+          Групповые тарифы
+        </button>
+      </div>
+
+      {values.pricingMode === 'simple' ? (
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="space-y-1">
+            <Label className="text-xs">Цена за чел. (₽) *</Label>
+            <Input type="number" min="0" step="0.01" placeholder="2500" value={values.adultPrice} onChange={set('adultPrice')} />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Минимальная цена (₽)</Label>
+            <Input type="number" min="0" step="0.01" placeholder="1500" value={values.minPrice} onChange={set('minPrice')} />
+          </div>
+        </div>
+      ) : (
+        <TierEditor
+          tiers={values.groupTiers}
+          onChange={(tiers) => setValues((v) => ({ ...v, groupTiers: tiers }))}
+        />
+      )}
+
+      <div className="flex gap-2">
+        <Button
+          type="button" size="sm"
+          disabled={isSaving || !isValid}
           onClick={() => onSave(values)}
         >
           {isSaving ? 'Сохранение...' : 'Сохранить'}
@@ -397,12 +508,15 @@ function PriceRowEditor({
 }
 
 function priceToFormState(price: Price): PriceFormState {
+  const hasGroupTiers = price.groupTiers && price.groupTiers.length > 0;
   return {
     dateFrom: price.dateFrom.slice(0, 10),
     dateTo: price.dateTo.slice(0, 10),
     adultPrice: price.adultPrice,
     minPrice: price.minPrice ?? '',
     availableSlots: price.availableSlots?.toString() ?? '',
+    pricingMode: hasGroupTiers ? 'group' : 'simple',
+    groupTiers: price.groupTiers ?? [],
   };
 }
 
@@ -430,9 +544,10 @@ function TicketPricesBlock({ ticket, cardId }: { ticket: Ticket; cardId: string 
       ticketsApi.createPrice(ticket.id, {
         dateFrom: v.dateFrom,
         dateTo: v.dateTo,
-        adultPrice: parseFloat(v.adultPrice),
-        minPrice: v.minPrice ? parseFloat(v.minPrice) : undefined,
+        adultPrice: v.pricingMode === 'simple' ? parseFloat(v.adultPrice) : 0,
+        minPrice: v.pricingMode === 'simple' && v.minPrice ? parseFloat(v.minPrice) : undefined,
         availableSlots: v.availableSlots ? parseInt(v.availableSlots) : undefined,
+        groupTiers: v.pricingMode === 'group' ? v.groupTiers : undefined,
       }),
     onSuccess: () => { invalidate(); setAddingNew(false); setBlockError(''); },
     onError: (err) => setBlockError(handleApiError(err)),
@@ -443,9 +558,10 @@ function TicketPricesBlock({ ticket, cardId }: { ticket: Ticket; cardId: string 
       ticketsApi.updatePrice(id, {
         dateFrom: v.dateFrom,
         dateTo: v.dateTo,
-        adultPrice: parseFloat(v.adultPrice),
-        minPrice: v.minPrice ? parseFloat(v.minPrice) : undefined,
+        adultPrice: v.pricingMode === 'simple' ? parseFloat(v.adultPrice) : 0,
+        minPrice: v.pricingMode === 'simple' && v.minPrice ? parseFloat(v.minPrice) : undefined,
         availableSlots: v.availableSlots ? parseInt(v.availableSlots) : undefined,
+        groupTiers: v.pricingMode === 'group' ? v.groupTiers : [],
       }),
     onSuccess: () => { invalidate(); setEditingId(null); setBlockError(''); },
     onError: (err) => setBlockError(handleApiError(err)),
@@ -457,6 +573,15 @@ function TicketPricesBlock({ ticket, cardId }: { ticket: Ticket; cardId: string 
     onError: (err) => setBlockError(handleApiError(err)),
   });
 
+  const unarchiveMutation = useMutation({
+    mutationFn: (priceId: string) => ticketsApi.unarchivePrice(priceId),
+    onSuccess: () => { invalidate(); setBlockError(''); },
+    onError: (err) => setBlockError(handleApiError(err)),
+  });
+
+  const activePrices = prices.filter((p) => !p.isArchived);
+  const archivedPrices = prices.filter((p) => p.isArchived);
+
   return (
     <div className="space-y-3">
       {blockError && (
@@ -465,11 +590,11 @@ function TicketPricesBlock({ ticket, cardId }: { ticket: Ticket; cardId: string 
 
       {isLoading ? (
         <div className="h-10 animate-pulse rounded bg-muted" />
-      ) : prices.length === 0 && !addingNew ? (
+      ) : activePrices.length === 0 && !addingNew ? (
         <p className="text-sm text-muted-foreground">Ценовых периодов нет. Добавьте первый.</p>
       ) : (
         <div className="space-y-2">
-          {prices.map((price) =>
+          {activePrices.map((price) =>
             editingId === price.id ? (
               <PriceRowEditor
                 key={price.id}
@@ -480,16 +605,24 @@ function TicketPricesBlock({ ticket, cardId }: { ticket: Ticket; cardId: string 
               />
             ) : (
               <div key={price.id} className="flex items-center justify-between gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm">
-                <div className="flex flex-wrap gap-x-4 gap-y-1">
+                <div className="flex flex-col gap-0.5 flex-1 min-w-0">
                   <span className="font-medium">
                     {new Date(price.dateFrom).toLocaleDateString('ru-RU')} — {new Date(price.dateTo).toLocaleDateString('ru-RU')}
                   </span>
-                  <span>{parseFloat(price.adultPrice).toLocaleString('ru-RU')} ₽</span>
-                  {price.minPrice && (
-                    <span className="text-muted-foreground">мин. {parseFloat(price.minPrice).toLocaleString('ru-RU')} ₽</span>
+                  {price.groupTiers && price.groupTiers.length > 0 ? (
+                    <div className="text-xs text-muted-foreground space-y-0.5">
+                      {price.groupTiers.map((t, i) => (
+                        <div key={i}>{formatTierLabel(t)}</div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-x-3 text-xs text-muted-foreground">
+                      <span>{parseFloat(price.adultPrice).toLocaleString('ru-RU')} ₽/чел.</span>
+                      {price.minPrice && <span>мин. {parseFloat(price.minPrice).toLocaleString('ru-RU')} ₽</span>}
+                    </div>
                   )}
                   {price.availableSlots != null && (
-                    <span className="text-muted-foreground">мест: {price.availableSlots}</span>
+                    <span className="text-xs text-muted-foreground">мест: {price.availableSlots}</span>
                   )}
                 </div>
                 <div className="flex shrink-0 gap-1">
@@ -512,6 +645,33 @@ function TicketPricesBlock({ ticket, cardId }: { ticket: Ticket; cardId: string 
               </div>
             )
           )}
+        </div>
+      )}
+
+      {archivedPrices.length > 0 && (
+        <div className="space-y-1">
+          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide pt-1">Архив (использовались в заказах)</p>
+          {archivedPrices.map((price) => (
+            <div key={price.id} className="flex items-center justify-between gap-2 rounded-md border border-input bg-muted/40 px-3 py-2 text-sm opacity-60">
+              <div className="flex flex-wrap gap-x-4 gap-y-1">
+                <span className="font-medium line-through">
+                  {new Date(price.dateFrom).toLocaleDateString('ru-RU')} — {new Date(price.dateTo).toLocaleDateString('ru-RU')}
+                </span>
+                <span>{parseFloat(price.adultPrice).toLocaleString('ru-RU')} ₽</span>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 shrink-0"
+                title="Восстановить"
+                disabled={unarchiveMutation.isPending}
+                onClick={() => unarchiveMutation.mutate(price.id)}
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          ))}
         </div>
       )}
 
@@ -740,25 +900,26 @@ const DAYS: { key: keyof WeeklySchedulePayload; label: string }[] = [
 ];
 
 const DEFAULT_WEEKLY: WeeklySchedulePayload = {
-  monday: { active: false, times: ['09:00', '18:00'] },
-  tuesday: { active: false, times: ['09:00', '18:00'] },
-  wednesday: { active: false, times: ['09:00', '18:00'] },
-  thursday: { active: false, times: ['09:00', '18:00'] },
-  friday: { active: false, times: ['09:00', '18:00'] },
-  saturday: { active: false, times: ['09:00', '18:00'] },
-  sunday: { active: false, times: ['09:00', '18:00'] },
+  monday: { active: false, times: [] },
+  tuesday: { active: false, times: [] },
+  wednesday: { active: false, times: [] },
+  thursday: { active: false, times: [] },
+  friday: { active: false, times: [] },
+  saturday: { active: false, times: [] },
+  sunday: { active: false, times: [] },
 };
 
 function ScheduleTab({ cardId }: { cardId: string }) {
   const queryClient = useQueryClient();
   const [scheduleError, setScheduleError] = useState('');
   const [weeklyDirty, setWeeklyDirty] = useState(false);
+  const [weeklyTimeInputs, setWeeklyTimeInputs] = useState<{ [dayKey: string]: string }>({});
 
   // New special date form state
   const [newDate, setNewDate] = useState('');
   const [newDateTo, setNewDateTo] = useState('');
-  const [newTimeFrom, setNewTimeFrom] = useState('');
-  const [newTimeTo, setNewTimeTo] = useState('');
+  const [newTimes, setNewTimes] = useState<string[]>([]);
+  const [newTimeInput, setNewTimeInput] = useState('');
   const [newClosed, setNewClosed] = useState(false);
   const [newReason, setNewReason] = useState('');
 
@@ -794,7 +955,7 @@ function ScheduleTab({ cardId }: { cardId: string }) {
       schedulesApi.addSpecialDate(cardId, {
         dateFrom: newDate,
         dateTo: newDateTo || newDate,
-        times: newClosed ? [] : [newTimeFrom, newTimeTo].filter(Boolean),
+        times: newClosed ? [] : newTimes,
         isClosed: newClosed,
         reason: newReason || undefined,
       }),
@@ -802,8 +963,8 @@ function ScheduleTab({ cardId }: { cardId: string }) {
       queryClient.invalidateQueries({ queryKey: ['card-schedule', cardId] });
       setNewDate('');
       setNewDateTo('');
-      setNewTimeFrom('');
-      setNewTimeTo('');
+      setNewTimes([]);
+      setNewTimeInput('');
       setNewClosed(false);
       setNewReason('');
       setScheduleError('');
@@ -822,16 +983,16 @@ function ScheduleTab({ cardId }: { cardId: string }) {
 
   const updateDay = (
     key: keyof WeeklySchedulePayload,
-    field: 'active' | 'from' | 'to',
-    value: string | boolean,
+    field: 'active' | 'times',
+    value: string | boolean | string[],
   ) => {
     setWeekly((prev) => {
       const day = { ...prev[key] };
-      const times = [...(day.times ?? ['09:00', '18:00'])];
-      if (field === 'active') day.active = value as boolean;
-      else if (field === 'from') times[0] = value as string;
-      else times[1] = value as string;
-      day.times = times;
+      if (field === 'active') {
+        day.active = value as boolean;
+      } else if (field === 'times') {
+        day.times = value as string[];
+      }
       return { ...prev, [key]: day };
     });
     setWeeklyDirty(true);
@@ -863,35 +1024,70 @@ function ScheduleTab({ cardId }: { cardId: string }) {
         <CardContent className="space-y-3">
           {DAYS.map(({ key, label }) => {
             const day = weekly[key];
-            const timeFrom = day.times?.[0] ?? '09:00';
-            const timeTo = day.times?.[1] ?? '18:00';
+            
             return (
-              <div key={key} className="flex items-center gap-3">
-                <label className="flex items-center gap-2 w-36 shrink-0 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={day.active}
-                    onChange={(e) => updateDay(key, 'active', e.target.checked)}
-                    className="h-4 w-4 rounded border-input accent-primary"
-                  />
-                  <span className={day.active ? 'font-medium' : 'text-muted-foreground'}>{label}</span>
-                </label>
-                <span className="text-sm text-muted-foreground shrink-0">с</span>
-                <Input
-                  type="time"
-                  value={timeFrom}
-                  disabled={!day.active}
-                  onChange={(e) => updateDay(key, 'from', e.target.value)}
-                  className="w-32"
-                />
-                <span className="text-sm text-muted-foreground shrink-0">до</span>
-                <Input
-                  type="time"
-                  value={timeTo}
-                  disabled={!day.active}
-                  onChange={(e) => updateDay(key, 'to', e.target.value)}
-                  className="w-32"
-                />
+              <div key={key} className="rounded-md border border-input bg-background p-3">
+                <div className="flex items-center gap-3 mb-2">
+                  <label className="flex items-center gap-2 w-36 shrink-0 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={day.active}
+                      onChange={(e) => updateDay(key, 'active', e.target.checked)}
+                      className="h-4 w-4 rounded border-input accent-primary"
+                    />
+                    <span className={day.active ? 'font-medium' : 'text-muted-foreground'}>{label}</span>
+                  </label>
+                </div>
+                
+                {day.active && (
+                  <div className="ml-9 space-y-2">
+                    {day.times && day.times.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {day.times.map((time, idx) => (
+                          <div key={idx} className="inline-flex items-center gap-1 rounded bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
+                            <span>{time}</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const newTimes = day.times.filter((_, i) => i !== idx);
+                                updateDay(key, 'times', newTimes);
+                              }}
+                              className="ml-1 text-primary/60 hover:text-primary"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <div className="flex gap-2">
+                      <Input
+                        type="time"
+                        value={weeklyTimeInputs[key] || ''}
+                        onChange={(e) => setWeeklyTimeInputs({ ...weeklyTimeInputs, [key]: e.target.value })}
+                        placeholder="HH:MM"
+                        className="w-32"
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={!weeklyTimeInputs[key]}
+                        onClick={() => {
+                          const newTime = weeklyTimeInputs[key];
+                          const currentTimes = day.times || [];
+                          if (newTime && !currentTimes.includes(newTime)) {
+                            updateDay(key, 'times', [...currentTimes, newTime].sort());
+                            setWeeklyTimeInputs({ ...weeklyTimeInputs, [key]: '' });
+                          }
+                        }}
+                      >
+                        <Plus className="h-3.5 w-3.5 mr-1" />
+                        Добавить
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })}
@@ -918,35 +1114,47 @@ function ScheduleTab({ cardId }: { cardId: string }) {
           {specialDates.length > 0 ? (
             <div className="space-y-2">
               {specialDates.map((sd, index) => (
-                <div key={index} className="flex items-center justify-between gap-3 rounded-md border border-input bg-background px-3 py-2 text-sm">
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 min-w-0">
-                    <span className="font-medium">
-                      {new Date(sd.dateFrom).toLocaleDateString('ru-RU')}
-                      {sd.dateTo && sd.dateTo !== sd.dateFrom && (
-                        <> — {new Date(sd.dateTo).toLocaleDateString('ru-RU')}</>
+                <div key={index} className="rounded-md border border-input bg-background">
+                  <div className="flex items-start justify-between gap-3 px-3 py-2 text-sm">
+                    <div className="flex-1 min-w-0 space-y-1">
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                        <span className="font-medium">
+                          {new Date(sd.dateFrom).toLocaleDateString('ru-RU')}
+                          {sd.dateTo && sd.dateTo !== sd.dateFrom && (
+                            <> — {new Date(sd.dateTo).toLocaleDateString('ru-RU')}</>
+                          )}
+                        </span>
+                        {sd.isClosed && (
+                          <span className="rounded bg-destructive/10 px-2 py-0.5 text-xs text-destructive font-medium">Закрыто</span>
+                        )}
+                        {sd.reason && <span className="text-muted-foreground italic">{sd.reason}</span>}
+                      </div>
+                      {!sd.isClosed && sd.times.length > 0 && (
+                        <div className="pl-4 space-y-0.5">
+                          <div className="text-xs text-muted-foreground mb-1">Время начала:</div>
+                          <div className="flex flex-wrap gap-2">
+                            {sd.times.map((time, timeIndex) => (
+                              <span key={timeIndex} className="inline-flex items-center rounded bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                                {time}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
                       )}
-                    </span>
-                    {sd.isClosed ? (
-                      <span className="rounded bg-destructive/10 px-2 py-0.5 text-xs text-destructive font-medium">Закрыто</span>
-                    ) : sd.times.length >= 2 ? (
-                      <span className="text-muted-foreground">с {sd.times[0]} до {sd.times[1]}</span>
-                    ) : sd.times.length === 1 ? (
-                      <span className="text-muted-foreground">{sd.times[0]}</span>
-                    ) : null}
-                    {sd.reason && <span className="text-muted-foreground italic">{sd.reason}</span>}
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 shrink-0 px-2 text-destructive hover:text-destructive"
+                      disabled={removeSpecialMutation.isPending}
+                      onClick={() => {
+                        if (confirm('Удалить эту запись?')) removeSpecialMutation.mutate(index);
+                      }}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
                   </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 shrink-0 px-2 text-destructive hover:text-destructive"
-                    disabled={removeSpecialMutation.isPending}
-                    onClick={() => {
-                      if (confirm('Удалить эту запись?')) removeSpecialMutation.mutate(index);
-                    }}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
                 </div>
               ))}
             </div>
@@ -972,38 +1180,75 @@ function ScheduleTab({ cardId }: { cardId: string }) {
                   placeholder="Оставьте пустым для одной даты"
                 />
               </div>
-              <div className="space-y-1">
-                <Label className="text-xs">Время с</Label>
-                <Input
-                  type="time"
-                  value={newTimeFrom}
-                  disabled={newClosed}
-                  onChange={(e) => setNewTimeFrom(e.target.value)}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">Время до</Label>
-                <Input
-                  type="time"
-                  value={newTimeTo}
-                  disabled={newClosed}
-                  onChange={(e) => setNewTimeTo(e.target.value)}
-                />
-              </div>
-              <div className="space-y-1 sm:col-span-2">
-                <Label className="text-xs">Причина / комментарий</Label>
-                <Input
-                  value={newReason}
-                  onChange={(e) => setNewReason(e.target.value)}
-                  placeholder="Например: Праздничный день"
-                />
-              </div>
             </div>
+            
+            {/* Time slots */}
+            {!newClosed && (
+              <div className="space-y-2">
+                <Label className="text-xs">Варианты времени начала</Label>
+                {newTimes.length > 0 && (
+                  <div className="flex flex-wrap gap-2 p-2 rounded-md bg-muted/50">
+                    {newTimes.map((time, idx) => (
+                      <div key={idx} className="inline-flex items-center gap-1 rounded bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
+                        <span>{time}</span>
+                        <button
+                          type="button"
+                          onClick={() => setNewTimes(newTimes.filter((_, i) => i !== idx))}
+                          className="ml-1 text-primary/60 hover:text-primary"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <Input
+                    type="time"
+                    value={newTimeInput}
+                    onChange={(e) => setNewTimeInput(e.target.value)}
+                    placeholder="HH:MM"
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={!newTimeInput}
+                    onClick={() => {
+                      if (newTimeInput && !newTimes.includes(newTimeInput)) {
+                        setNewTimes([...newTimes, newTimeInput].sort());
+                        setNewTimeInput('');
+                      }
+                    }}
+                  >
+                    <Plus className="h-3.5 w-3.5 mr-1" />
+                    Добавить
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-1">
+              <Label className="text-xs">Причина / комментарий</Label>
+              <Input
+                value={newReason}
+                onChange={(e) => setNewReason(e.target.value)}
+                placeholder="Например: Праздничный день"
+              />
+            </div>
+            
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
                 checked={newClosed}
-                onChange={(e) => setNewClosed(e.target.checked)}
+                onChange={(e) => {
+                  setNewClosed(e.target.checked);
+                  if (e.target.checked) {
+                    setNewTimes([]);
+                    setNewTimeInput('');
+                  }
+                }}
                 className="h-4 w-4 rounded border-input accent-destructive"
               />
               <span className="text-sm font-medium text-destructive">Закрыта (день недоступен)</span>
@@ -1011,11 +1256,11 @@ function ScheduleTab({ cardId }: { cardId: string }) {
             <Button
               type="button"
               size="sm"
-              disabled={!newDate || addSpecialMutation.isPending}
+              disabled={!newDate || (!newClosed && newTimes.length === 0) || addSpecialMutation.isPending}
               onClick={() => addSpecialMutation.mutate()}
             >
               <Plus className="mr-2 h-3.5 w-3.5" />
-              {addSpecialMutation.isPending ? 'Добавление...' : 'Добавить'}
+              {addSpecialMutation.isPending ? 'Добавление...' : 'Добавить дату'}
             </Button>
           </div>
         </CardContent>

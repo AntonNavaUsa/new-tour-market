@@ -5,7 +5,7 @@ import { MapPin, Clock, Users, Calendar, ChevronLeft, ChevronRight } from 'lucid
 import { cardsApi } from '../lib/api';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
-import { formatPrice, formatDate } from '../lib/utils';
+import { formatPrice, formatDate, formatDuration, getMinPriceFromTiers, formatTierLabel } from '../lib/utils';
 import type { Price, Schedule, Ticket } from '../types';
 
 type TimeSlot = {
@@ -47,12 +47,12 @@ function getUpcomingSlots(schedule?: Schedule, limit = 10): TimeSlot[] {
   const specialDates = Array.isArray(schedule.specialDates) ? schedule.specialDates : [];
   const slots: TimeSlot[] = [];
 
-  for (let offset = 0; offset < 45 && slots.length < limit; offset += 1) {
+  for (let offset = 0; offset < 90 && slots.length < limit; offset += 1) {
     const date = new Date();
     date.setHours(0, 0, 0, 0);
     date.setDate(date.getDate() + offset);
 
-    const isoDate = date.toISOString().split('T')[0];
+    const isoDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
     const specialDate = specialDates.find((item: any) =>
       isDateWithinRange(date, item.dateFrom, item.dateTo ?? item.dateFrom),
     );
@@ -82,6 +82,130 @@ function getUpcomingSlots(schedule?: Schedule, limit = 10): TimeSlot[] {
   return slots;
 }
 
+function getAvailableDates(schedule?: Schedule, scanDays = 90): string[] {
+  if (!schedule) {
+    return [];
+  }
+
+  const weeklySchedule = (schedule.weeklySchedule ?? {}) as Record<
+    string,
+    { active?: boolean; times?: string[] }
+  >;
+  const specialDates = Array.isArray(schedule.specialDates) ? schedule.specialDates : [];
+  const dates: string[] = [];
+
+  for (let offset = 0; offset < scanDays; offset += 1) {
+    const date = new Date();
+    date.setHours(0, 0, 0, 0);
+    date.setDate(date.getDate() + offset);
+
+    const isoDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    const specialDate = specialDates.find((item: any) =>
+      isDateWithinRange(date, item.dateFrom, item.dateTo ?? item.dateFrom),
+    );
+
+    if (specialDate?.isClosed) {
+      continue;
+    }
+
+    const dayName = getDayName(date);
+    const baseSchedule = weeklySchedule[dayName];
+    const times = specialDate?.times?.length ? specialDate.times : baseSchedule?.times ?? [];
+    const isActive = specialDate?.times?.length ? true : baseSchedule?.active;
+
+    if (isActive && times.length > 0) {
+      dates.push(isoDate);
+    }
+  }
+
+  return dates;
+}
+
+function isEarlyBooking(dateStr: string): boolean {
+  const date = new Date(dateStr);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const diffDays = (date.getTime() - today.getTime()) / (1000 * 60 * 60 * 24);
+  return diffDays > 30;
+}
+
+function getDayNameRu(dateStr: string): string {
+  const dayNames = ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'];
+  return dayNames[new Date(dateStr).getDay()];
+}
+
+function groupDatesByMonth(dates: string[]): { month: string; dates: string[] }[] {
+  const months: Record<string, string[]> = {};
+  const monthNames = [
+    'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
+    'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь',
+  ];
+  for (const date of dates) {
+    const d = new Date(date);
+    const key = `${monthNames[d.getMonth()]} ${d.getFullYear()}`;
+    if (!months[key]) months[key] = [];
+    months[key].push(date);
+  }
+  return Object.entries(months).map(([month, dates]) => ({ month, dates }));
+}
+
+function getTimesForDate(schedule: Schedule | undefined, dateStr: string): string[] {
+  if (!schedule) {
+    return [];
+  }
+
+  const date = new Date(dateStr);
+  const weeklySchedule = (schedule.weeklySchedule ?? {}) as Record<
+    string,
+    { active?: boolean; times?: string[] }
+  >;
+  const specialDates = Array.isArray(schedule.specialDates) ? schedule.specialDates : [];
+
+  const specialDate = specialDates.find((item: any) =>
+    isDateWithinRange(date, item.dateFrom, item.dateTo ?? item.dateFrom),
+  );
+
+  if (specialDate?.isClosed) {
+    return [];
+  }
+
+  if (specialDate?.times?.length) {
+    return specialDate.times;
+  }
+
+  const dayName = getDayName(date);
+  const baseSchedule = weeklySchedule[dayName];
+  
+  return baseSchedule?.active ? (baseSchedule.times ?? []) : [];
+}
+
+function getDateLabel(dateStr: string): { label: string; dayName: string } {
+  const date = new Date(dateStr);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  
+  const dayAfterTomorrow = new Date(today);
+  dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 2);
+
+  const dateTime = date.getTime();
+  
+  const dayNames = ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'];
+  const dayName = dayNames[date.getDay()];
+
+  if (dateTime === today.getTime()) {
+    return { label: 'Сегодня', dayName };
+  } else if (dateTime === tomorrow.getTime()) {
+    return { label: 'Завтра', dayName };
+  } else if (dateTime === dayAfterTomorrow.getTime()) {
+    return { label: 'Послезавтра', dayName };
+  }
+  
+  return { label: dayName, dayName };
+}
+
 function getTicketPriceForDate(ticket: Ticket, date: string): Price | undefined {
   if (!ticket.prices?.length) {
     return undefined;
@@ -101,6 +225,8 @@ export function TourDetailPage() {
   const navigate = useNavigate();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [showCalendar, setShowCalendar] = useState(false);
 
   const { data: card, isLoading } = useQuery({
     queryKey: ['card', id],
@@ -146,16 +272,36 @@ export function TourDetailPage() {
 
   const schedule = card.schedules?.[0];
   const upcomingSlots = getUpcomingSlots(schedule);
+  const availableDates = getAvailableDates(schedule);
+  const quickDateOptions = availableDates.slice(0, 3);
+  const hasEarlyBookingOnly = availableDates.length > 0 && isEarlyBooking(availableDates[0]);
   const minPrice = card.tickets && card.tickets.length > 0
     ? Math.min(
-        ...card.tickets
-          .flatMap((ticket) => (ticket.prices ?? []).map((price) => Number(price.adultPrice)))
-          .filter((price) => Number.isFinite(price)),
+        ...card.tickets.flatMap((ticket) =>
+          (ticket.prices ?? [])
+            .filter((p: any) => !p.isArchived)
+            .map((price: any) => {
+              if (price.groupTiers && price.groupTiers.length > 0) {
+                return getMinPriceFromTiers(price.groupTiers);
+              }
+              return Number(price.adultPrice);
+            })
+        ).filter((p) => Number.isFinite(p)),
       )
     : 0;
+
+  const hasGroupPricing = card.tickets?.some((t) =>
+    t.prices?.some((p: any) => !p.isArchived && p.groupTiers && p.groupTiers.length > 0),
+  );
+
+  const allTiers = card.tickets?.flatMap((t) =>
+    (t.prices ?? []).filter((p: any) => !p.isArchived && p.groupTiers?.length).flatMap((p: any) => p.groupTiers),
+  ) ?? [];
   const locationLabel = card.location
     ? [card.location.city, card.location.region, card.location.country].filter(Boolean).join(', ')
     : 'Локация уточняется';
+
+  const timesForSelectedDate = selectedDate ? getTimesForDate(schedule, selectedDate) : [];
 
   return (
     <div className="container py-12">
@@ -249,7 +395,7 @@ export function TourDetailPage() {
             </div>
             <div className="flex items-center gap-2">
               <Clock className="h-5 w-5" />
-              <span>{card.duration ? `${card.duration} мин` : 'Длительность уточняется'}</span>
+              <span>{card.duration ? formatDuration(card.duration) : 'Длительность уточняется'}</span>
             </div>
             <div className="flex items-center gap-2">
               <Users className="h-5 w-5" />
@@ -258,10 +404,18 @@ export function TourDetailPage() {
           </div>
 
           <div className="mb-8">
-            <div className="text-3xl font-bold text-primary mb-2">
+            <div className="text-3xl font-bold text-primary mb-1">
               от {formatPrice(minPrice)}
             </div>
-            <p className="text-muted-foreground">за человека</p>
+            {hasGroupPricing && allTiers.length > 0 ? (
+              <div className="space-y-0.5 mt-2">
+                {allTiers.map((t: any, i: number) => (
+                  <div key={i} className="text-sm text-muted-foreground">{formatTierLabel(t)}</div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground">за человека</p>
+            )}
           </div>
 
           <div className="prose max-w-none mb-8">
@@ -272,60 +426,160 @@ export function TourDetailPage() {
           </div>
 
           {/* Schedules */}
-          {upcomingSlots.length > 0 && (
+          {availableDates.length > 0 && (
             <div className="mb-8">
               <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
                 <Calendar className="h-5 w-5" />
-                Доступные даты
+                Выберите дату
+                {hasEarlyBookingOnly && (
+                  <span className="ml-2 text-xs font-normal px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-300">
+                    Раннее бронирование
+                  </span>
+                )}
               </h2>
-              <div className="grid gap-3">
-                {upcomingSlots.map((slot) => {
-                  const availablePrices = (card.tickets ?? [])
-                    .map((ticket) => getTicketPriceForDate(ticket, slot.date))
-                    .filter((price): price is Price => Boolean(price));
-                  const slotPrice = availablePrices.length > 0
-                    ? Math.min(...availablePrices.map((price) => Number(price.adultPrice)))
-                    : minPrice;
-                  const totalAvailable = availablePrices.length > 0
-                    ? Math.min(...availablePrices.map((price) => price.availableSlots ?? Number.MAX_SAFE_INTEGER))
-                    : 0;
-
+              {hasEarlyBookingOnly && (
+                <p className="text-sm text-muted-foreground mb-4 p-3 rounded-lg bg-amber-50 border border-amber-200">
+                  Ближайшие даты временно недоступны. Вы можете забронировать тур заранее на будущие даты.
+                </p>
+              )}
+              
+              {/* Quick date selection */}
+              <div className="grid grid-cols-3 gap-3 mb-4">
+                {quickDateOptions.map((date) => {
+                  const { label } = getDateLabel(date);
+                  const isSelected = selectedDate === date;
+                  const earlyBooking = isEarlyBooking(date);
                   return (
-                    <Card
-                      key={`${slot.date}-${slot.time}`}
-                      className={`cursor-pointer transition ${
-                        selectedSlot?.date === slot.date && selectedSlot?.time === slot.time
-                          ? 'ring-2 ring-primary'
-                          : 'hover:border-primary'
+                    <button
+                      key={date}
+                      onClick={() => {
+                        setSelectedDate(date);
+                        setSelectedSlot(null);
+                      }}
+                      className={`p-4 rounded-lg border-2 transition text-center ${
+                        isSelected
+                          ? 'border-primary bg-primary/5 font-semibold'
+                          : earlyBooking
+                          ? 'border-amber-300 hover:border-amber-400 bg-amber-50/50'
+                          : 'border-input hover:border-primary/50'
                       }`}
-                      onClick={() => setSelectedSlot(slot)}
                     >
-                      <CardContent className="p-4">
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <div className="font-semibold">
-                              {formatDate(slot.date)}
-                            </div>
-                            <div className="text-sm text-muted-foreground">
-                              {slot.time}
-                              {Number.isFinite(totalAvailable) && totalAvailable > 0
-                                ? ` • ${totalAvailable} мест доступно`
-                                : ''}
-                            </div>
-                          </div>
-                          {slotPrice > 0 && (
-                            <div className="text-right">
-                              <div className="font-semibold">
-                                от {formatPrice(slotPrice)}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
+                      <div className="text-lg font-medium">{earlyBooking ? formatDate(date) : label}</div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {earlyBooking ? getDayNameRu(date) : formatDate(date)}
+                      </div>
+                    </button>
                   );
                 })}
               </div>
+
+              {/* Calendar for other dates */}
+              {availableDates.length > 3 && (
+                <Button
+                  variant="outline"
+                  className="w-full mb-4"
+                  onClick={() => setShowCalendar(!showCalendar)}
+                >
+                  <Calendar className="h-4 w-4 mr-2" />
+                  {showCalendar ? 'Скрыть календарь' : 'Показать другие даты'}
+                </Button>
+              )}
+
+              {showCalendar && availableDates.length > 3 && (
+                <div className="mb-4 p-4 rounded-lg bg-muted/30">
+                  {groupDatesByMonth(availableDates.slice(3)).map(({ month, dates: monthDates }) => {
+                    const firstDate = new Date(monthDates[0]);
+                    const year = firstDate.getFullYear();
+                    const monthIdx = firstDate.getMonth();
+                    const daysInMonth = new Date(year, monthIdx + 1, 0).getDate();
+                    // Monday-first: (getDay()+6)%7 → Mon=0, ..., Sun=6
+                    const offset = (new Date(year, monthIdx, 1).getDay() + 6) % 7;
+                    const availableSet = new Set(monthDates);
+                    return (
+                      <div key={month} className="mb-6">
+                        <div className="text-sm font-semibold text-muted-foreground mb-2">{month}</div>
+                        <div className="grid grid-cols-7 gap-1 text-center">
+                          {['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].map((d) => (
+                            <div key={d} className="text-xs text-muted-foreground font-medium py-1">{d}</div>
+                          ))}
+                          {Array.from({ length: offset }, (_, i) => (
+                            <div key={`empty-${i}`} />
+                          ))}
+                          {Array.from({ length: daysInMonth }, (_, i) => {
+                            const day = i + 1;
+                            const dateStr = `${year}-${String(monthIdx + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                            const isAvailable = availableSet.has(dateStr);
+                            const isSelected = selectedDate === dateStr;
+                            if (isAvailable) {
+                              return (
+                                <button
+                                  key={dateStr}
+                                  onClick={() => {
+                                    setSelectedDate(dateStr);
+                                    setSelectedSlot(null);
+                                    setShowCalendar(false);
+                                  }}
+                                  className={`py-2 rounded-md border text-sm font-medium transition ${
+                                    isSelected
+                                      ? 'border-primary bg-primary text-primary-foreground'
+                                      : 'border-input hover:border-primary/50 hover:bg-background'
+                                  }`}
+                                >
+                                  {day}
+                                </button>
+                              );
+                            }
+                            return (
+                              <div key={dateStr} className="py-2 text-sm text-muted-foreground/30">
+                                {day}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Time selection */}
+              {selectedDate && timesForSelectedDate.length > 0 && (
+                <div className="mt-4">
+                  <h3 className="text-sm font-medium mb-3">Выберите время</h3>
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                    {timesForSelectedDate.map((time) => {
+                      const slot = { date: selectedDate, time };
+                      const isSelected = selectedSlot?.date === slot.date && selectedSlot?.time === slot.time;
+                      
+                      const availablePrices = (card.tickets ?? [])
+                        .map((ticket) => getTicketPriceForDate(ticket, slot.date))
+                        .filter((price): price is Price => Boolean(price));
+                      const slotPrice = availablePrices.length > 0
+                        ? Math.min(...availablePrices.map((price) => Number(price.adultPrice)))
+                        : minPrice;
+
+                      return (
+                        <button
+                          key={time}
+                          onClick={() => setSelectedSlot(slot)}
+                          className={`p-3 rounded-lg border-2 transition text-center ${
+                            isSelected
+                              ? 'border-primary bg-primary/5 font-semibold'
+                              : 'border-input hover:border-primary/50'
+                          }`}
+                        >
+                          <div className="font-medium">{time}</div>
+                          {slotPrice > 0 && (
+                            <div className="text-xs text-muted-foreground mt-1">
+                              от {formatPrice(slotPrice)}
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

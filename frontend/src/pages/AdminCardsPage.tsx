@@ -7,7 +7,7 @@ import { handleApiError } from '../lib/axios';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Input } from '../components/ui/input';
-import { formatPrice } from '../lib/utils';
+import { formatPrice, getMinPriceFromTiers } from '../lib/utils';
 import type { CardStatus } from '../types';
 
 export function AdminCardsPage() {
@@ -102,7 +102,24 @@ export function AdminCardsPage() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {cards.map((cardItem) => {
-            const firstPrice = cardItem.tickets?.[0]?.prices?.[0]?.adultPrice;
+            const firstPrice = (() => {
+              let min: number | null = null;
+              for (const ticket of cardItem.tickets ?? []) {
+                for (const price of ticket.prices ?? []) {
+                  if ((price as any).isArchived) continue;
+                  const rawTiers = (price as any).groupTiers;
+                  const tiers = typeof rawTiers === 'string' ? JSON.parse(rawTiers) : Array.isArray(rawTiers) ? rawTiers : null;
+                  if (tiers && tiers.length > 0) {
+                    const m = getMinPriceFromTiers(tiers);
+                    if (min === null || m < min) min = m;
+                    continue;
+                  }
+                  const p = parseFloat((price as any).adultPrice);
+                  if (!isNaN(p) && p > 0 && (min === null || p < min)) min = p;
+                }
+              }
+              return min;
+            })();
             const locationLabel = cardItem.location
               ? [cardItem.location.city, cardItem.location.country].filter(Boolean).join(', ')
               : 'Локация не указана';
@@ -141,7 +158,7 @@ export function AdminCardsPage() {
                     <div>
                       <div className="text-xs text-muted-foreground">Цена от</div>
                       <div className="text-lg font-semibold">
-                        {firstPrice ? formatPrice(firstPrice) : 'Уточняется'}
+                        {firstPrice !== null ? formatPrice(firstPrice) : 'Уточняется'}
                       </div>
                     </div>
                     <div className="flex gap-2">

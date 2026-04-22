@@ -225,6 +225,11 @@ model Price {
   
   availableSlots  Int?     @map("available_slots") // Max bookings for this period
   
+  // Group pricing tiers: [{ minPeople, maxPeople, price, priceType: 'fixed'|'per_person' }]
+  groupTiers      Json?    @map("group_tiers")
+  
+  isArchived      Boolean  @default(false) @map("is_archived")
+  
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
   
@@ -267,6 +272,8 @@ model Order {
   
   quantity      Int         @default(1) // Total number of participants
   amount        Decimal     @db.Decimal(10, 2) // Total order amount
+  prepaymentPercent Int     @default(20) @map("prepayment_percent") // % charged upfront
+  prepaymentAmount  Decimal @db.Decimal(10, 2) @map("prepayment_amount") // Amount charged online
   
   status        OrderStatus @default(PREORDER)
   expired       Boolean     @default(false)

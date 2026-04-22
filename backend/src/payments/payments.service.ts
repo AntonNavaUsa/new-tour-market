@@ -24,8 +24,10 @@ export class PaymentsService {
   ) {
     const shopId = this.config.get('YOOKASSA_SHOP_ID');
     const secretKey = this.config.get('YOOKASSA_SECRET_KEY');
+    const isPlaceholder = !shopId || !secretKey ||
+      shopId === 'your-shop-id' || secretKey === 'your-secret-key';
 
-    if (shopId && secretKey) {
+    if (!isPlaceholder) {
       try {
         this.yooKassa = new YooCheckout({
           shopId,
@@ -37,7 +39,7 @@ export class PaymentsService {
         this.logger.warn(error);
       }
     } else {
-      this.logger.warn('YooKassa credentials not configured');
+      this.logger.warn('YooKassa credentials not configured (using mock mode)');
     }
   }
 
@@ -76,12 +78,15 @@ export class PaymentsService {
       throw new BadRequestException('Order has expired');
     }
 
+    // Use prepayment amount (20% rounded up to nearest 100 rubles)
+    const paymentAmount = order.prepaymentAmount ?? order.amount;
+
     // Create payment record
     const payment = await this.prisma.payment.create({
       data: {
         userId,
         orderId: dto.orderId,
-        amount: order.amount,
+        amount: paymentAmount,
         status: PaymentStatus.PENDING,
       },
     });
@@ -91,14 +96,14 @@ export class PaymentsService {
       try {
         const yooPayment = await this.yooKassa.createPayment({
           amount: {
-            value: Number(order.amount).toFixed(2),
+            value: Number(paymentAmount).toFixed(2),
             currency: 'RUB',
           },
           confirmation: {
             type: 'embedded',
           },
           capture: true,
-          description: `Оплата заказа #${order.id.substring(0, 8)} - ${order.card.title}`,
+          description: `Предоплата 20% за заказ #${order.id.substring(0, 8)} - ${order.card.title}`,
           metadata: {
             orderId: order.id,
             paymentId: payment.id,
@@ -118,7 +123,9 @@ export class PaymentsService {
         return {
           paymentId: updatedPayment.id,
           confirmationToken: yooPayment.confirmation?.confirmation_token,
-          amount: order.amount,
+          amount: paymentAmount,
+          totalAmount: order.amount,
+          remainingAmount: Number(order.amount) - Number(paymentAmount),
         };
       } catch (error) {
         this.logger.error('YooKassa payment creation failed', error);
@@ -133,6 +140,20 @@ export class PaymentsService {
           },
         });
 
+        // In development mode fall through to mock response
+        const isDev = this.config.get('NODE_ENV') !== 'production';
+        if (isDev) {
+          this.logger.warn('YooKassa failed in dev mode — returning mock response');
+          return {
+            paymentId: payment.id,
+            confirmationToken: 'test_token_' + payment.id,
+            amount: paymentAmount,
+            totalAmount: order.amount,
+            remainingAmount: Number(order.amount) - Number(paymentAmount),
+            note: `YooKassa error (dev mock): ${error.message}`,
+          };
+        }
+
         throw new BadRequestException('Failed to create payment. Please try again later.');
       }
     }
@@ -141,7 +162,9 @@ export class PaymentsService {
     return {
       paymentId: payment.id,
       confirmationToken: 'test_token_' + payment.id,
-      amount: order.amount,
+      amount: paymentAmount,
+      totalAmount: order.amount,
+      remainingAmount: Number(order.amount) - Number(paymentAmount),
       note: 'YooKassa not configured. This is a test payment.',
     };
   }

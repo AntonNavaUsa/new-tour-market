@@ -23,6 +23,7 @@ export enum OrderStatus {
   CONFIRMED = 'CONFIRMED',
   PAID = 'PAID',
   CANCELLED = 'CANCELLED',
+  EXPIRED = 'EXPIRED',
   COMPLETED = 'COMPLETED',
 }
 
@@ -126,6 +127,13 @@ export interface Ticket {
   prices?: Price[];
 }
 
+export interface GroupTier {
+  minPeople: number;
+  maxPeople: number | null;
+  price: number;
+  priceType: 'fixed' | 'per_person';
+}
+
 export interface Price {
   id: string;
   ticketId: string;
@@ -135,6 +143,8 @@ export interface Price {
   childPrice: string | null;
   minPrice: string | null;
   availableSlots: number | null;
+  isArchived: boolean;
+  groupTiers: GroupTier[] | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -175,9 +185,15 @@ export interface Order {
   time: string | null;
   quantity: number;
   amount: string;
+  prepaymentPercent: number;
+  prepaymentAmount: string;
   status: OrderStatus;
   expired: boolean;
   expiresAt: string | null;
+  customerName?: string;
+  customerEmail?: string;
+  customerPhone?: string;
+  notes?: string;
   createdAt: string;
   updatedAt: string;
   card?: Card;

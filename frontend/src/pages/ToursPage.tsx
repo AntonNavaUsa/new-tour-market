@@ -5,9 +5,43 @@ import { cardsApi } from '../lib/api';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
-import { formatPrice } from '../lib/utils';
+import { formatPrice, formatDuration, getMinPriceFromTiers } from '../lib/utils';
 import { Search, MapPin, Clock, Users } from 'lucide-react';
-import type { CardFilterParams } from '../types';
+import type { CardFilterParams, Card as CardType } from '../types';
+
+// Найти минимальную цену среди всех тикетов карточки
+function getMinPrice(card: CardType): number | null {
+  if (!card.tickets || card.tickets.length === 0) {
+    return null;
+  }
+
+  let minPrice: number | null = null;
+
+  for (const ticket of card.tickets) {
+    if (!ticket.prices || ticket.prices.length === 0) {
+      continue;
+    }
+
+    for (const price of ticket.prices) {
+      if ((price as any).isArchived) continue;
+
+      const rawTiers = (price as any).groupTiers;
+      const tiers = typeof rawTiers === 'string' ? JSON.parse(rawTiers) : Array.isArray(rawTiers) ? rawTiers : null;
+      if (tiers && tiers.length > 0) {
+        const tierMin = getMinPriceFromTiers(tiers);
+        if (minPrice === null || tierMin < minPrice) minPrice = tierMin;
+        continue;
+      }
+
+      const adultPrice = parseFloat(price.adultPrice);
+      if (!isNaN(adultPrice) && adultPrice > 0 && (minPrice === null || adultPrice < minPrice)) {
+        minPrice = adultPrice;
+      }
+    }
+  }
+
+  return minPrice;
+}
 
 export function ToursPage() {
   const [filters, setFilters] = useState<CardFilterParams>({
@@ -114,7 +148,7 @@ export function ToursPage() {
                       {card.duration && (
                         <div className="flex items-center gap-1">
                           <Clock className="h-4 w-4" />
-                          <span>{card.duration} мин</span>
+                          <span>{formatDuration(card.duration)}</span>
                         </div>
                       )}
                       {card.maxParticipants && (
@@ -127,19 +161,22 @@ export function ToursPage() {
                   </CardContent>
 
                   <CardFooter className="flex justify-between items-center">
-                    {card.tickets && card.tickets.length > 0 && card.tickets[0].prices && card.tickets[0].prices[0] ? (
-                      <div>
-                        <p className="text-sm text-muted-foreground">от</p>
-                        <p className="text-2xl font-bold">
-                          {formatPrice(card.tickets[0].prices[0].adultPrice)}
-                        </p>
-                      </div>
-                    ) : (
-                      <div>
-                        <p className="text-sm text-muted-foreground">Цена</p>
-                        <p className="font-semibold">Уточняйте</p>
-                      </div>
-                    )}
+                    {(() => {
+                      const minPrice = getMinPrice(card);
+                      return minPrice !== null ? (
+                        <div>
+                          <p className="text-sm text-muted-foreground">от</p>
+                          <p className="text-2xl font-bold">
+                            {formatPrice(minPrice.toString())}
+                          </p>
+                        </div>
+                      ) : (
+                        <div>
+                          <p className="text-sm text-muted-foreground">Цена</p>
+                          <p className="font-semibold">Уточняйте</p>
+                        </div>
+                      );
+                    })()}
                     <Button variant="outline">Подробнее</Button>
                   </CardFooter>
                 </Card>
