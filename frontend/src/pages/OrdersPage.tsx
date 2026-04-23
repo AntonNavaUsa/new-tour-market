@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Package, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
-import { ordersApi } from '../lib/api';
+import { ordersApi, paymentsApi } from '../lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { formatPrice, formatDateTime } from '../lib/utils';
@@ -40,6 +41,7 @@ const statusConfig: Record<string, { label: string; icon: any; className: string
 };
 
 export function OrdersPage() {
+  const [payingOrderId, setPayingOrderId] = useState<string | null>(null);
   const { data: orders, isLoading, refetch } = useQuery({
     queryKey: ['my-orders'],
     queryFn: () => ordersApi.getMyOrders(),
@@ -53,6 +55,20 @@ export function OrdersPage() {
       } catch (error) {
         console.error('Failed to cancel order:', error);
       }
+    }
+  };
+
+  const handlePayOrder = async (orderId: string) => {
+    setPayingOrderId(orderId);
+    try {
+      const payment = await paymentsApi.createPayment({ orderId });
+      if (payment.confirmationUrl) {
+        window.location.href = payment.confirmationUrl;
+      }
+    } catch (error) {
+      console.error('Failed to create payment:', error);
+    } finally {
+      setPayingOrderId(null);
     }
   };
 
@@ -187,19 +203,12 @@ export function OrdersPage() {
                     >
                       Отменить заказ
                     </Button>
-                    {order.payments?.[0] && (
-                      <Button asChild>
-                        <a
-                          href={(order.payments[0] as any).confirmationToken
-                            ? `#payment-${order.payments[0].id}`
-                            : '#'}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          Оплатить
-                        </a>
-                      </Button>
-                    )}
+                    <Button
+                      onClick={() => handlePayOrder(order.id)}
+                      disabled={payingOrderId === order.id}
+                    >
+                      {payingOrderId === order.id ? 'Обработка...' : 'Оплатить'}
+                    </Button>
                   </div>
                 )}
               </CardContent>

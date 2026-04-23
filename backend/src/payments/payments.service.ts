@@ -94,13 +94,15 @@ export class PaymentsService {
     // Create payment in YooKassa
     if (this.yooKassa) {
       try {
+        const frontendUrl = this.config.get('FRONTEND_URL') || 'http://localhost:5173';
         const yooPayment = await this.yooKassa.createPayment({
           amount: {
             value: Number(paymentAmount).toFixed(2),
             currency: 'RUB',
           },
           confirmation: {
-            type: 'embedded',
+            type: 'redirect',
+            return_url: `${frontendUrl}/orders`,
           },
           capture: true,
           description: `Предоплата 20% за заказ #${order.id.substring(0, 8)} - ${order.card.title}`,
@@ -110,19 +112,21 @@ export class PaymentsService {
           },
         });
 
+        const confirmationUrl = yooPayment.confirmation?.confirmation_url;
+
         // Update payment with YooKassa data
         const updatedPayment = await this.prisma.payment.update({
           where: { id: payment.id },
           data: {
             paymentIdExternal: yooPayment.id,
-            confirmationToken: yooPayment.confirmation?.confirmation_token,
+            confirmationToken: confirmationUrl,
             metadata: yooPayment,
           },
         });
 
         return {
           paymentId: updatedPayment.id,
-          confirmationToken: yooPayment.confirmation?.confirmation_token,
+          confirmationUrl,
           amount: paymentAmount,
           totalAmount: order.amount,
           remainingAmount: Number(order.amount) - Number(paymentAmount),
@@ -144,9 +148,10 @@ export class PaymentsService {
         const isDev = this.config.get('NODE_ENV') !== 'production';
         if (isDev) {
           this.logger.warn('YooKassa failed in dev mode — returning mock response');
+          const frontendUrl = this.config.get('FRONTEND_URL') || 'http://localhost:5173';
           return {
             paymentId: payment.id,
-            confirmationToken: 'test_token_' + payment.id,
+            confirmationUrl: `${frontendUrl}/orders`,
             amount: paymentAmount,
             totalAmount: order.amount,
             remainingAmount: Number(order.amount) - Number(paymentAmount),
@@ -159,9 +164,10 @@ export class PaymentsService {
     }
 
     // If YooKassa is not configured, return mock response for testing
+    const frontendUrl = this.config.get('FRONTEND_URL') || 'http://localhost:5173';
     return {
       paymentId: payment.id,
-      confirmationToken: 'test_token_' + payment.id,
+      confirmationUrl: `${frontendUrl}/orders`,
       amount: paymentAmount,
       totalAmount: order.amount,
       remainingAmount: Number(order.amount) - Number(paymentAmount),

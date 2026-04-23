@@ -10,14 +10,16 @@ export const ordersApi = {
 
   // Получить заказы текущего пользователя
   getMyOrders: async (): Promise<Order[]> => {
-    const response = await api.get<Order[]>('/api/orders');
-    return response.data;
+    const response = await api.get<{ data: Order[] } | Order[]>('/api/orders');
+    const result = response.data;
+    return Array.isArray(result) ? result : result.data;
   },
 
   // Получить все заказы (admin/partner)
   getAllOrders: async (): Promise<Order[]> => {
-    const response = await api.get<Order[]>('/api/orders/all');
-    return response.data;
+    const response = await api.get<{ data: Order[] } | Order[]>('/api/orders/all');
+    const result = response.data;
+    return Array.isArray(result) ? result : result.data;
   },
 
   // Получить заказ по ID

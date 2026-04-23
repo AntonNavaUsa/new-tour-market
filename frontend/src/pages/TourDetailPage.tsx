@@ -504,7 +504,7 @@ export function TourDetailPage() {
 
               {showCalendar && availableDates.length > 3 && (
                 <div className="mb-4 p-4 rounded-lg bg-muted/30">
-                  {groupDatesByMonth(availableDates.slice(3)).map(({ month, dates: monthDates }) => {
+                  {groupDatesByMonth(availableDates).map(({ month, dates: monthDates }) => {
                     const firstDate = new Date(monthDates[0]);
                     const year = firstDate.getFullYear();
                     const monthIdx = firstDate.getMonth();
