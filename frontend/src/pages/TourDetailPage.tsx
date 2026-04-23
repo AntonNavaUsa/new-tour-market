@@ -35,6 +35,15 @@ function isDateWithinRange(date: Date, from: string, to: string) {
   return target >= fromDate && target <= toDate;
 }
 
+function isTodayAvailableWithBuffer(times: string[], bufferHours = 3): boolean {
+  if (times.length === 0) return false;
+  const latestTime = times.reduce((latest, t) => (t > latest ? t : latest), times[0]);
+  const [h, m] = latestTime.split(':').map(Number);
+  const lastStart = new Date();
+  lastStart.setHours(h, m, 0, 0);
+  return Date.now() + bufferHours * 60 * 60 * 1000 <= lastStart.getTime();
+}
+
 function getUpcomingSlots(schedule?: Schedule, limit = 10): TimeSlot[] {
   if (!schedule) {
     return [];
@@ -67,6 +76,10 @@ function getUpcomingSlots(schedule?: Schedule, limit = 10): TimeSlot[] {
     const isActive = specialDate?.times?.length ? true : baseSchedule?.active;
 
     if (!isActive || times.length === 0) {
+      continue;
+    }
+
+    if (offset === 0 && !isTodayAvailableWithBuffer(times)) {
       continue;
     }
 
@@ -114,6 +127,9 @@ function getAvailableDates(schedule?: Schedule, scanDays = 90): string[] {
     const isActive = specialDate?.times?.length ? true : baseSchedule?.active;
 
     if (isActive && times.length > 0) {
+      if (offset === 0 && !isTodayAvailableWithBuffer(times)) {
+        continue;
+      }
       dates.push(isoDate);
     }
   }
@@ -420,9 +436,10 @@ export function TourDetailPage() {
 
           <div className="prose max-w-none mb-8">
             <h2 className="text-xl font-semibold mb-3">Описание</h2>
-            <p className="text-muted-foreground whitespace-pre-line">
-              {card.description}
-            </p>
+            <div
+              className="text-muted-foreground"
+              dangerouslySetInnerHTML={{ __html: card.description }}
+            />
           </div>
 
           {/* Schedules */}
