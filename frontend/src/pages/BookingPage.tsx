@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { cardsApi, ordersApi, paymentsApi } from '../lib/api';
+import { cardsApi, ordersApi, paymentsApi, authApi } from '../lib/api';
 import { useAuthStore } from '../store/authStore';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -168,6 +168,23 @@ export function BookingPage() {
     setIsSubmitting(true);
 
     try {
+      // Регистрируем или авторизуем пользователя по email/phone
+      if (!user) {
+        const authResponse = await authApi.bookingRegister({
+          name: data.customerName,
+          email: data.customerEmail,
+          phone: data.customerPhone,
+        });
+        localStorage.setItem('accessToken', authResponse.accessToken);
+        localStorage.setItem('refreshToken', authResponse.refreshToken);
+        useAuthStore.setState({
+          user: authResponse.user,
+          accessToken: authResponse.accessToken,
+          refreshToken: authResponse.refreshToken,
+          isAuthenticated: true,
+        });
+      }
+
       const tickets = Object.entries(ticketQuantities)
         .filter(([_, quantity]) => quantity > 0)
         .map(([ticketId, quantity]) => ({

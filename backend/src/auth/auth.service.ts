@@ -7,8 +7,9 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
+import { randomBytes } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
-import { RegisterDto, LoginDto } from './dto';
+import { RegisterDto, LoginDto, BookingRegisterDto } from './dto';
 import { UserRole } from '@prisma/client';
 
 @Injectable()
@@ -140,6 +141,50 @@ export class AuthService {
     }
 
     return user;
+  }
+
+  async bookingRegisterOrLogin(dto: BookingRegisterDto) {
+    // Проверяем существует ли пользователь по email
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        role: true,
+      },
+    });
+
+    if (existingUser) {
+      // Пользователь существует — авторизуем без пароля (booking flow)
+      const tokens = await this.generateTokens(existingUser.id, existingUser.email, existingUser.role);
+      return { user: existingUser, ...tokens };
+    }
+
+    // Пользователь не существует — регистрируем с авто-паролем
+    const autoPassword = randomBytes(16).toString('hex');
+    const passwordHash = await bcrypt.hash(autoPassword, 10);
+
+    const user = await this.prisma.user.create({
+      data: {
+        name: dto.name,
+        email: dto.email,
+        phone: dto.phone,
+        passwordHash,
+        role: UserRole.USER,
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        role: true,
+      },
+    });
+
+    const tokens = await this.generateTokens(user.id, user.email, user.role);
+    return { user, ...tokens };
   }
 
   private async generateTokens(userId: string, email: string, role: UserRole) {

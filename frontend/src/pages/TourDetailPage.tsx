@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { MapPin, Clock, Users, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
+import { MapPin, Clock, Users, Calendar, ChevronLeft, ChevronRight, X, Expand } from 'lucide-react';
 import { cardsApi } from '../lib/api';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
@@ -243,12 +243,30 @@ export function TourDetailPage() {
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [showCalendar, setShowCalendar] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
 
   const { data: card, isLoading } = useQuery({
     queryKey: ['card', id],
     queryFn: () => cardsApi.getCard(id!),
     enabled: !!id,
   });
+
+  const allImages = [
+    card?.headPhotoUrl,
+    ...(card?.slideshowPhotos || []).map((photo: any) => photo.url),
+  ].filter((image): image is string => Boolean(image));
+
+  useEffect(() => {
+    if (!lightboxOpen) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setLightboxOpen(false);
+      if (e.key === 'ArrowRight') setLightboxIndex((i) => (i + 1) % allImages.length);
+      if (e.key === 'ArrowLeft') setLightboxIndex((i) => (i - 1 + allImages.length) % allImages.length);
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [lightboxOpen, allImages.length]);
 
   if (isLoading) {
     return (
@@ -273,11 +291,6 @@ export function TourDetailPage() {
     );
   }
 
-  const allImages = [
-    card.headPhotoUrl,
-    ...(card.slideshowPhotos || []).map((photo) => photo.url),
-  ].filter((image): image is string => Boolean(image));
-
   const nextImage = () => {
     setCurrentImageIndex((prev) => (prev + 1) % allImages.length);
   };
@@ -285,6 +298,14 @@ export function TourDetailPage() {
   const prevImage = () => {
     setCurrentImageIndex((prev) => (prev - 1 + allImages.length) % allImages.length);
   };
+
+  const openLightbox = (index: number) => {
+    setLightboxIndex(index);
+    setLightboxOpen(true);
+  };
+
+  const lightboxNext = () => setLightboxIndex((i) => (i + 1) % allImages.length);
+  const lightboxPrev = () => setLightboxIndex((i) => (i - 1 + allImages.length) % allImages.length);
 
   const schedule = card.schedules?.[0];
   const upcomingSlots = getUpcomingSlots(schedule);
@@ -320,27 +341,39 @@ export function TourDetailPage() {
   const timesForSelectedDate = selectedDate ? getTimesForDate(schedule, selectedDate) : [];
 
   return (
+    <>
     <div className="container py-12">
-      <Button
-        variant="ghost"
-        onClick={() => navigate(-1)}
-        className="mb-6"
-      >
-        <ChevronLeft className="h-4 w-4 mr-2" />
-        Назад
-      </Button>
+      <div className="max-w-6xl mx-auto">
 
-      <div className="grid lg:grid-cols-2 gap-12">
-        {/* Image Gallery */}
-        <div>
-          <div className="relative aspect-video rounded-lg overflow-hidden bg-muted mb-4">
+      {/* Breadcrumbs */}
+      <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
+        <Link to="/" className="hover:text-foreground transition">Главная</Link>
+        <ChevronRight className="h-4 w-4 flex-shrink-0" />
+        <Link to="/tours" className="hover:text-foreground transition">Туры</Link>
+        <ChevronRight className="h-4 w-4 flex-shrink-0" />
+        <span className="text-foreground font-medium truncate">{card.title}</span>
+      </nav>
+
+      <h1 className="text-4xl font-bold mb-6">{card.title}</h1>
+
+      {/* Image Gallery */}
+      <div className="mb-8">
+          <div className="relative aspect-video rounded-lg overflow-hidden bg-muted mb-4 group">
             {allImages.length > 0 ? (
               <>
                 <img
                   src={allImages[currentImageIndex]}
                   alt={card.title}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover cursor-zoom-in"
+                  onClick={() => openLightbox(currentImageIndex)}
                 />
+                <button
+                  onClick={() => openLightbox(currentImageIndex)}
+                  className="absolute top-3 right-3 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 transition opacity-0 group-hover:opacity-100"
+                  title="Открыть на весь экран"
+                >
+                  <Expand className="h-4 w-4" />
+                </button>
                 {allImages.length > 1 && (
                   <>
                     <button
@@ -380,13 +413,13 @@ export function TourDetailPage() {
 
           {/* Thumbnail Gallery */}
           {allImages.length > 1 && (
-            <div className="grid grid-cols-4 gap-2">
-              {allImages.slice(0, 4).map((image, index) => (
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {allImages.map((image, index) => (
                 <button
                   key={index}
                   onClick={() => setCurrentImageIndex(index)}
-                  className={`aspect-video rounded overflow-hidden ${
-                    index === currentImageIndex ? 'ring-2 ring-primary' : ''
+                  className={`flex-shrink-0 w-20 aspect-video rounded overflow-hidden transition ${
+                    index === currentImageIndex ? 'ring-2 ring-primary' : 'opacity-70 hover:opacity-100'
                   }`}
                 >
                   <img
@@ -398,13 +431,16 @@ export function TourDetailPage() {
               ))}
             </div>
           )}
-        </div>
+      </div>
 
-        {/* Tour Info */}
-        <div>
-          <h1 className="text-4xl font-bold mb-4">{card.title}</h1>
+      {/* Two-column content */}
+      <div className="grid lg:grid-cols-3 gap-10 items-start">
 
-          <div className="flex flex-wrap gap-4 mb-6 text-muted-foreground">
+        {/* LEFT — description, meta, expression photos */}
+        <div className="lg:col-span-2 space-y-8">
+
+          {/* Meta */}
+          <div className="flex flex-wrap gap-4 text-muted-foreground">
             <div className="flex items-center gap-2">
               <MapPin className="h-5 w-5" />
               <span>{locationLabel}</span>
@@ -419,22 +455,8 @@ export function TourDetailPage() {
             </div>
           </div>
 
-          <div className="mb-8">
-            <div className="text-3xl font-bold text-primary mb-1">
-              от {formatPrice(minPrice)}
-            </div>
-            {hasGroupPricing && allTiers.length > 0 ? (
-              <div className="space-y-0.5 mt-2">
-                {allTiers.map((t: any, i: number) => (
-                  <div key={i} className="text-sm text-muted-foreground">{formatTierLabel(t)}</div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-muted-foreground">за человека</p>
-            )}
-          </div>
-
-          <div className="prose max-w-none mb-8">
+          {/* Description */}
+          <div className="prose max-w-none">
             <h2 className="text-xl font-semibold mb-3">Описание</h2>
             <div
               className="text-muted-foreground"
@@ -442,187 +464,13 @@ export function TourDetailPage() {
             />
           </div>
 
-          {/* Schedules */}
-          {availableDates.length > 0 && (
-            <div className="mb-8">
-              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Выберите дату
-                {hasEarlyBookingOnly && (
-                  <span className="ml-2 text-xs font-normal px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-300">
-                    Раннее бронирование
-                  </span>
-                )}
-              </h2>
-              {hasEarlyBookingOnly && (
-                <p className="text-sm text-muted-foreground mb-4 p-3 rounded-lg bg-amber-50 border border-amber-200">
-                  Ближайшие даты временно недоступны. Вы можете забронировать тур заранее на будущие даты.
-                </p>
-              )}
-              
-              {/* Quick date selection */}
-              <div className="grid grid-cols-3 gap-3 mb-4">
-                {quickDateOptions.map((date) => {
-                  const { label } = getDateLabel(date);
-                  const isSelected = selectedDate === date;
-                  const earlyBooking = isEarlyBooking(date);
-                  return (
-                    <button
-                      key={date}
-                      onClick={() => {
-                        setSelectedDate(date);
-                        setSelectedSlot(null);
-                      }}
-                      className={`p-4 rounded-lg border-2 transition text-center ${
-                        isSelected
-                          ? 'border-primary bg-primary/5 font-semibold'
-                          : earlyBooking
-                          ? 'border-amber-300 hover:border-amber-400 bg-amber-50/50'
-                          : 'border-input hover:border-primary/50'
-                      }`}
-                    >
-                      <div className="text-lg font-medium">{earlyBooking ? formatDate(date) : label}</div>
-                      <div className="text-xs text-muted-foreground mt-1">
-                        {earlyBooking ? getDayNameRu(date) : formatDate(date)}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Calendar for other dates */}
-              {availableDates.length > 3 && (
-                <Button
-                  variant="outline"
-                  className="w-full mb-4"
-                  onClick={() => setShowCalendar(!showCalendar)}
-                >
-                  <Calendar className="h-4 w-4 mr-2" />
-                  {showCalendar ? 'Скрыть календарь' : 'Показать другие даты'}
-                </Button>
-              )}
-
-              {showCalendar && availableDates.length > 3 && (
-                <div className="mb-4 p-4 rounded-lg bg-muted/30">
-                  {groupDatesByMonth(availableDates).map(({ month, dates: monthDates }) => {
-                    const firstDate = new Date(monthDates[0]);
-                    const year = firstDate.getFullYear();
-                    const monthIdx = firstDate.getMonth();
-                    const daysInMonth = new Date(year, monthIdx + 1, 0).getDate();
-                    // Monday-first: (getDay()+6)%7 → Mon=0, ..., Sun=6
-                    const offset = (new Date(year, monthIdx, 1).getDay() + 6) % 7;
-                    const availableSet = new Set(monthDates);
-                    return (
-                      <div key={month} className="mb-6">
-                        <div className="text-sm font-semibold text-muted-foreground mb-2">{month}</div>
-                        <div className="grid grid-cols-7 gap-1 text-center">
-                          {['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].map((d) => (
-                            <div key={d} className="text-xs text-muted-foreground font-medium py-1">{d}</div>
-                          ))}
-                          {Array.from({ length: offset }, (_, i) => (
-                            <div key={`empty-${i}`} />
-                          ))}
-                          {Array.from({ length: daysInMonth }, (_, i) => {
-                            const day = i + 1;
-                            const dateStr = `${year}-${String(monthIdx + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                            const isAvailable = availableSet.has(dateStr);
-                            const isSelected = selectedDate === dateStr;
-                            if (isAvailable) {
-                              return (
-                                <button
-                                  key={dateStr}
-                                  onClick={() => {
-                                    setSelectedDate(dateStr);
-                                    setSelectedSlot(null);
-                                    setShowCalendar(false);
-                                  }}
-                                  className={`py-2 rounded-md border text-sm font-medium transition ${
-                                    isSelected
-                                      ? 'border-primary bg-primary text-primary-foreground'
-                                      : 'border-input hover:border-primary/50 hover:bg-background'
-                                  }`}
-                                >
-                                  {day}
-                                </button>
-                              );
-                            }
-                            return (
-                              <div key={dateStr} className="py-2 text-sm text-muted-foreground/30">
-                                {day}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* Time selection */}
-              {selectedDate && timesForSelectedDate.length > 0 && (
-                <div className="mt-4">
-                  <h3 className="text-sm font-medium mb-3">Выберите время</h3>
-                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                    {timesForSelectedDate.map((time) => {
-                      const slot = { date: selectedDate, time };
-                      const isSelected = selectedSlot?.date === slot.date && selectedSlot?.time === slot.time;
-                      
-                      const availablePrices = (card.tickets ?? [])
-                        .map((ticket) => getTicketPriceForDate(ticket, slot.date))
-                        .filter((price): price is Price => Boolean(price));
-                      const slotPrice = availablePrices.length > 0
-                        ? Math.min(...availablePrices.map((price) => Number(price.adultPrice)))
-                        : minPrice;
-
-                      return (
-                        <button
-                          key={time}
-                          onClick={() => setSelectedSlot(slot)}
-                          className={`p-3 rounded-lg border-2 transition text-center ${
-                            isSelected
-                              ? 'border-primary bg-primary/5 font-semibold'
-                              : 'border-input hover:border-primary/50'
-                          }`}
-                        >
-                          <div className="font-medium">{time}</div>
-                          {slotPrice > 0 && (
-                            <div className="text-xs text-muted-foreground mt-1">
-                              от {formatPrice(slotPrice)}
-                            </div>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          <Button
-            size="lg"
-            className="w-full"
-            disabled={!selectedSlot}
-            onClick={() => {
-              if (selectedSlot) {
-                navigate(`/booking/${card.id}?date=${selectedSlot.date}&time=${selectedSlot.time}`);
-              }
-            }}
-          >
-            {selectedSlot ? 'Забронировать' : 'Выберите дату'}
-          </Button>
-
           {/* Expression Photos */}
           {card.expressions && card.expressions.length > 0 && (
-            <div className="mt-12">
+            <div>
               <h2 className="text-xl font-semibold mb-4">Дополнительные фото</h2>
               <div className="grid grid-cols-2 gap-4">
                 {card.expressions.map((photo, index) => (
-                  <div
-                    key={photo.id}
-                    className="aspect-square rounded-lg overflow-hidden"
-                  >
+                  <div key={photo.id} className="aspect-square rounded-lg overflow-hidden">
                     <img
                       src={photo.photoUrl}
                       alt={`Expression ${index + 1}`}
@@ -634,7 +482,257 @@ export function TourDetailPage() {
             </div>
           )}
         </div>
+
+        {/* RIGHT — price, schedule, booking */}
+        <div className="lg:col-span-1">
+          <div className="sticky top-6 space-y-6 rounded-xl border bg-card p-6 shadow-sm">
+
+            {/* Price */}
+            <div>
+              <div className="text-3xl font-bold text-primary mb-1">
+                от {formatPrice(minPrice)}
+              </div>
+              {hasGroupPricing && allTiers.length > 0 ? (
+                <div className="space-y-0.5 mt-2">
+                  {allTiers.map((t: any, i: number) => (
+                    <div key={i} className="text-sm text-muted-foreground">{formatTierLabel(t)}</div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-sm">за человека</p>
+              )}
+            </div>
+
+            {/* Schedules */}
+            {availableDates.length > 0 && (
+              <div>
+                <h2 className="text-base font-semibold mb-3 flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  Выберите дату
+                  {hasEarlyBookingOnly && (
+                    <span className="ml-1 text-xs font-normal px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-300">
+                      Раннее бронирование
+                    </span>
+                  )}
+                </h2>
+                {hasEarlyBookingOnly && (
+                  <p className="text-sm text-muted-foreground mb-3 p-3 rounded-lg bg-amber-50 border border-amber-200">
+                    Ближайшие даты временно недоступны. Вы можете забронировать тур заранее на будущие даты.
+                  </p>
+                )}
+
+                {/* Quick date selection */}
+                <div className="grid grid-cols-3 gap-2 mb-3">
+                  {quickDateOptions.map((date) => {
+                    const { label } = getDateLabel(date);
+                    const isSelected = selectedDate === date;
+                    const earlyBooking = isEarlyBooking(date);
+                    return (
+                      <button
+                        key={date}
+                        onClick={() => { setSelectedDate(date); setSelectedSlot(null); }}
+                        className={`p-2 rounded-lg border-2 transition text-center ${
+                          isSelected
+                            ? 'border-primary bg-primary/5 font-semibold'
+                            : earlyBooking
+                            ? 'border-amber-300 hover:border-amber-400 bg-amber-50/50'
+                            : 'border-input hover:border-primary/50'
+                        }`}
+                      >
+                        <div className="text-sm font-medium">{earlyBooking ? formatDate(date) : label}</div>
+                        <div className="text-xs text-muted-foreground mt-0.5">
+                          {earlyBooking ? getDayNameRu(date) : formatDate(date)}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Calendar for other dates */}
+                {availableDates.length > 3 && (
+                  <Button
+                    variant="outline"
+                    className="w-full mb-3"
+                    onClick={() => setShowCalendar(!showCalendar)}
+                  >
+                    <Calendar className="h-4 w-4 mr-2" />
+                    {showCalendar ? 'Скрыть календарь' : 'Показать другие даты'}
+                  </Button>
+                )}
+
+                {showCalendar && availableDates.length > 3 && (
+                  <div className="mb-3 p-3 rounded-lg bg-muted/30">
+                    {groupDatesByMonth(availableDates).map(({ month, dates: monthDates }) => {
+                      const firstDate = new Date(monthDates[0]);
+                      const year = firstDate.getFullYear();
+                      const monthIdx = firstDate.getMonth();
+                      const daysInMonth = new Date(year, monthIdx + 1, 0).getDate();
+                      const offset = (new Date(year, monthIdx, 1).getDay() + 6) % 7;
+                      const availableSet = new Set(monthDates);
+                      return (
+                        <div key={month} className="mb-4">
+                          <div className="text-xs font-semibold text-muted-foreground mb-2">{month}</div>
+                          <div className="grid grid-cols-7 gap-1 text-center">
+                            {['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].map((d) => (
+                              <div key={d} className="text-xs text-muted-foreground font-medium py-1">{d}</div>
+                            ))}
+                            {Array.from({ length: offset }, (_, i) => (
+                              <div key={`empty-${i}`} />
+                            ))}
+                            {Array.from({ length: daysInMonth }, (_, i) => {
+                              const day = i + 1;
+                              const dateStr = `${year}-${String(monthIdx + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                              const isAvailable = availableSet.has(dateStr);
+                              const isSelected = selectedDate === dateStr;
+                              if (isAvailable) {
+                                return (
+                                  <button
+                                    key={dateStr}
+                                    onClick={() => { setSelectedDate(dateStr); setSelectedSlot(null); setShowCalendar(false); }}
+                                    className={`py-1.5 rounded-md border text-xs font-medium transition ${
+                                      isSelected
+                                        ? 'border-primary bg-primary text-primary-foreground'
+                                        : 'border-input hover:border-primary/50 hover:bg-background'
+                                    }`}
+                                  >
+                                    {day}
+                                  </button>
+                                );
+                              }
+                              return (
+                                <div key={dateStr} className="py-1.5 text-xs text-muted-foreground/30">{day}</div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Time selection */}
+                {selectedDate && timesForSelectedDate.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-medium mb-2">Выберите время</h3>
+                    <div className="grid grid-cols-3 gap-2">
+                      {timesForSelectedDate.map((time) => {
+                        const slot = { date: selectedDate, time };
+                        const isSelected = selectedSlot?.date === slot.date && selectedSlot?.time === slot.time;
+                        const availablePrices = (card.tickets ?? [])
+                          .map((ticket) => getTicketPriceForDate(ticket, slot.date))
+                          .filter((price): price is Price => Boolean(price));
+                        const slotPrice = availablePrices.length > 0
+                          ? Math.min(...availablePrices.map((price) => Number(price.adultPrice)))
+                          : minPrice;
+                        return (
+                          <button
+                            key={time}
+                            onClick={() => setSelectedSlot(slot)}
+                            className={`p-2 rounded-lg border-2 transition text-center ${
+                              isSelected
+                                ? 'border-primary bg-primary/5 font-semibold'
+                                : 'border-input hover:border-primary/50'
+                            }`}
+                          >
+                            <div className="text-sm font-medium">{time}</div>
+                            {slotPrice > 0 && (
+                              <div className="text-xs text-muted-foreground mt-0.5">от {formatPrice(slotPrice)}</div>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <Button
+              size="lg"
+              className="w-full"
+              disabled={!selectedSlot}
+              onClick={() => {
+                if (selectedSlot) {
+                  navigate(`/booking/${card.id}?date=${selectedSlot.date}&time=${selectedSlot.time}`);
+                }
+              }}
+            >
+              {selectedSlot ? 'Забронировать' : 'Выберите дату'}
+            </Button>
+          </div>
+        </div>
+
+      </div>
       </div>
     </div>
+
+    {/* Lightbox */}
+      {lightboxOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center"
+          onClick={(e) => { if (e.target === e.currentTarget) setLightboxOpen(false); }}
+        >
+          {/* Close */}
+          <button
+            onClick={() => setLightboxOpen(false)}
+            className="absolute top-4 right-4 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 rounded-full p-2 transition z-10"
+          >
+            <X className="h-6 w-6" />
+          </button>
+
+          {/* Counter */}
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 text-white/70 text-sm">
+            {lightboxIndex + 1} / {allImages.length}
+          </div>
+
+          {/* Prev */}
+          {allImages.length > 1 && (
+            <button
+              onClick={lightboxPrev}
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 rounded-full p-3 transition"
+            >
+              <ChevronLeft className="h-7 w-7" />
+            </button>
+          )}
+
+          {/* Image */}
+          <img
+            src={allImages[lightboxIndex]}
+            alt={`${card?.title} ${lightboxIndex + 1}`}
+            className="max-h-[90vh] max-w-[90vw] object-contain select-none"
+            draggable={false}
+          />
+
+          {/* Next */}
+          {allImages.length > 1 && (
+            <button
+              onClick={lightboxNext}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 rounded-full p-3 transition"
+            >
+              <ChevronRight className="h-7 w-7" />
+            </button>
+          )}
+
+          {/* Thumbnails strip */}
+          {allImages.length > 1 && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 max-w-[90vw] overflow-x-auto pb-1">
+              {allImages.map((img, index) => (
+                <button
+                  key={index}
+                  onClick={() => setLightboxIndex(index)}
+                  className={`flex-shrink-0 w-14 h-10 rounded overflow-hidden transition ${
+                    index === lightboxIndex
+                      ? 'ring-2 ring-white opacity-100'
+                      : 'opacity-50 hover:opacity-80'
+                  }`}
+                >
+                  <img src={img} alt="" className="w-full h-full object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </>
   );
 }

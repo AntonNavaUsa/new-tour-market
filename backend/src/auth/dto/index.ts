@@ -36,3 +36,17 @@ export class RefreshTokenDto {
   @IsString()
   refreshToken: string;
 }
+
+export class BookingRegisterDto {
+  @ApiProperty({ example: 'Иван Иванов' })
+  @IsString()
+  name: string;
+
+  @ApiProperty({ example: 'user@example.com' })
+  @IsEmail()
+  email: string;
+
+  @ApiProperty({ example: '+7 999 123 45 67' })
+  @IsString()
+  phone: string;
+}

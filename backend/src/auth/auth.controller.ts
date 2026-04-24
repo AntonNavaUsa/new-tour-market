@@ -1,7 +1,7 @@
 import { Controller, Post, Get, Body, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { RegisterDto, LoginDto, RefreshTokenDto } from './dto';
+import { RegisterDto, LoginDto, RefreshTokenDto, BookingRegisterDto } from './dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators';
 
@@ -34,6 +34,14 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Invalid refresh token' })
   async refresh(@Body() dto: RefreshTokenDto) {
     return this.authService.refreshToken(dto.refreshToken);
+  }
+
+  @Post('booking-register')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Register or login user during booking (no password required)' })
+  @ApiResponse({ status: 200, description: 'User registered or logged in successfully' })
+  async bookingRegister(@Body() dto: BookingRegisterDto) {
+    return this.authService.bookingRegisterOrLogin(dto);
   }
 
   @Get('profile')

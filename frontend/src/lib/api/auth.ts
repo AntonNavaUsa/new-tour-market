@@ -38,4 +38,10 @@ export const authApi = {
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
   },
+
+  // Регистрация / авторизация при бронировании (без пароля)
+  bookingRegister: async (data: { name: string; email: string; phone: string }): Promise<AuthResponse> => {
+    const response = await api.post<AuthResponse>('/api/auth/booking-register', data);
+    return response.data;
+  },
 };
