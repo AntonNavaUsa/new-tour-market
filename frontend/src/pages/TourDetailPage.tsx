@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { MapPin, Clock, Users, Calendar, ChevronLeft, ChevronRight, X, Expand } from 'lucide-react';
+import { MapPin, Clock, Users, Calendar, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { cardsApi } from '../lib/api';
 import { Button } from '../components/ui/button';
-import { Card, CardContent } from '../components/ui/card';
 import { formatPrice, formatDate, formatDuration, getMinPriceFromTiers, formatTierLabel } from '../lib/utils';
 import type { Price, Schedule, Ticket } from '../types';
 
@@ -42,57 +41,6 @@ function isTodayAvailableWithBuffer(times: string[], bufferHours = 3): boolean {
   const lastStart = new Date();
   lastStart.setHours(h, m, 0, 0);
   return Date.now() + bufferHours * 60 * 60 * 1000 <= lastStart.getTime();
-}
-
-function getUpcomingSlots(schedule?: Schedule, limit = 10): TimeSlot[] {
-  if (!schedule) {
-    return [];
-  }
-
-  const weeklySchedule = (schedule.weeklySchedule ?? {}) as Record<
-    string,
-    { active?: boolean; times?: string[] }
-  >;
-  const specialDates = Array.isArray(schedule.specialDates) ? schedule.specialDates : [];
-  const slots: TimeSlot[] = [];
-
-  for (let offset = 0; offset < 90 && slots.length < limit; offset += 1) {
-    const date = new Date();
-    date.setHours(0, 0, 0, 0);
-    date.setDate(date.getDate() + offset);
-
-    const isoDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-    const specialDate = specialDates.find((item: any) =>
-      isDateWithinRange(date, item.dateFrom, item.dateTo ?? item.dateFrom),
-    );
-
-    if (specialDate?.isClosed) {
-      continue;
-    }
-
-    const dayName = getDayName(date);
-    const baseSchedule = weeklySchedule[dayName];
-    const times = specialDate?.times?.length ? specialDate.times : baseSchedule?.times ?? [];
-    const isActive = specialDate?.times?.length ? true : baseSchedule?.active;
-
-    if (!isActive || times.length === 0) {
-      continue;
-    }
-
-    if (offset === 0 && !isTodayAvailableWithBuffer(times)) {
-      continue;
-    }
-
-    for (const time of times) {
-      slots.push({ date: isoDate, time });
-
-      if (slots.length >= limit) {
-        break;
-      }
-    }
-  }
-
-  return slots;
 }
 
 function getAvailableDates(schedule?: Schedule, scanDays = 90): string[] {
@@ -239,10 +187,10 @@ function getTicketPriceForDate(ticket: Ticket, date: string): Price | undefined 
 export function TourDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [showCalendar, setShowCalendar] = useState(false);
+  const [calendarMonthIndex, setCalendarMonthIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
 
@@ -291,14 +239,6 @@ export function TourDetailPage() {
     );
   }
 
-  const nextImage = () => {
-    setCurrentImageIndex((prev) => (prev + 1) % allImages.length);
-  };
-
-  const prevImage = () => {
-    setCurrentImageIndex((prev) => (prev - 1 + allImages.length) % allImages.length);
-  };
-
   const openLightbox = (index: number) => {
     setLightboxIndex(index);
     setLightboxOpen(true);
@@ -308,7 +248,6 @@ export function TourDetailPage() {
   const lightboxPrev = () => setLightboxIndex((i) => (i - 1 + allImages.length) % allImages.length);
 
   const schedule = card.schedules?.[0];
-  const upcomingSlots = getUpcomingSlots(schedule);
   const availableDates = getAvailableDates(schedule);
   const quickDateOptions = availableDates.slice(0, 3);
   const hasEarlyBookingOnly = availableDates.length > 0 && isEarlyBooking(availableDates[0]);
@@ -342,105 +281,239 @@ export function TourDetailPage() {
 
   return (
     <>
-    <div className="container py-12">
-      <div className="max-w-6xl mx-auto">
+    {/* ─── Hero Cover ─── */}
+
+    {/* Mobile: stacked image + text block */}
+    <div className="md:hidden">
+      {/* Image */}
+      <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-900">
+        {card.headPhotoUrl ? (
+          <img
+            src={card.headPhotoUrl}
+            alt={card.title}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-slate-800 to-slate-900" />
+        )}
+        {/* Light bottom fade into text block */}
+        <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-slate-900 to-transparent" />
+
+        {/* Breadcrumbs */}
+        <nav className="absolute top-0 left-0 right-0 flex items-center gap-1.5 text-xs text-white/60 px-4 pt-4">
+          <Link to="/" className="hover:text-white transition shrink-0">Главная</Link>
+          <ChevronRight className="h-3 w-3 shrink-0" />
+          <Link to="/tours" className="hover:text-white transition shrink-0">Туры</Link>
+          <ChevronRight className="h-3 w-3 shrink-0" />
+          <span className="text-white/80 truncate">{card.title}</span>
+        </nav>
+      </div>
+
+      {/* Text below image */}
+      <div className="bg-slate-900 px-4 pt-4 pb-6">
+        <h1 className="text-2xl font-bold text-white mb-2 leading-tight break-words">
+          {card.title}
+        </h1>
+        {card.shortDescription && (
+          <p className="text-sm text-white/70 mb-4 leading-relaxed">
+            {card.shortDescription}
+          </p>
+        )}
+        <div className="flex flex-wrap gap-2">
+          <div className="flex items-center gap-1.5 bg-white/10 border border-white/15 text-white/90 px-3 py-1.5 rounded-full text-xs">
+            <MapPin className="h-3.5 w-3.5 shrink-0" />
+            <span>{locationLabel}</span>
+          </div>
+          {card.duration && (
+            <div className="flex items-center gap-1.5 bg-white/10 border border-white/15 text-white/90 px-3 py-1.5 rounded-full text-xs">
+              <Clock className="h-3.5 w-3.5 shrink-0" />
+              <span>{formatDuration(card.duration)}</span>
+            </div>
+          )}
+          {card.maxParticipants && (
+            <div className="flex items-center gap-1.5 bg-white/10 border border-white/15 text-white/90 px-3 py-1.5 rounded-full text-xs">
+              <Users className="h-3.5 w-3.5 shrink-0" />
+              <span>До {card.maxParticipants} чел.</span>
+            </div>
+          )}
+          {minPrice > 0 && (
+            <div className="flex items-center gap-1.5 bg-primary text-primary-foreground px-3 py-1.5 rounded-full text-xs font-bold shadow">
+              от {formatPrice(minPrice)}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+
+    {/* Desktop: full overlay hero */}
+    <div className="hidden md:block relative h-[75vh] min-h-[520px] w-full overflow-hidden">
+      {card.headPhotoUrl ? (
+        <img
+          src={card.headPhotoUrl}
+          alt={card.title}
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+      ) : (
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-900" />
+      )}
+
+      {/* Gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/10" />
 
       {/* Breadcrumbs */}
-      <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
-        <Link to="/" className="hover:text-foreground transition">Главная</Link>
-        <ChevronRight className="h-4 w-4 flex-shrink-0" />
-        <Link to="/tours" className="hover:text-foreground transition">Туры</Link>
-        <ChevronRight className="h-4 w-4 flex-shrink-0" />
-        <span className="text-foreground font-medium truncate">{card.title}</span>
-      </nav>
+      <div className="absolute top-0 left-0 right-0 z-10 px-6 lg:px-8 pt-6">
+        <div className="max-w-6xl mx-auto">
+          <nav className="flex items-center gap-2 text-sm text-white/60">
+            <Link to="/" className="hover:text-white transition">Главная</Link>
+            <ChevronRight className="h-4 w-4 flex-shrink-0" />
+            <Link to="/tours" className="hover:text-white transition">Туры</Link>
+            <ChevronRight className="h-4 w-4 flex-shrink-0" />
+            <span className="text-white/80 font-medium truncate">{card.title}</span>
+          </nav>
+        </div>
+      </div>
 
-      <h1 className="text-4xl font-bold mb-6">{card.title}</h1>
-
-      {/* Image Gallery */}
-      <div className="mb-8">
-          <div className="relative aspect-video rounded-lg overflow-hidden bg-muted mb-4 group">
-            {allImages.length > 0 ? (
-              <>
-                <img
-                  src={allImages[currentImageIndex]}
-                  alt={card.title}
-                  className="w-full h-full object-cover cursor-zoom-in"
-                  onClick={() => openLightbox(currentImageIndex)}
-                />
-                <button
-                  onClick={() => openLightbox(currentImageIndex)}
-                  className="absolute top-3 right-3 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 transition opacity-0 group-hover:opacity-100"
-                  title="Открыть на весь экран"
-                >
-                  <Expand className="h-4 w-4" />
-                </button>
-                {allImages.length > 1 && (
-                  <>
-                    <button
-                      onClick={prevImage}
-                      className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 transition"
-                    >
-                      <ChevronLeft className="h-6 w-6" />
-                    </button>
-                    <button
-                      onClick={nextImage}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 transition"
-                    >
-                      <ChevronRight className="h-6 w-6" />
-                    </button>
-                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-                      {allImages.map((_, index) => (
-                        <button
-                          key={index}
-                          onClick={() => setCurrentImageIndex(index)}
-                          className={`w-2 h-2 rounded-full transition ${
-                            index === currentImageIndex
-                              ? 'bg-white'
-                              : 'bg-white/50 hover:bg-white/75'
-                          }`}
-                        />
-                      ))}
-                    </div>
-                  </>
-                )}
-              </>
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                Нет фотографий
+      {/* Hero text */}
+      <div className="absolute bottom-0 left-0 right-0 z-10 px-6 lg:px-8 pb-12">
+        <div className="max-w-6xl mx-auto">
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 leading-tight drop-shadow-lg">
+            {card.title}
+          </h1>
+          {card.shortDescription && (
+            <p className="text-lg md:text-xl text-white/80 max-w-2xl mb-7 leading-relaxed drop-shadow">
+              {card.shortDescription}
+            </p>
+          )}
+          <div className="flex flex-wrap gap-3">
+            <div className="flex items-center gap-1.5 bg-white/15 backdrop-blur-sm border border-white/20 text-white px-3 py-1.5 rounded-full text-sm">
+              <MapPin className="h-4 w-4 shrink-0" />
+              <span>{locationLabel}</span>
+            </div>
+            {card.duration && (
+              <div className="flex items-center gap-1.5 bg-white/15 backdrop-blur-sm border border-white/20 text-white px-3 py-1.5 rounded-full text-sm">
+                <Clock className="h-4 w-4 shrink-0" />
+                <span>{formatDuration(card.duration)}</span>
+              </div>
+            )}
+            {card.maxParticipants && (
+              <div className="flex items-center gap-1.5 bg-white/15 backdrop-blur-sm border border-white/20 text-white px-3 py-1.5 rounded-full text-sm">
+                <Users className="h-4 w-4 shrink-0" />
+                <span>До {card.maxParticipants} чел.</span>
+              </div>
+            )}
+            {minPrice > 0 && (
+              <div className="flex items-center gap-1.5 bg-primary text-primary-foreground px-4 py-1.5 rounded-full text-sm font-bold shadow-lg">
+                от {formatPrice(minPrice)}
               </div>
             )}
           </div>
-
-          {/* Thumbnail Gallery */}
-          {allImages.length > 1 && (
-            <div className="flex gap-2 overflow-x-auto pb-1">
-              {allImages.map((image, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCurrentImageIndex(index)}
-                  className={`flex-shrink-0 w-20 aspect-video rounded overflow-hidden transition ${
-                    index === currentImageIndex ? 'ring-2 ring-primary' : 'opacity-70 hover:opacity-100'
-                  }`}
-                >
-                  <img
-                    src={image}
-                    alt={`${card.title} ${index + 1}`}
-                    className="w-full h-full object-cover"
-                  />
-                </button>
-              ))}
-            </div>
-          )}
+        </div>
       </div>
+    </div>
+
+    <div className="container py-6 md:py-12 pb-24 lg:pb-12 overflow-hidden">
+      <div className="max-w-6xl mx-auto">
+
+      {/* Photo Gallery */}
+      {allImages.length > 0 && (
+        <div className="mb-10">
+          {/* Desktop: Airbnb-style grid */}
+          <div className="hidden md:block relative rounded-2xl overflow-hidden">
+            {allImages.length === 1 && (
+              <button
+                className="w-full h-[460px] block group"
+                onClick={() => openLightbox(0)}
+              >
+                <img src={allImages[0]} alt={card.title} className="w-full h-full object-cover group-hover:brightness-90 transition" />
+              </button>
+            )}
+
+            {allImages.length === 2 && (
+              <div className="grid grid-cols-2 gap-2 h-[460px]">
+                {allImages.map((img, i) => (
+                  <button key={i} className="group overflow-hidden rounded-none first:rounded-l-2xl last:rounded-r-2xl" onClick={() => openLightbox(i)}>
+                    <img src={img} alt={`${card.title} ${i + 1}`} className="w-full h-full object-cover group-hover:brightness-90 transition" />
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {allImages.length >= 3 && (
+              <div className="grid grid-cols-4 grid-rows-2 gap-2 h-[460px]">
+                {/* Large first image */}
+                <button
+                  className="col-span-2 row-span-2 group overflow-hidden rounded-l-2xl"
+                  onClick={() => openLightbox(0)}
+                >
+                  <img src={allImages[0]} alt={card.title} className="w-full h-full object-cover group-hover:brightness-90 transition duration-300" />
+                </button>
+                {/* Grid 2×2 on right */}
+                {allImages.slice(1, 5).map((img, i) => {
+                  const pos = i + 1;
+                  const roundedClass =
+                    i === 1 ? 'rounded-tr-2xl' :
+                    i === 3 ? 'rounded-br-2xl' : '';
+                  return (
+                    <button
+                      key={pos}
+                      className={`group overflow-hidden relative ${roundedClass}`}
+                      onClick={() => openLightbox(pos)}
+                    >
+                      <img
+                        src={img}
+                        alt={`${card.title} ${pos + 1}`}
+                        className="w-full h-full object-cover group-hover:brightness-90 transition duration-300"
+                      />
+                      {/* "Show all" overlay on last visible cell */}
+                      {i === 3 && allImages.length > 5 && (
+                        <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center text-white pointer-events-none">
+                          <span className="text-2xl font-bold">+{allImages.length - 5}</span>
+                          <span className="text-sm mt-1">ещё фото</span>
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Show all button */}
+            <button
+              onClick={() => openLightbox(0)}
+              className="absolute bottom-4 right-4 flex items-center gap-2 bg-white/90 hover:bg-white backdrop-blur-sm text-sm font-semibold text-gray-800 px-4 py-2 rounded-xl shadow-md transition"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+              </svg>
+              Все фото · {allImages.length}
+            </button>
+          </div>
+
+          {/* Mobile: horizontal scroll strip */}
+          <div className="md:hidden overflow-x-auto -mx-4 px-4">
+            <div className="flex gap-2 pb-2 snap-x snap-mandatory w-max min-w-full">
+            {allImages.map((image, index) => (
+              <button
+                key={index}
+                onClick={() => openLightbox(index)}
+                className="flex-shrink-0 w-64 h-44 rounded-xl overflow-hidden snap-start"
+              >
+                <img src={image} alt={`${card.title} ${index + 1}`} className="w-full h-full object-cover" />
+              </button>
+            ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Two-column content */}
-      <div className="grid lg:grid-cols-3 gap-10 items-start">
+      <div className="grid lg:grid-cols-3 gap-6 lg:gap-10 items-start">
 
         {/* LEFT — description, meta, expression photos */}
-        <div className="lg:col-span-2 space-y-8">
+        <div className="lg:col-span-2 space-y-8 order-last lg:order-none">
 
           {/* Meta */}
-          <div className="flex flex-wrap gap-4 text-muted-foreground">
+          <div className="hidden md:flex flex-wrap gap-4 text-muted-foreground">
             <div className="flex items-center gap-2">
               <MapPin className="h-5 w-5" />
               <span>{locationLabel}</span>
@@ -484,8 +557,8 @@ export function TourDetailPage() {
         </div>
 
         {/* RIGHT — price, schedule, booking */}
-        <div className="lg:col-span-1">
-          <div className="sticky top-6 space-y-6 rounded-xl border bg-card p-6 shadow-sm">
+        <div className="lg:col-span-1 order-first lg:order-none" id="booking-panel">
+          <div className="sticky top-6 space-y-6 rounded-xl border bg-card p-4 md:p-6 shadow-sm">
 
             {/* Price */}
             <div>
@@ -553,62 +626,97 @@ export function TourDetailPage() {
                   <Button
                     variant="outline"
                     className="w-full mb-3"
-                    onClick={() => setShowCalendar(!showCalendar)}
+                    onClick={() => {
+                      if (!showCalendar) setCalendarMonthIndex(0);
+                      setShowCalendar(!showCalendar);
+                    }}
                   >
                     <Calendar className="h-4 w-4 mr-2" />
                     {showCalendar ? 'Скрыть календарь' : 'Показать другие даты'}
                   </Button>
                 )}
 
-                {showCalendar && availableDates.length > 3 && (
-                  <div className="mb-3 p-3 rounded-lg bg-muted/30">
-                    {groupDatesByMonth(availableDates).map(({ month, dates: monthDates }) => {
-                      const firstDate = new Date(monthDates[0]);
-                      const year = firstDate.getFullYear();
-                      const monthIdx = firstDate.getMonth();
-                      const daysInMonth = new Date(year, monthIdx + 1, 0).getDate();
-                      const offset = (new Date(year, monthIdx, 1).getDay() + 6) % 7;
-                      const availableSet = new Set(monthDates);
-                      return (
-                        <div key={month} className="mb-4">
-                          <div className="text-xs font-semibold text-muted-foreground mb-2">{month}</div>
-                          <div className="grid grid-cols-7 gap-1 text-center">
-                            {['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].map((d) => (
-                              <div key={d} className="text-xs text-muted-foreground font-medium py-1">{d}</div>
-                            ))}
-                            {Array.from({ length: offset }, (_, i) => (
-                              <div key={`empty-${i}`} />
-                            ))}
-                            {Array.from({ length: daysInMonth }, (_, i) => {
-                              const day = i + 1;
-                              const dateStr = `${year}-${String(monthIdx + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                              const isAvailable = availableSet.has(dateStr);
-                              const isSelected = selectedDate === dateStr;
-                              if (isAvailable) {
-                                return (
-                                  <button
-                                    key={dateStr}
-                                    onClick={() => { setSelectedDate(dateStr); setSelectedSlot(null); setShowCalendar(false); }}
-                                    className={`py-1.5 rounded-md border text-xs font-medium transition ${
-                                      isSelected
-                                        ? 'border-primary bg-primary text-primary-foreground'
-                                        : 'border-input hover:border-primary/50 hover:bg-background'
-                                    }`}
-                                  >
-                                    {day}
-                                  </button>
-                                );
-                              }
-                              return (
-                                <div key={dateStr} className="py-1.5 text-xs text-muted-foreground/30">{day}</div>
-                              );
-                            })}
-                          </div>
+                {showCalendar && availableDates.length > 3 && (() => {
+                  const months = groupDatesByMonth(availableDates);
+                  const safeIdx = Math.min(calendarMonthIndex, months.length - 1);
+                  const { month, dates: monthDates } = months[safeIdx];
+                  const firstDate = new Date(monthDates[0]);
+                  const year = firstDate.getFullYear();
+                  const monthIdx = firstDate.getMonth();
+                  const daysInMonth = new Date(year, monthIdx + 1, 0).getDate();
+                  const offset = (new Date(year, monthIdx, 1).getDay() + 6) % 7;
+                  const availableSet = new Set(monthDates);
+                  return (
+                    <div className="mb-3 p-3 rounded-lg bg-muted/30">
+                      {/* Month navigation */}
+                      <div className="flex items-center justify-between mb-3">
+                        <button
+                          onClick={() => setCalendarMonthIndex((i) => Math.max(0, i - 1))}
+                          disabled={safeIdx === 0}
+                          className="p-1.5 rounded-md hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition"
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                        </button>
+                        <span className="text-sm font-semibold">{month}</span>
+                        <button
+                          onClick={() => setCalendarMonthIndex((i) => Math.min(months.length - 1, i + 1))}
+                          disabled={safeIdx === months.length - 1}
+                          className="p-1.5 rounded-md hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition"
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                        </button>
+                      </div>
+
+                      {/* Month counter */}
+                      {months.length > 1 && (
+                        <div className="flex justify-center gap-1 mb-3">
+                          {months.map((_, i) => (
+                            <button
+                              key={i}
+                              onClick={() => setCalendarMonthIndex(i)}
+                              className={`w-1.5 h-1.5 rounded-full transition ${
+                                i === safeIdx ? 'bg-primary' : 'bg-muted-foreground/30 hover:bg-muted-foreground/60'
+                              }`}
+                            />
+                          ))}
                         </div>
-                      );
-                    })}
-                  </div>
-                )}
+                      )}
+
+                      <div className="grid grid-cols-7 gap-1 text-center">
+                        {['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].map((d) => (
+                          <div key={d} className="text-xs text-muted-foreground font-medium py-1">{d}</div>
+                        ))}
+                        {Array.from({ length: offset }, (_, i) => (
+                          <div key={`empty-${i}`} />
+                        ))}
+                        {Array.from({ length: daysInMonth }, (_, i) => {
+                          const day = i + 1;
+                          const dateStr = `${year}-${String(monthIdx + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                          const isAvailable = availableSet.has(dateStr);
+                          const isSelected = selectedDate === dateStr;
+                          if (isAvailable) {
+                            return (
+                              <button
+                                key={dateStr}
+                                onClick={() => { setSelectedDate(dateStr); setSelectedSlot(null); setShowCalendar(false); }}
+                                className={`py-1.5 rounded-md border text-xs font-medium transition ${
+                                  isSelected
+                                    ? 'border-primary bg-primary text-primary-foreground'
+                                    : 'border-input hover:border-primary/50 hover:bg-background'
+                                }`}
+                              >
+                                {day}
+                              </button>
+                            );
+                          }
+                          return (
+                            <div key={dateStr} className="py-1.5 text-xs text-muted-foreground/30">{day}</div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* Time selection */}
                 {selectedDate && timesForSelectedDate.length > 0 && (
@@ -664,6 +772,32 @@ export function TourDetailPage() {
 
       </div>
       </div>
+    </div>
+
+    {/* Mobile sticky bottom CTA */}
+    <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur border-t px-4 py-3 flex items-center gap-3 shadow-[0_-4px_16px_rgba(0,0,0,0.08)]">
+      <div className="flex-1 min-w-0">
+        {minPrice > 0 && (
+          <div className="font-bold text-lg text-primary leading-none">от {formatPrice(minPrice)}</div>
+        )}
+        <div className="text-xs text-muted-foreground mt-0.5 truncate">
+          {selectedSlot ? `${formatDate(selectedSlot.date)}, ${selectedSlot.time}` : 'Выберите дату и время'}
+        </div>
+      </div>
+      <Button
+        size="lg"
+        className="shrink-0 px-6"
+        disabled={!selectedSlot}
+        onClick={() => {
+          if (selectedSlot) {
+            navigate(`/booking/${card.id}?date=${selectedSlot.date}&time=${selectedSlot.time}`);
+          } else {
+            document.getElementById('booking-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }}
+      >
+        {selectedSlot ? 'Забронировать' : 'Выбрать дату'}
+      </Button>
     </div>
 
     {/* Lightbox */}
