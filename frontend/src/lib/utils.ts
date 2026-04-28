@@ -47,6 +47,22 @@ export function formatDuration(minutes: number): string {
   return `${minutes} мин`;
 }
 
+function hoursLabel(h: number): string {
+  if (h === 1) return 'час';
+  if (h >= 2 && h <= 4) return 'часа';
+  return 'часов';
+}
+
+export function formatDurationRange(
+  from: number | null | undefined,
+  to: number | null | undefined,
+): string {
+  if (!from && !to) return '';
+  if (from && to && from !== to) return `${from}–${to} ${hoursLabel(to)}`;
+  const h = from ?? to!;
+  return `${h} ${hoursLabel(h)}`;
+}
+
 import type { GroupTier, Price } from '../types';
 
 /** Рассчитать итоговую стоимость для тикета с учётом группового тарифа */

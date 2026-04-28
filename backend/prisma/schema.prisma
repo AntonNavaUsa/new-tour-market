@@ -66,6 +66,7 @@ model User {
   cards         Card[]
   orders        Order[]
   payments      Payment[]
+  guides        Guide[]
   
   @@map("users")
 }
@@ -109,6 +110,7 @@ model CardType {
   id        String   @id @default(uuid())
   name      String   @unique
   slug      String   @unique
+  icon      String?  @map("icon")
   
   createdAt DateTime @default(now()) @map("created_at")
   
@@ -160,11 +162,17 @@ model Card {
   scheduleConfig  Json?       @map("schedule_config") // Additional schedule metadata
   includedItems   Json?       @map("included_items")     // Array of included items
   notIncludedItems Json?      @map("not_included_items") // Array of not included items
+  forWhom         Json?       @map("for_whom")           // Array of target audience items
   
   status          CardStatus  @default(DRAFT)
   position        Int         @default(0) // For sorting in lists
   
-  duration        Int?        // Duration in minutes
+  durationFrom    Int?        @map("duration_from") // Duration range start in hours
+  durationTo      Int?        @map("duration_to")   // Duration range end in hours
+  distanceKm      Float?      @map("distance_km")   // Route distance in km
+  elevationGain   Int?        @map("elevation_gain") // Elevation gain in meters
+  childFriendly   Boolean?    @map("child_friendly") // Suitable for children
+  meetingPoint    String?     @map("meeting_point")  // Meeting point description
   minParticipants Int?        @map("min_participants")
   maxParticipants Int?        @map("max_participants")
   
@@ -378,4 +386,21 @@ model Expression {
   
   @@index([cardId, sortOrder])
   @@map("expressions")
+}
+
+model Guide {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  name        String
+  description String?  @db.Text
+  photoUrl    String?  @map("photo_url")
+  position    Int      @default(0)
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  @@index([userId])
+  @@map("guides")
 }

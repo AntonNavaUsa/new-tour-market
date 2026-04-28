@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import { formatPrice, formatDate, formatDuration, calculateTicketPrice, formatTierLabel } from '../lib/utils';
+import { formatPrice, formatDate, formatDuration, formatDurationRange, calculateTicketPrice, formatTierLabel } from '../lib/utils';
 import { ChevronLeft, Minus, Plus } from 'lucide-react';
 import { handleApiError } from '../lib/axios';
 import type { Price, Ticket } from '../types';
@@ -250,7 +250,7 @@ export function BookingPage() {
                   </div>
                   <p className="text-sm text-muted-foreground">
                     {[card.location?.city, card.location?.country].filter(Boolean).join(', ') || 'Локация уточняется'}
-                    {card.duration ? ` • ${formatDuration(card.duration)}` : ''}
+                    {(card.durationFrom || card.durationTo) ? ` • ${formatDurationRange(card.durationFrom, card.durationTo)}` : ''}
                   </p>
                 </div>
               </CardContent>

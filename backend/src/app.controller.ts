@@ -133,7 +133,7 @@ export class AppController {
   @Post('admin/card-types')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
-  async createCardType(@Body() data: { name: string; slug: string }) {
+  async createCardType(@Body() data: { name: string; slug: string; icon?: string }) {
     // Check if name or slug already exist
     const existing = await this.prisma.cardType.findFirst({
       where: {
@@ -148,6 +148,7 @@ export class AppController {
       data: {
         name: data.name,
         slug: data.slug,
+        icon: data.icon ?? null,
       },
     });
   }
@@ -157,7 +158,7 @@ export class AppController {
   @Roles(UserRole.ADMIN)
   async updateCardType(
     @Param('id') id: string,
-    @Body() data: { name?: string; slug?: string }
+    @Body() data: { name?: string; slug?: string; icon?: string | null }
   ) {
     // Check if name or slug conflict with other types
     if (data.name || data.slug) {

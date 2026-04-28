@@ -26,12 +26,12 @@ export const metaApi = {
     return response.data;
   },
 
-  createCardType: async (data: { name: string; slug: string }): Promise<CardType> => {
+  createCardType: async (data: { name: string; slug: string; icon?: string | null }): Promise<CardType> => {
     const response = await api.post<CardType>('/api/admin/card-types', data);
     return response.data;
   },
 
-  updateCardType: async (id: string, data: Partial<{ name: string; slug: string }>): Promise<CardType> => {
+  updateCardType: async (id: string, data: Partial<{ name: string; slug: string; icon: string | null }>): Promise<CardType> => {
     const response = await api.patch<CardType>(`/api/admin/card-types/${id}`, data);
     return response.data;
   },

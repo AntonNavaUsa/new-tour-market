@@ -7,6 +7,7 @@ import {
   Min,
   IsEnum,
   IsBoolean,
+  IsNumber,
 } from 'class-validator';
 import { ApiProperty, PartialType } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
@@ -49,7 +50,35 @@ export class CreateCardDto {
   @IsOptional()
   @IsInt()
   @Min(0)
-  duration?: number;
+  durationFrom?: number;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  durationTo?: number;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  distanceKm?: number;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  elevationGain?: number;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsBoolean()
+  childFriendly?: boolean;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  meetingPoint?: string;
 
   @ApiProperty({ required: false })
   @IsOptional()
@@ -80,6 +109,12 @@ export class CreateCardDto {
   @IsArray()
   @IsString({ each: true })
   notIncludedItems?: string[];
+
+  @ApiProperty({ required: false, type: [String] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  forWhom?: string[];
 }
 
 export class UpdateCardDto extends PartialType(CreateCardDto) {

@@ -7,6 +7,7 @@ import { handleApiError } from '../lib/axios';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
 import { Input } from '../components/ui/input';
+import CardTypeIcon from '../components/CardTypeIcon';
 import type { CardType } from '../types';
 
 export function AdminCardTypesPage() {
@@ -97,10 +98,15 @@ export function AdminCardTypesPage() {
           {cardTypes.map((type: CardType) => (
             <Card key={type.id}>
               <CardContent className="flex items-center justify-between p-4">
-                <div className="flex-1">
-                  <h3 className="font-semibold">{type.name}</h3>
-                  <div className="text-sm text-muted-foreground">
-                    slug: <code>{type.slug}</code>
+                <div className="flex flex-1 items-center gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border bg-muted/40">
+                    <CardTypeIcon icon={type.icon} className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">{type.name}</h3>
+                    <div className="text-sm text-muted-foreground">
+                      slug: <code>{type.slug}</code>
+                    </div>
                   </div>
                 </div>
                 <div className="flex gap-2">

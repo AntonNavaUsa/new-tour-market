@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { MapPin, Clock, Users, Calendar, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { MapPin, Clock, Users, Calendar, ChevronLeft, ChevronRight, X, Ruler, TrendingUp, Baby, Navigation } from 'lucide-react';
+import CardTypeIcon from '../components/CardTypeIcon';
 import { cardsApi } from '../lib/api';
 import { Button } from '../components/ui/button';
-import { formatPrice, formatDate, formatDuration, getMinPriceFromTiers, formatTierLabel } from '../lib/utils';
+import { formatPrice, formatDate, formatDurationRange, getMinPriceFromTiers, formatTierLabel } from '../lib/utils';
 import type { Price, Schedule, Ticket } from '../types';
 
 type TimeSlot = {
@@ -324,10 +325,10 @@ export function TourDetailPage() {
             <MapPin className="h-3.5 w-3.5 shrink-0" />
             <span>{locationLabel}</span>
           </div>
-          {card.duration && (
+          {(card.durationFrom || card.durationTo) && (
             <div className="flex items-center gap-1.5 bg-white/10 border border-white/15 text-white/90 px-3 py-1.5 rounded-full text-xs">
               <Clock className="h-3.5 w-3.5 shrink-0" />
-              <span>{formatDuration(card.duration)}</span>
+              <span>{formatDurationRange(card.durationFrom, card.durationTo)}</span>
             </div>
           )}
           {card.maxParticipants && (
@@ -389,10 +390,10 @@ export function TourDetailPage() {
               <MapPin className="h-4 w-4 shrink-0" />
               <span>{locationLabel}</span>
             </div>
-            {card.duration && (
+            {(card.durationFrom || card.durationTo) && (
               <div className="flex items-center gap-1.5 bg-white/15 backdrop-blur-sm border border-white/20 text-white px-3 py-1.5 rounded-full text-sm">
                 <Clock className="h-4 w-4 shrink-0" />
-                <span>{formatDuration(card.duration)}</span>
+                <span>{formatDurationRange(card.durationFrom, card.durationTo)}</span>
               </div>
             )}
             {card.maxParticipants && (
@@ -520,7 +521,7 @@ export function TourDetailPage() {
             </div>
             <div className="flex items-center gap-2">
               <Clock className="h-5 w-5" />
-              <span>{card.duration ? formatDuration(card.duration) : 'Длительность уточняется'}</span>
+              <span>{(card.durationFrom || card.durationTo) ? formatDurationRange(card.durationFrom, card.durationTo) : 'Длительность уточняется'}</span>
             </div>
             <div className="flex items-center gap-2">
               <Users className="h-5 w-5" />
@@ -537,6 +538,84 @@ export function TourDetailPage() {
             />
           </div>
 
+          {/* Parameters block */}
+          {(card.durationFrom || card.durationTo || card.distanceKm || card.elevationGain || card.childFriendly != null || card.meetingPoint || card.cardType) && (
+            <div>
+              <h2 className="text-xl font-semibold mb-4">Параметры</h2>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {(card.durationFrom || card.durationTo) && (
+                  <div className="flex items-start gap-3 rounded-xl border bg-muted/40 px-4 py-3">
+                    <Clock className="h-5 w-5 shrink-0 text-primary mt-0.5" />
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-0.5">Длительность</p>
+                      <p className="text-sm font-medium">{formatDurationRange(card.durationFrom, card.durationTo)}</p>
+                    </div>
+                  </div>
+                )}
+                {card.distanceKm != null && (
+                  <div className="flex items-start gap-3 rounded-xl border bg-muted/40 px-4 py-3">
+                    <Ruler className="h-5 w-5 shrink-0 text-primary mt-0.5" />
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-0.5">Длина</p>
+                      <p className="text-sm font-medium">{card.distanceKm} км</p>
+                    </div>
+                  </div>
+                )}
+                {card.elevationGain != null && (
+                  <div className="flex items-start gap-3 rounded-xl border bg-muted/40 px-4 py-3">
+                    <TrendingUp className="h-5 w-5 shrink-0 text-primary mt-0.5" />
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-0.5">Набор высоты</p>
+                      <p className="text-sm font-medium">{card.elevationGain} м</p>
+                    </div>
+                  </div>
+                )}
+                {card.childFriendly != null && (
+                  <div className="flex items-start gap-3 rounded-xl border bg-muted/40 px-4 py-3">
+                    <Baby className="h-5 w-5 shrink-0 text-primary mt-0.5" />
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-0.5">Можно с детьми</p>
+                      <p className="text-sm font-medium">{card.childFriendly ? 'Да' : 'Нет'}</p>
+                    </div>
+                  </div>
+                )}
+                {card.cardType && (
+                  <div className="flex items-start gap-3 rounded-xl border bg-muted/40 px-4 py-3">
+                    <CardTypeIcon icon={card.cardType.icon} className="h-5 w-5 shrink-0 text-primary mt-0.5" />
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-0.5">Тип тура</p>
+                      <p className="text-sm font-medium">{card.cardType.name}</p>
+                    </div>
+                  </div>
+                )}
+                {card.meetingPoint && (
+                  <div className="flex items-start gap-3 rounded-xl border bg-muted/40 px-4 py-3 sm:col-span-2">
+                    <Navigation className="h-5 w-5 shrink-0 text-primary mt-0.5" />
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-0.5">Место встречи</p>
+                      <p className="text-sm font-medium">{card.meetingPoint}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* For whom */}
+          {card.forWhom && card.forWhom.length > 0 && (
+            <div>
+              <h2 className="text-xl font-semibold mb-3">Для кого</h2>
+              <ul className="space-y-2">
+                {card.forWhom.map((item, index) => (
+                  <li key={index} className="flex items-start gap-2 text-muted-foreground">
+                    <span className="mt-0.5 text-primary shrink-0">👤</span>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           {/* Expression Photos */}
           {card.expressions && card.expressions.length > 0 && (
             <div>
@@ -549,6 +628,32 @@ export function TourDetailPage() {
                       alt={`Expression ${index + 1}`}
                       className="w-full h-full object-cover hover:scale-110 transition"
                     />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Guides */}
+          {card.user?.guides && card.user.guides.length > 0 && (
+            <div>
+              <h2 className="text-xl font-semibold mb-4">Гиды программы</h2>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {card.user.guides.map((guide) => (
+                  <div key={guide.id} className="flex gap-4 rounded-xl border bg-card p-4">
+                    <div className="h-16 w-16 shrink-0 rounded-full overflow-hidden border-2 border-muted bg-muted flex items-center justify-center">
+                      {guide.photoUrl ? (
+                        <img src={guide.photoUrl} alt={guide.name} className="h-full w-full object-cover" />
+                      ) : (
+                        <Users className="h-7 w-7 text-muted-foreground" />
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-semibold">{guide.name}</p>
+                      {guide.description && (
+                        <p className="mt-0.5 text-sm text-muted-foreground line-clamp-3">{guide.description}</p>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>

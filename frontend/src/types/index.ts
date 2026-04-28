@@ -62,6 +62,7 @@ export interface CardType {
   id: string;
   name: string;
   slug: string;
+  icon: string | null;
   createdAt: string;
 }
 
@@ -83,6 +84,17 @@ export interface AdminUserOption {
   partnerId: string | null;
 }
 
+export interface Guide {
+  id: string;
+  userId: string;
+  name: string;
+  description: string | null;
+  photoUrl: string | null;
+  position: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Card {
   id: string;
   userId: string;
@@ -96,8 +108,14 @@ export interface Card {
   tags: string[];
   includedItems: string[] | null;
   notIncludedItems: string[] | null;
+  forWhom: string[] | null;
   status: CardStatus;
-  duration: number | null;
+  durationFrom: number | null;
+  durationTo: number | null;
+  distanceKm: number | null;
+  elevationGain: number | null;
+  childFriendly: boolean | null;
+  meetingPoint: string | null;
   minParticipants: number | null;
   maxParticipants: number | null;
   position: number;
@@ -105,6 +123,7 @@ export interface Card {
   updatedAt: string;
   location?: Location;
   cardType?: CardType;
+  user?: { id: string; name: string; email: string; guides?: Guide[] };
   tickets?: Ticket[];
   slideshowPhotos?: SlideshowPhoto[];
   expressions?: Expression[];
@@ -258,12 +277,18 @@ export interface CreateCardRequest {
   description: string;
   shortDescription?: string;
   tags?: string[];
-  duration?: number;
+  durationFrom?: number;
+  durationTo?: number;
+  distanceKm?: number;
+  elevationGain?: number;
+  childFriendly?: boolean;
+  meetingPoint?: string;
   minParticipants?: number;
   maxParticipants?: number;
   position?: number;
   includedItems?: string[];
   notIncludedItems?: string[];
+  forWhom?: string[];
 }
 
 export interface UpdateCardRequest extends Partial<CreateCardRequest> {

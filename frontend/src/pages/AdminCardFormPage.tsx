@@ -35,7 +35,12 @@ const formSchema = z.object({
   title: z.string().min(3, 'Название должно быть не короче 3 символов'),
   shortDescription: z.string().optional(),
   tags: z.string().optional(),
-  duration: z.string().optional(),
+  durationFrom: z.string().optional(),
+  durationTo: z.string().optional(),
+  distanceKm: z.string().optional(),
+  elevationGain: z.string().optional(),
+  childFriendly: z.string().optional(),
+  meetingPoint: z.string().optional(),
   minParticipants: z.string().optional(),
   maxParticipants: z.string().optional(),
   position: z.string().optional(),
@@ -1282,6 +1287,7 @@ export function AdminCardFormPage() {
   const [description, setDescription] = useState('');
   const [includedItems, setIncludedItems] = useState<string[]>([]);
   const [notIncludedItems, setNotIncludedItems] = useState<string[]>([]);
+  const [forWhom, setForWhom] = useState<string[]>([]);
 
   const { data: locations = [] } = useQuery({
     queryKey: ['meta-locations'],
@@ -1315,7 +1321,12 @@ export function AdminCardFormPage() {
       title: '',
       shortDescription: '',
       tags: '',
-      duration: '',
+      durationFrom: '',
+      durationTo: '',
+      distanceKm: '',
+      elevationGain: '',
+      childFriendly: '',
+      meetingPoint: '',
       minParticipants: '',
       maxParticipants: '',
       position: '0',
@@ -1332,7 +1343,12 @@ export function AdminCardFormPage() {
       title: card.title,
       shortDescription: card.shortDescription || '',
       tags: (card.tags || []).join(', '),
-      duration: card.duration?.toString() || '',
+      durationFrom: card.durationFrom?.toString() || '',
+      durationTo: card.durationTo?.toString() || '',
+      distanceKm: card.distanceKm?.toString() || '',
+      elevationGain: card.elevationGain?.toString() || '',
+      childFriendly: card.childFriendly === true ? 'yes' : card.childFriendly === false ? 'no' : '',
+      meetingPoint: card.meetingPoint || '',
       minParticipants: card.minParticipants?.toString() || '',
       maxParticipants: card.maxParticipants?.toString() || '',
       position: card.position.toString(),
@@ -1341,6 +1357,7 @@ export function AdminCardFormPage() {
     setDescription(card.description || '');
     setIncludedItems((card.includedItems as string[] | null) || []);
     setNotIncludedItems((card.notIncludedItems as string[] | null) || []);
+    setForWhom((card.forWhom as string[] | null) || []);
   }, [card, reset]);
 
   const createMutation = useMutation({
@@ -1372,12 +1389,18 @@ export function AdminCardFormPage() {
       description,
       shortDescription: values.shortDescription || undefined,
       tags: values.tags ? values.tags.split(',').map((t) => t.trim()).filter(Boolean) : [],
-      duration: toOptionalNumber(values.duration),
+      durationFrom: toOptionalNumber(values.durationFrom),
+      durationTo: toOptionalNumber(values.durationTo),
+      distanceKm: toOptionalNumber(values.distanceKm),
+      elevationGain: toOptionalNumber(values.elevationGain),
+      childFriendly: values.childFriendly === 'yes' ? true : values.childFriendly === 'no' ? false : undefined,
+      meetingPoint: values.meetingPoint || undefined,
       minParticipants: toOptionalNumber(values.minParticipants),
       maxParticipants: toOptionalNumber(values.maxParticipants),
       position: toOptionalNumber(values.position) ?? 0,
       includedItems,
       notIncludedItems,
+      forWhom,
     };
     if (isEditMode && id) {
       await updateMutation.mutateAsync({ cardId: id, payload: { ...payloadBase, status: values.status } });
@@ -1488,10 +1511,6 @@ export function AdminCardFormPage() {
                     <Input id="tags" placeholder="природа, семья, активный отдых" {...register('tags')} />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="duration">Длительность, мин</Label>
-                    <Input id="duration" type="number" min="0" {...register('duration')} />
-                  </div>
-                  <div className="space-y-2">
                     <Label htmlFor="position">Позиция (сортировка)</Label>
                     <Input id="position" type="number" min="0" {...register('position')} />
                   </div>
@@ -1502,6 +1521,40 @@ export function AdminCardFormPage() {
                   <div className="space-y-2">
                     <Label htmlFor="maxParticipants">Макс. участников</Label>
                     <Input id="maxParticipants" type="number" min="1" {...register('maxParticipants')} />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader><CardTitle>Параметры маршрута</CardTitle></CardHeader>
+                <CardContent className="grid gap-6 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>Длительность, часов</Label>
+                    <div className="flex items-center gap-2">
+                      <Input type="number" min="0" placeholder="от" {...register('durationFrom')} />
+                      <span className="text-muted-foreground shrink-0">—</span>
+                      <Input type="number" min="0" placeholder="до" {...register('durationTo')} />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="distanceKm">Длина маршрута, км</Label>
+                    <Input id="distanceKm" type="number" min="0" step="0.1" placeholder="12.5" {...register('distanceKm')} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="elevationGain">Набор высоты, м</Label>
+                    <Input id="elevationGain" type="number" min="0" placeholder="350" {...register('elevationGain')} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="childFriendly">Можно с детьми</Label>
+                    <select id="childFriendly" className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" {...register('childFriendly')}>
+                      <option value="">Не указано</option>
+                      <option value="yes">Да</option>
+                      <option value="no">Нет</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="meetingPoint">Место встречи</Label>
+                    <Input id="meetingPoint" placeholder="Например: парковка у входа в нацпарк" {...register('meetingPoint')} />
                   </div>
                 </CardContent>
               </Card>
@@ -1521,6 +1574,7 @@ export function AdminCardFormPage() {
               <Card>
                 <CardHeader><CardTitle>Включено / Не включено</CardTitle></CardHeader>
                 <CardContent className="grid gap-8 md:grid-cols-2">
+                  <EditableList title="👥 Для кого" items={forWhom} onChange={setForWhom} />
                   <EditableList title="✅ Включено в стоимость" items={includedItems} onChange={setIncludedItems} />
                   <EditableList title="❌ Не включено" items={notIncludedItems} onChange={setNotIncludedItems} />
                 </CardContent>

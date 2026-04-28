@@ -8,6 +8,7 @@ import { TicketsModule } from './tickets/tickets.module';
 import { SchedulesModule } from './schedules/schedules.module';
 import { OrdersModule } from './orders/orders.module';
 import { PaymentsModule } from './payments/payments.module';
+import { GuidesModule } from './guides/guides.module';
 import { AppController } from './app.controller';
 
 @Module({
@@ -36,6 +37,7 @@ import { AppController } from './app.controller';
     SchedulesModule,
     OrdersModule,
     PaymentsModule,
+    GuidesModule,
   ],
   controllers: [AppController],
 })

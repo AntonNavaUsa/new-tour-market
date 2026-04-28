@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { metaApi } from '../lib/api';
@@ -10,10 +10,13 @@ import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
+import CardTypeIcon, { ICON_OPTIONS } from '../components/CardTypeIcon';
+import { cn } from '../lib/utils';
 
 const cardTypeSchema = z.object({
   name: z.string().min(1, 'Название обязательно'),
   slug: z.string().min(1, 'Slug обязателен').regex(/^[a-z0-9-]+$/, 'Только латинские буквы, цифры и дефисы'),
+  icon: z.string().nullable().optional(),
 });
 
 type CardTypeFormData = z.infer<typeof cardTypeSchema>;
@@ -39,25 +42,31 @@ export function AdminCardTypeFormPage() {
     handleSubmit,
     formState: { errors },
     reset,
+    control,
+    watch,
   } = useForm<CardTypeFormData>({
     resolver: zodResolver(cardTypeSchema),
     defaultValues: {
       name: '',
       slug: '',
+      icon: null,
     },
   });
+
+  const selectedIcon = watch('icon');
 
   useEffect(() => {
     if (cardType && isEditMode) {
       reset({
         name: cardType.name,
         slug: cardType.slug,
+        icon: cardType.icon,
       });
     }
   }, [cardType, isEditMode, reset]);
 
   const createMutation = useMutation({
-    mutationFn: (data: CardTypeFormData) => metaApi.createCardType(data),
+    mutationFn: (data: CardTypeFormData) => metaApi.createCardType({ ...data, icon: data.icon ?? null }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['admin-card-types'] });
       await queryClient.invalidateQueries({ queryKey: ['card-types'] });
@@ -66,7 +75,7 @@ export function AdminCardTypeFormPage() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: (data: CardTypeFormData) => metaApi.updateCardType(id!, data),
+    mutationFn: (data: CardTypeFormData) => metaApi.updateCardType(id!, { ...data, icon: data.icon ?? null }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['admin-card-types'] });
       await queryClient.invalidateQueries({ queryKey: ['card-types'] });
@@ -107,7 +116,7 @@ export function AdminCardTypeFormPage() {
               <Label htmlFor="name">Название типа *</Label>
               <Input
                 id="name"
-                placeholder="Например: Экскурсия, Тур, Маршрут"
+                placeholder="Например: Хайкинг, Джип-тур, Поход"
                 {...register('name')}
                 disabled={isLoading}
               />
@@ -120,7 +129,7 @@ export function AdminCardTypeFormPage() {
               <Label htmlFor="slug">Slug (для URL) *</Label>
               <Input
                 id="slug"
-                placeholder="Например: excursion, tour, route"
+                placeholder="Например: hiking, jeep-tour, trekking"
                 {...register('slug')}
                 disabled={isLoading}
               />
@@ -130,6 +139,51 @@ export function AdminCardTypeFormPage() {
               <p className="text-xs text-muted-foreground">
                 Только латинские буквы, цифры и дефисы
               </p>
+            </div>
+
+            {/* Icon picker */}
+            <div className="space-y-3">
+              <Label>Иконка типа тура</Label>
+              <Controller
+                name="icon"
+                control={control}
+                render={({ field }) => (
+                  <div className="grid grid-cols-5 gap-2">
+                    {/* No icon option */}
+                    <button
+                      type="button"
+                      onClick={() => field.onChange(null)}
+                      className={cn(
+                        'flex flex-col items-center gap-1.5 rounded-lg border p-3 text-xs transition-colors hover:bg-muted',
+                        !field.value && 'border-primary bg-primary/5 text-primary'
+                      )}
+                    >
+                      <span className="text-lg">—</span>
+                      <span className="leading-tight text-center">Без иконки</span>
+                    </button>
+
+                    {ICON_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.key}
+                        type="button"
+                        onClick={() => field.onChange(opt.key)}
+                        className={cn(
+                          'flex flex-col items-center gap-1.5 rounded-lg border p-3 text-xs transition-colors hover:bg-muted',
+                          field.value === opt.key && 'border-primary bg-primary/5 text-primary'
+                        )}
+                      >
+                        <CardTypeIcon icon={opt.key} className="h-6 w-6 shrink-0" />
+                        <span className="leading-tight text-center">{opt.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              />
+              {selectedIcon && (
+                <p className="text-xs text-muted-foreground">
+                  Выбрано: <strong>{ICON_OPTIONS.find((o) => o.key === selectedIcon)?.label ?? selectedIcon}</strong>
+                </p>
+              )}
             </div>
 
             <div className="flex gap-4">
