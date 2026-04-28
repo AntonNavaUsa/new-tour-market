@@ -49,7 +49,7 @@ services:
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
       MINIO_USE_SSL: "false"
       MINIO_BUCKET: ${MINIO_BUCKET}
-      MINIO_PUBLIC_URL: http://${SERVER_IP}:9010
+      MINIO_PUBLIC_URL: https://szntravel.ru
     ports:
       - "127.0.0.1:3010:3000"
     networks:
