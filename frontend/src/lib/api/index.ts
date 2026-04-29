@@ -4,5 +4,6 @@ export * from './guides';
 export * from './meta';
 export * from './orders';
 export * from './payments';
+export * from './reviews';
 export * from './tickets';
 export * from './schedules';

@@ -9,6 +9,7 @@ import { SchedulesModule } from './schedules/schedules.module';
 import { OrdersModule } from './orders/orders.module';
 import { PaymentsModule } from './payments/payments.module';
 import { GuidesModule } from './guides/guides.module';
+import { ReviewsModule } from './reviews/reviews.module';
 import { AppController } from './app.controller';
 
 @Module({
@@ -38,6 +39,7 @@ import { AppController } from './app.controller';
     OrdersModule,
     PaymentsModule,
     GuidesModule,
+    ReviewsModule,
   ],
   controllers: [AppController],
 })

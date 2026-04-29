@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { cardsApi, metaApi, ticketsApi, schedulesApi } from '../lib/api';
 import { handleApiError } from '../lib/axios';
+import { CoverCropModal } from '../components/CoverCropModal';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Input } from '../components/ui/input';
@@ -131,6 +132,7 @@ function PhotosTab({ cardId, headPhotoUrl }: { cardId: string; headPhotoUrl?: st
   const mainPhotoInputRef = useRef<HTMLInputElement>(null);
   const slideshowInputRef = useRef<HTMLInputElement>(null);
   const [photoError, setPhotoError] = useState('');
+  const [cropFile, setCropFile] = useState<File | null>(null);
 
   const { data: card, isLoading } = useQuery({
     queryKey: ['admin-card', cardId],
@@ -174,6 +176,20 @@ function PhotosTab({ cardId, headPhotoUrl }: { cardId: string; headPhotoUrl?: st
   const currentHeadPhoto = card?.headPhotoUrl ?? headPhotoUrl;
   const slideshowPhotos: SlideshowPhoto[] = card?.slideshowPhotos ?? [];
 
+  const handleCoverFileSelected = (file: File) => {
+    setCropFile(file);
+  };
+
+  const handleCropConfirm = (croppedFile: File) => {
+    setCropFile(null);
+    uploadMainMutation.mutate(croppedFile);
+  };
+
+  const handleCropCancel = () => {
+    setCropFile(null);
+    if (mainPhotoInputRef.current) mainPhotoInputRef.current.value = '';
+  };
+
   const movePhoto = (index: number, direction: 'up' | 'down') => {
     const photos = [...slideshowPhotos];
     const targetIndex = direction === 'up' ? index - 1 : index + 1;
@@ -187,50 +203,83 @@ function PhotosTab({ cardId, headPhotoUrl }: { cardId: string; headPhotoUrl?: st
   }
 
   return (
+    <>
+    {cropFile && (
+      <CoverCropModal
+        file={cropFile}
+        onConfirm={handleCropConfirm}
+        onCancel={handleCropCancel}
+      />
+    )}
     <div className="space-y-8">
       {photoError && (
         <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{photoError}</div>
       )}
 
-      {/* Main photo */}
+      {/* Cover photo */}
       <div>
-        <h3 className="mb-4 text-lg font-semibold">Заголовочное фото</h3>
-        <div className="flex items-start gap-6">
-          <div className="h-40 w-64 flex-none overflow-hidden rounded-lg border border-input bg-muted">
-            {currentHeadPhoto ? (
-              <img src={currentHeadPhoto} alt="Заголовочное фото" className="h-full w-full object-cover" />
-            ) : (
-              <div className="flex h-full items-center justify-center text-muted-foreground">
-                <ImageIcon className="h-8 w-8" />
-              </div>
-            )}
-          </div>
-          <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">
-              Рекомендуемый размер: 1280×720 px. Форматы: JPG, PNG, WebP.
-            </p>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={uploadMainMutation.isPending}
-              onClick={() => mainPhotoInputRef.current?.click()}
-            >
-              <Upload className="mr-2 h-4 w-4" />
-              {uploadMainMutation.isPending ? 'Загрузка...' : 'Загрузить фото'}
-            </Button>
-            <input
-              ref={mainPhotoInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) uploadMainMutation.mutate(file);
-                e.target.value = '';
-              }}
+        <h3 className="mb-1 text-lg font-semibold">Обложка тура</h3>
+        <p className="mb-4 text-sm text-muted-foreground">
+          Главное фото, отображаемое в шапке страницы тура. После выбора файла откроется редактор кадрирования.
+        </p>
+
+        {/* Preview area */}
+        <div
+          className="relative mb-4 w-full overflow-hidden rounded-xl border border-input bg-muted"
+          style={{ aspectRatio: '16/9', maxWidth: 640 }}
+        >
+          {uploadMainMutation.isPending ? (
+            <div className="flex h-full items-center justify-center">
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+            </div>
+          ) : currentHeadPhoto ? (
+            <img
+              src={currentHeadPhoto}
+              alt="Обложка тура"
+              className="h-full w-full object-cover"
             />
-          </div>
+          ) : (
+            <div className="flex h-full flex-col items-center justify-center gap-2 text-muted-foreground">
+              <ImageIcon className="h-10 w-10" />
+              <span className="text-sm">Обложка не загружена</span>
+            </div>
+          )}
+
+          {/* Overlay change button */}
+          {currentHeadPhoto && !uploadMainMutation.isPending && (
+            <button
+              type="button"
+              onClick={() => mainPhotoInputRef.current?.click()}
+              className="absolute inset-0 flex items-center justify-center bg-black/0 hover:bg-black/40 transition group"
+            >
+              <span className="opacity-0 group-hover:opacity-100 transition flex items-center gap-2 rounded-lg bg-white/90 px-4 py-2 text-sm font-medium text-gray-800 shadow">
+                <Upload className="h-4 w-4" />
+                Изменить обложку
+              </span>
+            </button>
+          )}
         </div>
+
+        <Button
+          type="button"
+          variant="outline"
+          disabled={uploadMainMutation.isPending}
+          onClick={() => mainPhotoInputRef.current?.click()}
+        >
+          <Upload className="mr-2 h-4 w-4" />
+          {uploadMainMutation.isPending ? 'Загрузка...' : currentHeadPhoto ? 'Заменить обложку' : 'Загрузить обложку'}
+        </Button>
+        <input
+          ref={mainPhotoInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) handleCoverFileSelected(file);
+            e.target.value = '';
+          }}
+        />
       </div>
 
       {/* Slideshow */}
@@ -324,6 +373,7 @@ function PhotosTab({ cardId, headPhotoUrl }: { cardId: string; headPhotoUrl?: st
         )}
       </div>
     </div>
+    </>
   );
 }
 

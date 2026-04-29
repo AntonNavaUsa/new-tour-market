@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { MapPin, Clock, Users, Calendar, ChevronLeft, ChevronRight, X, Ruler, TrendingUp, Baby, Navigation } from 'lucide-react';
+import { MapPin, Clock, Users, Calendar, ChevronLeft, ChevronRight, X, Check, Ruler, TrendingUp, Baby, Navigation, Star } from 'lucide-react';
 import CardTypeIcon from '../components/CardTypeIcon';
-import { cardsApi } from '../lib/api';
+import { cardsApi, reviewsApi } from '../lib/api';
 import { Button } from '../components/ui/button';
 import { formatPrice, formatDate, formatDurationRange, getMinPriceFromTiers, formatTierLabel } from '../lib/utils';
 import type { Price, Schedule, Ticket } from '../types';
@@ -171,6 +171,10 @@ function getDateLabel(dateStr: string): { label: string; dayName: string } {
   return { label: dayName, dayName };
 }
 
+function stripEmoji(str: string): string {
+  return str.replace(/\p{Emoji_Presentation}|\p{Extended_Pictographic}/gu, '').replace(/\s{2,}/g, ' ').trim();
+}
+
 function getTicketPriceForDate(ticket: Ticket, date: string): Price | undefined {
   if (!ticket.prices?.length) {
     return undefined;
@@ -201,9 +205,17 @@ export function TourDetailPage() {
     enabled: !!id,
   });
 
+  const { data: reviews = [] } = useQuery({
+    queryKey: ['reviews', id],
+    queryFn: () => reviewsApi.getForCard(id!),
+    enabled: !!id,
+  });
+
+  const validUrl = (url?: string | null) => (url && !url.startsWith('blob:') ? url : undefined);
+
   const allImages = [
-    card?.headPhotoUrl,
-    ...(card?.slideshowPhotos || []).map((photo: any) => photo.url),
+    validUrl(card?.headPhotoUrl),
+    ...(card?.slideshowPhotos || []).map((photo: any) => validUrl(photo.url)),
   ].filter((image): image is string => Boolean(image));
 
   useEffect(() => {
@@ -284,73 +296,71 @@ export function TourDetailPage() {
     <>
     {/* ─── Hero Cover ─── */}
 
-    {/* Mobile: stacked image + text block */}
+    {/* Mobile: full-screen hero with centered overlay text */}
     <div className="md:hidden">
-      {/* Image */}
-      <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-900">
-        {card.headPhotoUrl ? (
+      <div className="relative w-full overflow-hidden bg-slate-900" style={{ height: 'calc(100dvh - 3rem)' }}>
+        {validUrl(card.headPhotoUrl) ? (
           <img
-            src={card.headPhotoUrl}
+            src={validUrl(card.headPhotoUrl)}
             alt={card.title}
-            className="w-full h-full object-cover"
+            className="absolute inset-0 w-full h-full object-cover"
           />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-slate-800 to-slate-900" />
         )}
-        {/* Light bottom fade into text block */}
-        <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-slate-900 to-transparent" />
 
         {/* Breadcrumbs */}
-        <nav className="absolute top-0 left-0 right-0 flex items-center gap-1.5 text-xs text-white/60 px-4 pt-4">
+        <nav className="absolute top-0 left-0 right-0 flex items-center gap-1.5 text-xs text-white/90 px-4 pt-4">
           <Link to="/" className="hover:text-white transition shrink-0">Главная</Link>
           <ChevronRight className="h-3 w-3 shrink-0" />
           <Link to="/tours" className="hover:text-white transition shrink-0">Туры</Link>
           <ChevronRight className="h-3 w-3 shrink-0" />
-          <span className="text-white/80 truncate">{card.title}</span>
+          <span className="text-white/80 truncate">{stripEmoji(card.title)}</span>
         </nav>
-      </div>
 
-      {/* Text below image */}
-      <div className="bg-slate-900 px-4 pt-4 pb-6">
-        <h1 className="text-2xl font-bold text-white mb-2 leading-tight break-words">
-          {card.title}
-        </h1>
-        {card.shortDescription && (
-          <p className="text-sm text-white/70 mb-4 leading-relaxed">
-            {card.shortDescription}
-          </p>
-        )}
-        <div className="flex flex-wrap gap-2">
-          <div className="flex items-center gap-1.5 bg-white/10 border border-white/15 text-white/90 px-3 py-1.5 rounded-full text-xs">
-            <MapPin className="h-3.5 w-3.5 shrink-0" />
-            <span>{locationLabel}</span>
+        {/* Hero text */}
+        <div className="absolute inset-0 flex flex-col items-start justify-center px-4">
+          <h1 className="text-3xl font-bold text-white mb-3 leading-tight drop-shadow-lg">
+            {stripEmoji(card.title)}
+          </h1>
+          {card.shortDescription && (
+            <p className="text-sm text-white/95 mb-6 leading-relaxed max-w-sm drop-shadow">
+              {card.shortDescription}
+            </p>
+          )}
+          <div className="flex flex-wrap gap-2 mb-6">
+            <div className="flex items-center gap-1.5 bg-white/15 backdrop-blur-sm border border-white/20 text-white px-3 py-1.5 rounded-full text-xs">
+              <MapPin className="h-3.5 w-3.5 shrink-0" />
+              <span>{locationLabel}</span>
+            </div>
+            {(card.durationFrom || card.durationTo) && (
+              <div className="flex items-center gap-1.5 bg-white/15 backdrop-blur-sm border border-white/20 text-white px-3 py-1.5 rounded-full text-xs">
+                <Clock className="h-3.5 w-3.5 shrink-0" />
+                <span>{formatDurationRange(card.durationFrom, card.durationTo)}</span>
+              </div>
+            )}
+            {card.maxParticipants && (
+              <div className="flex items-center gap-1.5 bg-white/15 backdrop-blur-sm border border-white/20 text-white px-3 py-1.5 rounded-full text-xs">
+                <Users className="h-3.5 w-3.5 shrink-0" />
+                <span>До {card.maxParticipants} чел.</span>
+              </div>
+            )}
           </div>
-          {(card.durationFrom || card.durationTo) && (
-            <div className="flex items-center gap-1.5 bg-white/10 border border-white/15 text-white/90 px-3 py-1.5 rounded-full text-xs">
-              <Clock className="h-3.5 w-3.5 shrink-0" />
-              <span>{formatDurationRange(card.durationFrom, card.durationTo)}</span>
-            </div>
-          )}
-          {card.maxParticipants && (
-            <div className="flex items-center gap-1.5 bg-white/10 border border-white/15 text-white/90 px-3 py-1.5 rounded-full text-xs">
-              <Users className="h-3.5 w-3.5 shrink-0" />
-              <span>До {card.maxParticipants} чел.</span>
-            </div>
-          )}
-          {minPrice > 0 && (
-            <div className="flex items-center gap-1.5 bg-primary text-primary-foreground px-3 py-1.5 rounded-full text-xs font-bold shadow">
-              от {formatPrice(minPrice)}
-            </div>
-          )}
+          <a
+            href="#booking-panel"
+            className="inline-flex items-center justify-center rounded-full bg-yellow-400 text-black font-semibold text-sm px-8 py-3 shadow-lg hover:bg-yellow-300 transition"
+          >
+            {minPrice > 0 ? `Забронировать от ${formatPrice(minPrice)}` : 'Забронировать'}
+          </a>
         </div>
       </div>
     </div>
 
     {/* Desktop: full overlay hero */}
-    <div className="hidden md:block relative h-[75vh] min-h-[520px] w-full overflow-hidden">
-      {card.headPhotoUrl ? (
+    <div className="hidden md:block relative w-full overflow-hidden" style={{ height: 'calc(100dvh - 3rem)' }}>
+      {validUrl(card.headPhotoUrl) ? (
         <img
-          src={card.headPhotoUrl}
+          src={validUrl(card.headPhotoUrl)}
           alt={card.title}
           className="absolute inset-0 w-full h-full object-cover"
         />
@@ -358,34 +368,32 @@ export function TourDetailPage() {
         <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-900" />
       )}
 
-      {/* Gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/10" />
-
       {/* Breadcrumbs */}
       <div className="absolute top-0 left-0 right-0 z-10 px-6 lg:px-8 pt-6">
         <div className="max-w-6xl mx-auto">
-          <nav className="flex items-center gap-2 text-sm text-white/60">
+          <nav className="flex items-center gap-2 text-sm text-white/90">
             <Link to="/" className="hover:text-white transition">Главная</Link>
             <ChevronRight className="h-4 w-4 flex-shrink-0" />
             <Link to="/tours" className="hover:text-white transition">Туры</Link>
             <ChevronRight className="h-4 w-4 flex-shrink-0" />
-            <span className="text-white/80 font-medium truncate">{card.title}</span>
+            <span className="text-white/80 font-medium truncate">{stripEmoji(card.title)}</span>
           </nav>
         </div>
       </div>
 
       {/* Hero text */}
-      <div className="absolute bottom-0 left-0 right-0 z-10 px-6 lg:px-8 pb-12">
-        <div className="max-w-6xl mx-auto">
+      <div className="absolute inset-0 z-10 flex flex-col justify-center px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto w-full">
+          <div className="max-w-3xl">
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 leading-tight drop-shadow-lg">
-            {card.title}
+            {stripEmoji(card.title)}
           </h1>
           {card.shortDescription && (
-            <p className="text-lg md:text-xl text-white/80 max-w-2xl mb-7 leading-relaxed drop-shadow">
+            <p className="text-lg md:text-xl text-white/95 max-w-2xl mb-7 leading-relaxed drop-shadow">
               {card.shortDescription}
             </p>
           )}
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-3 mb-8">
             <div className="flex items-center gap-1.5 bg-white/15 backdrop-blur-sm border border-white/20 text-white px-3 py-1.5 rounded-full text-sm">
               <MapPin className="h-4 w-4 shrink-0" />
               <span>{locationLabel}</span>
@@ -402,12 +410,14 @@ export function TourDetailPage() {
                 <span>До {card.maxParticipants} чел.</span>
               </div>
             )}
-            {minPrice > 0 && (
-              <div className="flex items-center gap-1.5 bg-primary text-primary-foreground px-4 py-1.5 rounded-full text-sm font-bold shadow-lg">
-                от {formatPrice(minPrice)}
-              </div>
-            )}
           </div>
+          <a
+            href="#booking-panel"
+            className="inline-flex items-center justify-center rounded-full bg-yellow-400 text-black font-bold text-base px-10 py-3.5 shadow-xl hover:bg-yellow-300 transition"
+          >
+            {minPrice > 0 ? `Забронировать от ${formatPrice(minPrice)}` : 'Забронировать'}
+          </a>
+        </div>
         </div>
       </div>
     </div>
@@ -513,22 +523,6 @@ export function TourDetailPage() {
         {/* LEFT — description, meta, expression photos */}
         <div className="lg:col-span-2 space-y-8 order-last lg:order-none">
 
-          {/* Meta */}
-          <div className="hidden md:flex flex-wrap gap-4 text-muted-foreground">
-            <div className="flex items-center gap-2">
-              <MapPin className="h-5 w-5" />
-              <span>{locationLabel}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Clock className="h-5 w-5" />
-              <span>{(card.durationFrom || card.durationTo) ? formatDurationRange(card.durationFrom, card.durationTo) : 'Длительность уточняется'}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              <span>До {card.maxParticipants} человек</span>
-            </div>
-          </div>
-
           {/* Description */}
           <div className="prose max-w-none">
             <h2 className="text-xl font-semibold mb-3">Описание</h2>
@@ -538,63 +532,93 @@ export function TourDetailPage() {
             />
           </div>
 
+          {/* Included / Not Included */}
+          {((card.includedItems && card.includedItems.length > 0) || (card.notIncludedItems && card.notIncludedItems.length > 0)) && (
+            <div>
+              <h2 className="text-xl font-semibold mb-4">Что включено</h2>
+              <div className="grid sm:grid-cols-2 gap-6">
+                {card.includedItems && card.includedItems.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-green-700 dark:text-green-400 mb-2">Включено</p>
+                    <ul className="space-y-1.5">
+                      {card.includedItems.map((item, index) => (
+                        <li key={index} className="flex items-start gap-2 text-sm text-muted-foreground">
+                          <Check className="h-4 w-4 shrink-0 text-green-500 mt-0.5" />
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {card.notIncludedItems && card.notIncludedItems.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-red-600 dark:text-red-400 mb-2">Не включено</p>
+                    <ul className="space-y-1.5">
+                      {card.notIncludedItems.map((item, index) => (
+                        <li key={index} className="flex items-start gap-2 text-sm text-muted-foreground">
+                          <X className="h-4 w-4 shrink-0 text-red-400 mt-0.5" />
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Parameters block */}
-          {(card.durationFrom || card.durationTo || card.distanceKm || card.elevationGain || card.childFriendly != null || card.meetingPoint || card.cardType) && (
+          {(card.location || card.durationFrom || card.durationTo || card.distanceKm || card.elevationGain || card.childFriendly != null || card.meetingPoint || card.cardType) && (
             <div>
               <h2 className="text-xl font-semibold mb-4">Параметры</h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div className="divide-y divide-border">
+                {card.location && (
+                  <div className="flex items-center gap-3 py-3">
+                    <MapPin className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground w-32 shrink-0">Локация</span>
+                    <span className="text-sm font-medium">{locationLabel}</span>
+                  </div>
+                )}
                 {(card.durationFrom || card.durationTo) && (
-                  <div className="flex items-start gap-3 rounded-xl border bg-muted/40 px-4 py-3">
-                    <Clock className="h-5 w-5 shrink-0 text-primary mt-0.5" />
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-0.5">Длительность</p>
-                      <p className="text-sm font-medium">{formatDurationRange(card.durationFrom, card.durationTo)}</p>
-                    </div>
+                  <div className="flex items-center gap-3 py-3">
+                    <Clock className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground w-32 shrink-0">Длительность</span>
+                    <span className="text-sm font-medium">{formatDurationRange(card.durationFrom, card.durationTo)}</span>
                   </div>
                 )}
                 {card.distanceKm != null && (
-                  <div className="flex items-start gap-3 rounded-xl border bg-muted/40 px-4 py-3">
-                    <Ruler className="h-5 w-5 shrink-0 text-primary mt-0.5" />
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-0.5">Длина</p>
-                      <p className="text-sm font-medium">{card.distanceKm} км</p>
-                    </div>
+                  <div className="flex items-center gap-3 py-3">
+                    <Ruler className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground w-32 shrink-0">Длина</span>
+                    <span className="text-sm font-medium">{card.distanceKm} км</span>
                   </div>
                 )}
                 {card.elevationGain != null && (
-                  <div className="flex items-start gap-3 rounded-xl border bg-muted/40 px-4 py-3">
-                    <TrendingUp className="h-5 w-5 shrink-0 text-primary mt-0.5" />
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-0.5">Набор высоты</p>
-                      <p className="text-sm font-medium">{card.elevationGain} м</p>
-                    </div>
+                  <div className="flex items-center gap-3 py-3">
+                    <TrendingUp className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground w-32 shrink-0">Набор высоты</span>
+                    <span className="text-sm font-medium">{card.elevationGain} м</span>
                   </div>
                 )}
                 {card.childFriendly != null && (
-                  <div className="flex items-start gap-3 rounded-xl border bg-muted/40 px-4 py-3">
-                    <Baby className="h-5 w-5 shrink-0 text-primary mt-0.5" />
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-0.5">Можно с детьми</p>
-                      <p className="text-sm font-medium">{card.childFriendly ? 'Да' : 'Нет'}</p>
-                    </div>
+                  <div className="flex items-center gap-3 py-3">
+                    <Baby className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground w-32 shrink-0">Можно с детьми</span>
+                    <span className="text-sm font-medium">{card.childFriendly ? 'Да' : 'Нет'}</span>
                   </div>
                 )}
                 {card.cardType && (
-                  <div className="flex items-start gap-3 rounded-xl border bg-muted/40 px-4 py-3">
-                    <CardTypeIcon icon={card.cardType.icon} className="h-5 w-5 shrink-0 text-primary mt-0.5" />
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-0.5">Тип тура</p>
-                      <p className="text-sm font-medium">{card.cardType.name}</p>
-                    </div>
+                  <div className="flex items-center gap-3 py-3">
+                    <CardTypeIcon icon={card.cardType.icon} className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground w-32 shrink-0">Тип тура</span>
+                    <span className="text-sm font-medium">{card.cardType.name}</span>
                   </div>
                 )}
                 {card.meetingPoint && (
-                  <div className="flex items-start gap-3 rounded-xl border bg-muted/40 px-4 py-3 sm:col-span-2">
-                    <Navigation className="h-5 w-5 shrink-0 text-primary mt-0.5" />
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-0.5">Место встречи</p>
-                      <p className="text-sm font-medium">{card.meetingPoint}</p>
-                    </div>
+                  <div className="flex items-start gap-3 py-3">
+                    <Navigation className="h-4 w-4 shrink-0 text-muted-foreground mt-0.5" />
+                    <span className="text-sm text-muted-foreground w-32 shrink-0">Место встречи</span>
+                    <span className="text-sm font-medium">{card.meetingPoint}</span>
                   </div>
                 )}
               </div>
@@ -608,7 +632,7 @@ export function TourDetailPage() {
               <ul className="space-y-2">
                 {card.forWhom.map((item, index) => (
                   <li key={index} className="flex items-start gap-2 text-muted-foreground">
-                    <span className="mt-0.5 text-primary shrink-0">👤</span>
+                    <Check className="h-4 w-4 shrink-0 text-primary mt-0.5" />
                     <span>{item}</span>
                   </li>
                 ))}
@@ -638,21 +662,64 @@ export function TourDetailPage() {
           {card.user?.guides && card.user.guides.length > 0 && (
             <div>
               <h2 className="text-xl font-semibold mb-4">Гиды программы</h2>
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-4">
                 {card.user.guides.map((guide) => (
-                  <div key={guide.id} className="flex gap-4 rounded-xl border bg-card p-4">
-                    <div className="h-16 w-16 shrink-0 rounded-full overflow-hidden border-2 border-muted bg-muted flex items-center justify-center">
+                  <div key={guide.id} className="flex gap-5 rounded-2xl border bg-card p-5">
+                    <div className="h-20 w-20 shrink-0 rounded-full overflow-hidden border-2 border-muted bg-muted flex items-center justify-center">
                       {guide.photoUrl ? (
                         <img src={guide.photoUrl} alt={guide.name} className="h-full w-full object-cover" />
                       ) : (
-                        <Users className="h-7 w-7 text-muted-foreground" />
+                        <Users className="h-8 w-8 text-muted-foreground" />
                       )}
                     </div>
-                    <div className="min-w-0">
-                      <p className="font-semibold">{guide.name}</p>
+                    <div className="min-w-0 flex flex-col justify-center">
+                      <p className="font-semibold text-base">{guide.name}</p>
                       {guide.description && (
-                        <p className="mt-0.5 text-sm text-muted-foreground line-clamp-3">{guide.description}</p>
+                        <p className="mt-1 text-sm text-muted-foreground leading-relaxed">{guide.description}</p>
                       )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Reviews */}
+          {reviews.length > 0 && (
+            <div>
+              <h2 className="text-xl font-semibold mb-4">Отзывы</h2>
+              <div className="grid gap-4">
+                {reviews.map((review) => (
+                  <div key={review.id} className="flex gap-4 rounded-2xl border bg-card p-5">
+                    {/* Photo */}
+                    <div className="h-14 w-14 shrink-0 rounded-full overflow-hidden bg-muted border flex items-center justify-center">
+                      {review.authorPhoto ? (
+                        <img src={review.authorPhoto} alt={review.authorName} className="h-full w-full object-cover" />
+                      ) : (
+                        <span className="text-xl font-bold text-muted-foreground">
+                          {review.authorName.charAt(0).toUpperCase()}
+                        </span>
+                      )}
+                    </div>
+                    {/* Callout */}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <p className="font-semibold text-sm">{review.authorName}</p>
+                        <div className="flex items-center gap-0.5">
+                          {Array.from({ length: 5 }).map((_, i) => (
+                            <Star
+                              key={i}
+                              className={`h-3.5 w-3.5 ${
+                                i < review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground/30'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                      {review.title && (
+                        <p className="font-medium text-sm mb-1">{review.title}</p>
+                      )}
+                      <p className="text-sm text-muted-foreground leading-relaxed">{review.text}</p>
                     </div>
                   </div>
                 ))}

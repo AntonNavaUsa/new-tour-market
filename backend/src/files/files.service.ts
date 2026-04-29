@@ -149,10 +149,33 @@ export class FilesService {
 
   async deleteImage(url: string): Promise<void> {
     try {
+      // Пропустить blob-URL и нереальные пути
+      if (!url || url.startsWith('blob:') || url.startsWith('data:')) {
+        return;
+      }
+
+      // Убедиться, что URL принадлежит MinIO (localhost:9000 или настроенному эндпоинту)
+      const minioEndpoint = this.configService.get('MINIO_ENDPOINT') || 'localhost';
+      const minioPort = this.configService.get('MINIO_PORT') || '9000';
+      let parsedUrl: URL;
+      try {
+        parsedUrl = new URL(url);
+      } catch {
+        return; // невалидный URL — игнорируем
+      }
+
+      const isMinioUrl =
+        parsedUrl.hostname === minioEndpoint ||
+        parsedUrl.host === `${minioEndpoint}:${minioPort}`;
+
+      if (!isMinioUrl) {
+        this.logger.warn(`Skipping delete for non-MinIO URL: ${url}`);
+        return;
+      }
+
       // Извлечь bucket и filename из URL
-      const urlParts = new URL(url);
-      const pathParts = urlParts.pathname.split('/').filter(Boolean);
-      
+      const pathParts = parsedUrl.pathname.split('/').filter(Boolean);
+
       if (pathParts.length < 2) {
         throw new BadRequestException('Invalid file URL');
       }

@@ -185,6 +185,7 @@ model Card {
   slideshowPhotos SlideshowPhoto[]
   expressions     Expression[]
   orders          Order[]
+  reviews         Review[]
   
   @@index([locationId])
   @@index([userId])
@@ -403,4 +404,26 @@ model Guide {
   
   @@index([userId])
   @@map("guides")
+}
+
+model Review {
+  id          String   @id @default(uuid())
+  
+  cardId      String?  @map("card_id")
+  card        Card?    @relation(fields: [cardId], references: [id], onDelete: SetNull)
+  
+  authorName  String   @map("author_name")
+  authorPhoto String?  @map("author_photo")
+  title       String?
+  text        String   @db.Text
+  rating      Int      @default(5) // 1-5
+  isVisible   Boolean  @default(true) @map("is_visible")
+  sortOrder   Int      @default(0) @map("sort_order")
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  @@index([cardId])
+  @@index([isVisible])
+  @@map("reviews")
 }
