@@ -155,6 +155,7 @@ model Card {
   shortDescription String?    @db.Text @map("short_description")
   
   headPhotoUrl    String?     @map("head_photo_url")
+  noCover         Boolean     @default(false) @map("no_cover")
   
   tags            Json?       // Array of tags for filtering
   

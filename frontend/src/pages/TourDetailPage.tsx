@@ -295,7 +295,27 @@ export function TourDetailPage() {
   return (
     <>
     {/* ─── Hero Cover ─── */}
-
+    {card.noCover ? (
+      /* No-cover variant: simple page header */
+      <div className="border-b bg-background">
+        <div className="container py-4">
+          <div className="max-w-6xl mx-auto">
+            <nav className="flex items-center gap-1.5 text-sm text-muted-foreground mb-3">
+              <Link to="/" className="hover:text-foreground transition">Главная</Link>
+              <ChevronRight className="h-3.5 w-3.5 shrink-0" />
+              <Link to="/tours" className="hover:text-foreground transition">Туры</Link>
+              <ChevronRight className="h-3.5 w-3.5 shrink-0" />
+              <span className="text-foreground truncate">{stripEmoji(card.title)}</span>
+            </nav>
+            <h1 className="text-2xl md:text-3xl font-bold leading-tight">{stripEmoji(card.title)}</h1>
+            {card.shortDescription && (
+              <p className="mt-2 text-muted-foreground leading-relaxed max-w-2xl">{card.shortDescription}</p>
+            )}
+          </div>
+        </div>
+      </div>
+    ) : (
+      <>
     {/* Mobile: full-screen hero with centered overlay text */}
     <div className="md:hidden">
       <div className="relative w-full overflow-hidden bg-slate-900" style={{ height: 'calc(100dvh - 3rem)' }}>
@@ -421,6 +441,8 @@ export function TourDetailPage() {
         </div>
       </div>
     </div>
+      </>
+    )}
 
     <div className="container py-6 md:py-12 pb-24 lg:pb-12 overflow-hidden">
       <div className="max-w-6xl mx-auto">

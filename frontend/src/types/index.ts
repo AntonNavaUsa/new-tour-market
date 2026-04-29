@@ -105,6 +105,7 @@ export interface Card {
   description: string;
   shortDescription: string | null;
   headPhotoUrl: string | null;
+  noCover: boolean;
   tags: string[];
   includedItems: string[] | null;
   notIncludedItems: string[] | null;
@@ -289,6 +290,7 @@ export interface CreateCardRequest {
   includedItems?: string[];
   notIncludedItems?: string[];
   forWhom?: string[];
+  noCover?: boolean;
 }
 
 export interface UpdateCardRequest extends Partial<CreateCardRequest> {

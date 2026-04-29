@@ -70,6 +70,7 @@ export class CardsService {
         includedItems: dto.includedItems || [],
         notIncludedItems: dto.notIncludedItems || [],
         forWhom: dto.forWhom || [],
+        noCover: dto.noCover ?? false,
       },
       include: {
         location: true,

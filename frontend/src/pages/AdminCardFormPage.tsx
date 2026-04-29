@@ -1335,6 +1335,7 @@ export function AdminCardFormPage() {
   const [formError, setFormError] = useState('');
 
   const [description, setDescription] = useState('');
+  const [noCover, setNoCover] = useState(false);
   const [includedItems, setIncludedItems] = useState<string[]>([]);
   const [notIncludedItems, setNotIncludedItems] = useState<string[]>([]);
   const [forWhom, setForWhom] = useState<string[]>([]);
@@ -1405,6 +1406,7 @@ export function AdminCardFormPage() {
       status: card.status,
     });
     setDescription(card.description || '');
+    setNoCover(card.noCover ?? false);
     setIncludedItems((card.includedItems as string[] | null) || []);
     setNotIncludedItems((card.notIncludedItems as string[] | null) || []);
     setForWhom((card.forWhom as string[] | null) || []);
@@ -1451,6 +1453,7 @@ export function AdminCardFormPage() {
       includedItems,
       notIncludedItems,
       forWhom,
+      noCover,
     };
     if (isEditMode && id) {
       await updateMutation.mutateAsync({ cardId: id, payload: { ...payloadBase, status: values.status } });
@@ -1563,6 +1566,18 @@ export function AdminCardFormPage() {
                   <div className="space-y-2">
                     <Label htmlFor="position">Позиция (сортировка)</Label>
                     <Input id="position" type="number" min="0" {...register('position')} />
+                  </div>
+                  <div className="flex items-center gap-3 pt-1">
+                    <input
+                      id="noCover"
+                      type="checkbox"
+                      checked={noCover}
+                      onChange={(e) => setNoCover(e.target.checked)}
+                      className="h-4 w-4 rounded border-input accent-primary"
+                    />
+                    <Label htmlFor="noCover" className="cursor-pointer font-normal">
+                      Без обложки (скрыть hero-секцию на странице тура)
+                    </Label>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="minParticipants">Мин. участников</Label>

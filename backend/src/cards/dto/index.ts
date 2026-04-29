@@ -115,6 +115,11 @@ export class CreateCardDto {
   @IsArray()
   @IsString({ each: true })
   forWhom?: string[];
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsBoolean()
+  noCover?: boolean;
 }
 
 export class UpdateCardDto extends PartialType(CreateCardDto) {
