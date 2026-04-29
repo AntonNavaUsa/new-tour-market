@@ -664,18 +664,18 @@ export function TourDetailPage() {
               <h2 className="text-xl font-semibold mb-4">Гиды программы</h2>
               <div className="grid gap-4">
                 {card.user.guides.map((guide) => (
-                  <div key={guide.id} className="flex gap-5 rounded-2xl border bg-card p-5">
-                    <div className="h-20 w-20 shrink-0 rounded-full overflow-hidden border-2 border-muted bg-muted flex items-center justify-center">
+                  <div key={guide.id} className="grid grid-cols-[128px_1fr] gap-4 rounded-xl border bg-card p-4 md:grid-cols-[160px_1fr] md:gap-5 md:p-5">
+                    <div className="h-32 w-32 shrink-0 overflow-hidden rounded-xl border border-muted bg-muted md:h-40 md:w-40 flex items-center justify-center">
                       {guide.photoUrl ? (
                         <img src={guide.photoUrl} alt={guide.name} className="h-full w-full object-cover" />
                       ) : (
                         <Users className="h-8 w-8 text-muted-foreground" />
                       )}
                     </div>
-                    <div className="min-w-0 flex flex-col justify-center">
-                      <p className="font-semibold text-base">{guide.name}</p>
+                    <div className="min-w-0 self-center">
+                      <p className="text-lg font-semibold">{guide.name}</p>
                       {guide.description && (
-                        <p className="mt-1 text-sm text-muted-foreground leading-relaxed">{guide.description}</p>
+                        <p className="mt-1 text-sm text-muted-foreground line-clamp-4">{guide.description}</p>
                       )}
                     </div>
                   </div>
