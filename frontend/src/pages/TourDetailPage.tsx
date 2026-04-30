@@ -371,6 +371,12 @@ export function TourDetailPage() {
                 <span>{card.distanceKm} км</span>
               </div>
             )}
+            {(card.durationFrom || card.durationTo) && (
+              <div className="flex items-center gap-1.5 bg-white/15 backdrop-blur-sm border border-white/20 text-white px-3 py-1.5 rounded-full text-xs">
+                <Clock className="h-3.5 w-3.5 shrink-0" />
+                <span>{formatDurationRange(card.durationFrom, card.durationTo)}</span>
+              </div>
+            )}
           </div>
           <a
             href="#booking-panel"
@@ -434,6 +440,12 @@ export function TourDetailPage() {
               <div className="flex items-center gap-1.5 bg-white/15 backdrop-blur-sm border border-white/20 text-white px-3 py-1.5 rounded-full text-sm">
                 <Ruler className="h-4 w-4 shrink-0" />
                 <span>{card.distanceKm} км</span>
+              </div>
+            )}
+            {(card.durationFrom || card.durationTo) && (
+              <div className="flex items-center gap-1.5 bg-white/15 backdrop-blur-sm border border-white/20 text-white px-3 py-1.5 rounded-full text-sm">
+                <Clock className="h-4 w-4 shrink-0" />
+                <span>{formatDurationRange(card.durationFrom, card.durationTo)}</span>
               </div>
             )}
           </div>
@@ -546,7 +558,7 @@ export function TourDetailPage() {
       )}
 
       {/* noCover: badges row under photo gallery */}
-      {card.noCover && (card.location || card.difficulty || card.distanceKm != null) && (
+      {card.noCover && (card.location || card.difficulty || card.distanceKm != null || card.durationFrom || card.durationTo) && (
         <div className="mb-6 flex flex-wrap gap-2">
           {card.location && (
             <div className="flex items-center gap-1.5 bg-muted border border-border text-foreground px-3 py-1.5 rounded-full text-sm">
@@ -564,6 +576,12 @@ export function TourDetailPage() {
             <div className="flex items-center gap-1.5 bg-muted border border-border text-foreground px-3 py-1.5 rounded-full text-sm">
               <Ruler className="h-3.5 w-3.5 shrink-0 text-primary" />
               <span>{card.distanceKm} км</span>
+            </div>
+          )}
+          {(card.durationFrom || card.durationTo) && (
+            <div className="flex items-center gap-1.5 bg-muted border border-border text-foreground px-3 py-1.5 rounded-full text-sm">
+              <Clock className="h-3.5 w-3.5 shrink-0 text-primary" />
+              <span>{formatDurationRange(card.durationFrom, card.durationTo)}</span>
             </div>
           )}
         </div>
@@ -642,30 +660,9 @@ export function TourDetailPage() {
           )}
 
           {/* Parameters block */}
-          {(card.location || card.durationFrom || card.durationTo || card.distanceKm || card.elevationGain || card.childFriendly != null || card.meetingPoint || card.cardType) && (
+          {(card.elevationGain || card.childFriendly != null || card.meetingPoint || card.cardType) && (
             <div>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-                {card.location && (
-                  <div className="flex min-h-[148px] flex-col items-center justify-center rounded-2xl border border-border/60 bg-muted/30 px-4 py-5 text-center">
-                    <MapPin className="h-6 w-6 shrink-0 text-primary" />
-                    <p className="mt-3 text-xs uppercase tracking-wide text-muted-foreground">Локация</p>
-                    <p className="mt-1 text-sm font-semibold leading-snug">{locationLabel}</p>
-                  </div>
-                )}
-                {(card.durationFrom || card.durationTo) && (
-                  <div className="flex min-h-[148px] flex-col items-center justify-center rounded-2xl border border-border/60 bg-muted/30 px-4 py-5 text-center">
-                    <Clock className="h-6 w-6 shrink-0 text-primary" />
-                    <p className="mt-3 text-xs uppercase tracking-wide text-muted-foreground">Длительность</p>
-                    <p className="mt-1 text-sm font-semibold leading-snug">{formatDurationRange(card.durationFrom, card.durationTo)}</p>
-                  </div>
-                )}
-                {card.distanceKm != null && (
-                  <div className="flex min-h-[148px] flex-col items-center justify-center rounded-2xl border border-border/60 bg-muted/30 px-4 py-5 text-center">
-                    <Ruler className="h-6 w-6 shrink-0 text-primary" />
-                    <p className="mt-3 text-xs uppercase tracking-wide text-muted-foreground">Длина</p>
-                    <p className="mt-1 text-sm font-semibold leading-snug">{card.distanceKm} км</p>
-                  </div>
-                )}
                 {card.elevationGain != null && (
                   <div className="flex min-h-[148px] flex-col items-center justify-center rounded-2xl border border-border/60 bg-muted/30 px-4 py-5 text-center">
                     <TrendingUp className="h-6 w-6 shrink-0 text-primary" />
