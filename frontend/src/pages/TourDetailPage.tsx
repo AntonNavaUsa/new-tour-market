@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { MapPin, Clock, Users, Calendar, ChevronLeft, ChevronRight, X, Check, Ruler, TrendingUp, Baby, Navigation, Star } from 'lucide-react';
+import { MapPin, Clock, Users, Calendar, ChevronLeft, ChevronRight, X, Check, Ruler, TrendingUp, Baby, Navigation, Star, Activity } from 'lucide-react';
 import CardTypeIcon from '../components/CardTypeIcon';
 import { cardsApi, reviewsApi } from '../lib/api';
 import { Button } from '../components/ui/button';
@@ -169,6 +169,15 @@ function getDateLabel(dateStr: string): { label: string; dayName: string } {
   }
   
   return { label: dayName, dayName };
+}
+
+function getDifficultyLabel(difficulty?: string | null): string {
+  switch (difficulty) {
+    case 'EASY': return 'Простая';
+    case 'MEDIUM': return 'Средняя';
+    case 'ABOVE_MEDIUM': return 'Выше средней';
+    default: return '';
+  }
 }
 
 function stripEmoji(str: string): string {
@@ -350,16 +359,16 @@ export function TourDetailPage() {
               <MapPin className="h-3.5 w-3.5 shrink-0" />
               <span>{locationLabel}</span>
             </div>
-            {(card.durationFrom || card.durationTo) && (
+            {card.difficulty && (
               <div className="flex items-center gap-1.5 bg-white/15 backdrop-blur-sm border border-white/20 text-white px-3 py-1.5 rounded-full text-xs">
-                <Clock className="h-3.5 w-3.5 shrink-0" />
-                <span>{formatDurationRange(card.durationFrom, card.durationTo)}</span>
+                <Activity className="h-3.5 w-3.5 shrink-0" />
+                <span>{getDifficultyLabel(card.difficulty)}</span>
               </div>
             )}
-            {card.maxParticipants && (
+            {card.distanceKm != null && (
               <div className="flex items-center gap-1.5 bg-white/15 backdrop-blur-sm border border-white/20 text-white px-3 py-1.5 rounded-full text-xs">
-                <Users className="h-3.5 w-3.5 shrink-0" />
-                <span>До {card.maxParticipants} чел.</span>
+                <Ruler className="h-3.5 w-3.5 shrink-0" />
+                <span>{card.distanceKm} км</span>
               </div>
             )}
           </div>
@@ -415,16 +424,16 @@ export function TourDetailPage() {
               <MapPin className="h-4 w-4 shrink-0" />
               <span>{locationLabel}</span>
             </div>
-            {(card.durationFrom || card.durationTo) && (
+            {card.difficulty && (
               <div className="flex items-center gap-1.5 bg-white/15 backdrop-blur-sm border border-white/20 text-white px-3 py-1.5 rounded-full text-sm">
-                <Clock className="h-4 w-4 shrink-0" />
-                <span>{formatDurationRange(card.durationFrom, card.durationTo)}</span>
+                <Activity className="h-4 w-4 shrink-0" />
+                <span>{getDifficultyLabel(card.difficulty)}</span>
               </div>
             )}
-            {card.maxParticipants && (
+            {card.distanceKm != null && (
               <div className="flex items-center gap-1.5 bg-white/15 backdrop-blur-sm border border-white/20 text-white px-3 py-1.5 rounded-full text-sm">
-                <Users className="h-4 w-4 shrink-0" />
-                <span>До {card.maxParticipants} чел.</span>
+                <Ruler className="h-4 w-4 shrink-0" />
+                <span>{card.distanceKm} км</span>
               </div>
             )}
           </div>
@@ -533,6 +542,30 @@ export function TourDetailPage() {
             ))}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* noCover: badges row under photo gallery */}
+      {card.noCover && (card.location || card.difficulty || card.distanceKm != null) && (
+        <div className="mb-6 flex flex-wrap gap-2">
+          {card.location && (
+            <div className="flex items-center gap-1.5 bg-muted border border-border text-foreground px-3 py-1.5 rounded-full text-sm">
+              <MapPin className="h-3.5 w-3.5 shrink-0 text-primary" />
+              <span>{locationLabel}</span>
+            </div>
+          )}
+          {card.difficulty && (
+            <div className="flex items-center gap-1.5 bg-muted border border-border text-foreground px-3 py-1.5 rounded-full text-sm">
+              <Activity className="h-3.5 w-3.5 shrink-0 text-primary" />
+              <span>{getDifficultyLabel(card.difficulty)}</span>
+            </div>
+          )}
+          {card.distanceKm != null && (
+            <div className="flex items-center gap-1.5 bg-muted border border-border text-foreground px-3 py-1.5 rounded-full text-sm">
+              <Ruler className="h-3.5 w-3.5 shrink-0 text-primary" />
+              <span>{card.distanceKm} км</span>
+            </div>
+          )}
         </div>
       )}
 

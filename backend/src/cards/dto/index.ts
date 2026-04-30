@@ -70,6 +70,11 @@ export class CreateCardDto {
   @Min(0)
   elevationGain?: number;
 
+  @ApiProperty({ required: false, enum: ['EASY', 'MEDIUM', 'ABOVE_MEDIUM'] })
+  @IsOptional()
+  @IsString()
+  difficulty?: string;
+
   @ApiProperty({ required: false })
   @IsOptional()
   @IsBoolean()

@@ -40,6 +40,7 @@ const formSchema = z.object({
   durationTo: z.string().optional(),
   distanceKm: z.string().optional(),
   elevationGain: z.string().optional(),
+  difficulty: z.string().optional(),
   childFriendly: z.string().optional(),
   meetingPoint: z.string().optional(),
   minParticipants: z.string().optional(),
@@ -1376,6 +1377,7 @@ export function AdminCardFormPage() {
       durationTo: '',
       distanceKm: '',
       elevationGain: '',
+      difficulty: '',
       childFriendly: '',
       meetingPoint: '',
       minParticipants: '',
@@ -1398,6 +1400,7 @@ export function AdminCardFormPage() {
       durationTo: card.durationTo?.toString() || '',
       distanceKm: card.distanceKm?.toString() || '',
       elevationGain: card.elevationGain?.toString() || '',
+      difficulty: card.difficulty || '',
       childFriendly: card.childFriendly === true ? 'yes' : card.childFriendly === false ? 'no' : '',
       meetingPoint: card.meetingPoint || '',
       minParticipants: card.minParticipants?.toString() || '',
@@ -1445,6 +1448,7 @@ export function AdminCardFormPage() {
       durationTo: toOptionalNumber(values.durationTo),
       distanceKm: toOptionalNumber(values.distanceKm),
       elevationGain: toOptionalNumber(values.elevationGain),
+      difficulty: values.difficulty || undefined,
       childFriendly: values.childFriendly === 'yes' ? true : values.childFriendly === 'no' ? false : undefined,
       meetingPoint: values.meetingPoint || undefined,
       minParticipants: toOptionalNumber(values.minParticipants),
@@ -1608,6 +1612,15 @@ export function AdminCardFormPage() {
                   <div className="space-y-2">
                     <Label htmlFor="elevationGain">Набор высоты, м</Label>
                     <Input id="elevationGain" type="number" min="0" placeholder="350" {...register('elevationGain')} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="difficulty">Сложность</Label>
+                    <select id="difficulty" className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" {...register('difficulty')}>
+                      <option value="">Не указано</option>
+                      <option value="EASY">Простая</option>
+                      <option value="MEDIUM">Средняя</option>
+                      <option value="ABOVE_MEDIUM">Выше средней</option>
+                    </select>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="childFriendly">Можно с детьми</Label>
