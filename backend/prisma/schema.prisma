@@ -173,6 +173,7 @@ model Card {
   distanceKm      Float?      @map("distance_km")   // Route distance in km
   elevationGain   Int?        @map("elevation_gain") // Elevation gain in meters
   difficulty      String?     @map("difficulty")     // EASY | MEDIUM | ABOVE_MEDIUM
+  placeHistory    String?     @db.Text @map("place_history") // History of the place
   childFriendly   Boolean?    @map("child_friendly") // Suitable for children
   meetingPoint    String?     @map("meeting_point")  // Meeting point description
   minParticipants Int?        @map("min_participants")

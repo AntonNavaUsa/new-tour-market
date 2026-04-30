@@ -180,6 +180,34 @@ function getDifficultyLabel(difficulty?: string | null): string {
   }
 }
 
+function renderDescriptionWithPullQuote(html: string, placeHistory?: string | null) {
+  if (!placeHistory) {
+    return <div className="text-muted-foreground" dangerouslySetInnerHTML={{ __html: html }} />;
+  }
+  let count = 0;
+  let splitIndex = -1;
+  let pos = 0;
+  while (pos < html.length) {
+    const idx = html.indexOf('</p>', pos);
+    if (idx === -1) break;
+    count++;
+    if (count === 2) { splitIndex = idx + 4; break; }
+    pos = idx + 4;
+  }
+  const before = splitIndex !== -1 ? html.slice(0, splitIndex) : html;
+  const after = splitIndex !== -1 ? html.slice(splitIndex) : '';
+  return (
+    <>
+      <div className="text-muted-foreground" dangerouslySetInnerHTML={{ __html: before }} />
+      <div className="my-6 rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-800/50 dark:bg-amber-950/20 px-5 py-4">
+        <p className="text-xs font-semibold uppercase tracking-widest text-amber-700 dark:text-amber-400 mb-2">История места</p>
+        <p className="text-base leading-relaxed text-foreground italic">{placeHistory}</p>
+      </div>
+      {after && <div className="text-muted-foreground" dangerouslySetInnerHTML={{ __html: after }} />}
+    </>
+  );
+}
+
 function stripEmoji(str: string): string {
   return str.replace(/\p{Emoji_Presentation}|\p{Extended_Pictographic}/gu, '').replace(/\s{2,}/g, ' ').trim();
 }
@@ -618,10 +646,7 @@ export function TourDetailPage() {
           {/* Description */}
           <div className="prose max-w-none">
             <h2 className="text-xl font-semibold mb-3">Описание</h2>
-            <div
-              className="text-muted-foreground"
-              dangerouslySetInnerHTML={{ __html: card.description }}
-            />
+            {renderDescriptionWithPullQuote(card.description, card.placeHistory)}
           </div>
 
           {/* Included / Not Included */}

@@ -41,6 +41,7 @@ const formSchema = z.object({
   distanceKm: z.string().optional(),
   elevationGain: z.string().optional(),
   difficulty: z.string().optional(),
+  placeHistory: z.string().optional(),
   childFriendly: z.string().optional(),
   meetingPoint: z.string().optional(),
   minParticipants: z.string().optional(),
@@ -1378,6 +1379,7 @@ export function AdminCardFormPage() {
       distanceKm: '',
       elevationGain: '',
       difficulty: '',
+      placeHistory: '',
       childFriendly: '',
       meetingPoint: '',
       minParticipants: '',
@@ -1401,6 +1403,7 @@ export function AdminCardFormPage() {
       distanceKm: card.distanceKm?.toString() || '',
       elevationGain: card.elevationGain?.toString() || '',
       difficulty: card.difficulty || '',
+      placeHistory: card.placeHistory || '',
       childFriendly: card.childFriendly === true ? 'yes' : card.childFriendly === false ? 'no' : '',
       meetingPoint: card.meetingPoint || '',
       minParticipants: card.minParticipants?.toString() || '',
@@ -1449,6 +1452,7 @@ export function AdminCardFormPage() {
       distanceKm: toOptionalNumber(values.distanceKm),
       elevationGain: toOptionalNumber(values.elevationGain),
       difficulty: values.difficulty || undefined,
+      placeHistory: values.placeHistory || undefined,
       childFriendly: values.childFriendly === 'yes' ? true : values.childFriendly === 'no' ? false : undefined,
       meetingPoint: values.meetingPoint || undefined,
       minParticipants: toOptionalNumber(values.minParticipants),
@@ -1646,6 +1650,22 @@ export function AdminCardFormPage() {
                       Описание должно содержать не менее 20 символов
                     </p>
                   )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>История места</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="mb-3 text-sm text-muted-foreground">Необязательный блок — выводится как pull-quote после второго абзаца описания на странице тура.</p>
+                  <textarea
+                    id="placeHistory"
+                    rows={5}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-y"
+                    placeholder="Расскажите историю этого места..."
+                    {...register('placeHistory')}
+                  />
                 </CardContent>
               </Card>
 

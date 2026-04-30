@@ -77,6 +77,11 @@ export class CreateCardDto {
 
   @ApiProperty({ required: false })
   @IsOptional()
+  @IsString()
+  placeHistory?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
   @IsBoolean()
   childFriendly?: boolean;
 

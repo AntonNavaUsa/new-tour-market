@@ -116,6 +116,7 @@ export interface Card {
   distanceKm: number | null;
   elevationGain: number | null;
   difficulty: string | null;
+  placeHistory: string | null;
   childFriendly: boolean | null;
   meetingPoint: string | null;
   minParticipants: number | null;
@@ -284,6 +285,7 @@ export interface CreateCardRequest {
   distanceKm?: number;
   elevationGain?: number;
   difficulty?: string;
+  placeHistory?: string;
   childFriendly?: boolean;
   meetingPoint?: string;
   minParticipants?: number;

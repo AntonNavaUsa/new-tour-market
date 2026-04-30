@@ -63,6 +63,7 @@ export class CardsService {
         distanceKm: dto.distanceKm,
         elevationGain: dto.elevationGain,
         difficulty: dto.difficulty,
+        placeHistory: dto.placeHistory,
         childFriendly: dto.childFriendly,
         meetingPoint: dto.meetingPoint,
         minParticipants: dto.minParticipants,
