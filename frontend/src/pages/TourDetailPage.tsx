@@ -297,8 +297,8 @@ export function TourDetailPage() {
     {/* ─── Hero Cover ─── */}
     {card.noCover ? (
       /* No-cover variant: simple page header */
-      <div className="border-b bg-background">
-        <div className="container py-4">
+      <div className="bg-background">
+        <div className="container py-6 md:py-8">
           <div className="max-w-6xl mx-auto">
             <nav className="flex items-center gap-1.5 text-sm text-muted-foreground mb-3">
               <Link to="/" className="hover:text-foreground transition">Главная</Link>
@@ -307,10 +307,7 @@ export function TourDetailPage() {
               <ChevronRight className="h-3.5 w-3.5 shrink-0" />
               <span className="text-foreground truncate">{stripEmoji(card.title)}</span>
             </nav>
-            <h1 className="text-2xl md:text-3xl font-bold leading-tight">{stripEmoji(card.title)}</h1>
-            {card.shortDescription && (
-              <p className="mt-2 text-muted-foreground leading-relaxed max-w-2xl">{card.shortDescription}</p>
-            )}
+            <h1 className="mt-4 text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">{stripEmoji(card.title)}</h1>
           </div>
         </div>
       </div>
@@ -444,7 +441,7 @@ export function TourDetailPage() {
       </>
     )}
 
-    <div className="container py-6 md:py-12 pb-24 lg:pb-12 overflow-hidden">
+    <div className="container py-6 md:py-12 pb-24 lg:pb-12">
       <div className="max-w-6xl mx-auto">
 
       {/* Photo Gallery */}
@@ -539,11 +536,33 @@ export function TourDetailPage() {
         </div>
       )}
 
+      
       {/* Two-column content */}
       <div className="grid lg:grid-cols-3 gap-6 lg:gap-10 items-start">
 
         {/* LEFT — description, meta, expression photos */}
         <div className="lg:col-span-2 space-y-8 order-last lg:order-none">
+
+      {card.noCover && card.shortDescription && (
+        <div className="mb-10 max-w-3xl rounded-2xl border border-primary/20 bg-primary/5 px-5 py-4 shadow-sm">
+          <p className="text-base md:text-lg font-medium text-foreground leading-relaxed">{card.shortDescription}</p>
+        </div>
+      )}
+
+          {/* For whom */}
+          {card.forWhom && card.forWhom.length > 0 && (
+            <div>
+              <h2 className="text-xl font-semibold mb-3">Для кого</h2>
+              <ul className="space-y-2">
+                {card.forWhom.map((item, index) => (
+                  <li key={index} className="flex items-start gap-2 text-muted-foreground">
+                    <Check className="h-4 w-4 shrink-0 text-primary mt-0.5" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           {/* Description */}
           <div className="prose max-w-none">
@@ -592,76 +611,61 @@ export function TourDetailPage() {
           {/* Parameters block */}
           {(card.location || card.durationFrom || card.durationTo || card.distanceKm || card.elevationGain || card.childFriendly != null || card.meetingPoint || card.cardType) && (
             <div>
-              <h2 className="text-xl font-semibold mb-4">Параметры</h2>
-              <div className="divide-y divide-border">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                 {card.location && (
-                  <div className="flex items-center gap-3 py-3">
-                    <MapPin className="h-4 w-4 shrink-0 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground w-32 shrink-0">Локация</span>
-                    <span className="text-sm font-medium">{locationLabel}</span>
+                  <div className="flex min-h-[148px] flex-col items-center justify-center rounded-2xl border border-border/60 bg-muted/30 px-4 py-5 text-center">
+                    <MapPin className="h-6 w-6 shrink-0 text-primary" />
+                    <p className="mt-3 text-xs uppercase tracking-wide text-muted-foreground">Локация</p>
+                    <p className="mt-1 text-sm font-semibold leading-snug">{locationLabel}</p>
                   </div>
                 )}
                 {(card.durationFrom || card.durationTo) && (
-                  <div className="flex items-center gap-3 py-3">
-                    <Clock className="h-4 w-4 shrink-0 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground w-32 shrink-0">Длительность</span>
-                    <span className="text-sm font-medium">{formatDurationRange(card.durationFrom, card.durationTo)}</span>
+                  <div className="flex min-h-[148px] flex-col items-center justify-center rounded-2xl border border-border/60 bg-muted/30 px-4 py-5 text-center">
+                    <Clock className="h-6 w-6 shrink-0 text-primary" />
+                    <p className="mt-3 text-xs uppercase tracking-wide text-muted-foreground">Длительность</p>
+                    <p className="mt-1 text-sm font-semibold leading-snug">{formatDurationRange(card.durationFrom, card.durationTo)}</p>
                   </div>
                 )}
                 {card.distanceKm != null && (
-                  <div className="flex items-center gap-3 py-3">
-                    <Ruler className="h-4 w-4 shrink-0 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground w-32 shrink-0">Длина</span>
-                    <span className="text-sm font-medium">{card.distanceKm} км</span>
+                  <div className="flex min-h-[148px] flex-col items-center justify-center rounded-2xl border border-border/60 bg-muted/30 px-4 py-5 text-center">
+                    <Ruler className="h-6 w-6 shrink-0 text-primary" />
+                    <p className="mt-3 text-xs uppercase tracking-wide text-muted-foreground">Длина</p>
+                    <p className="mt-1 text-sm font-semibold leading-snug">{card.distanceKm} км</p>
                   </div>
                 )}
                 {card.elevationGain != null && (
-                  <div className="flex items-center gap-3 py-3">
-                    <TrendingUp className="h-4 w-4 shrink-0 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground w-32 shrink-0">Набор высоты</span>
-                    <span className="text-sm font-medium">{card.elevationGain} м</span>
+                  <div className="flex min-h-[148px] flex-col items-center justify-center rounded-2xl border border-border/60 bg-muted/30 px-4 py-5 text-center">
+                    <TrendingUp className="h-6 w-6 shrink-0 text-primary" />
+                    <p className="mt-3 text-xs uppercase tracking-wide text-muted-foreground">Набор высоты</p>
+                    <p className="mt-1 text-sm font-semibold leading-snug">{card.elevationGain} м</p>
                   </div>
                 )}
                 {card.childFriendly != null && (
-                  <div className="flex items-center gap-3 py-3">
-                    <Baby className="h-4 w-4 shrink-0 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground w-32 shrink-0">Можно с детьми</span>
-                    <span className="text-sm font-medium">{card.childFriendly ? 'Да' : 'Нет'}</span>
+                  <div className="flex min-h-[148px] flex-col items-center justify-center rounded-2xl border border-border/60 bg-muted/30 px-4 py-5 text-center">
+                    <Baby className="h-6 w-6 shrink-0 text-primary" />
+                    <p className="mt-3 text-xs uppercase tracking-wide text-muted-foreground">Можно с детьми</p>
+                    <p className="mt-1 text-sm font-semibold leading-snug">{card.childFriendly ? 'Да' : 'Нет'}</p>
                   </div>
                 )}
                 {card.cardType && (
-                  <div className="flex items-center gap-3 py-3">
-                    <CardTypeIcon icon={card.cardType.icon} className="h-4 w-4 shrink-0 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground w-32 shrink-0">Тип тура</span>
-                    <span className="text-sm font-medium">{card.cardType.name}</span>
+                  <div className="flex min-h-[148px] flex-col items-center justify-center rounded-2xl border border-border/60 bg-muted/30 px-4 py-5 text-center">
+                    <CardTypeIcon icon={card.cardType.icon} className="h-6 w-6 shrink-0 text-primary" />
+                    <p className="mt-3 text-xs uppercase tracking-wide text-muted-foreground">Тип тура</p>
+                    <p className="mt-1 text-sm font-semibold leading-snug">{card.cardType.name}</p>
                   </div>
                 )}
                 {card.meetingPoint && (
-                  <div className="flex items-start gap-3 py-3">
-                    <Navigation className="h-4 w-4 shrink-0 text-muted-foreground mt-0.5" />
-                    <span className="text-sm text-muted-foreground w-32 shrink-0">Место встречи</span>
-                    <span className="text-sm font-medium">{card.meetingPoint}</span>
+                  <div className="flex min-h-[148px] flex-col items-center justify-center rounded-2xl border border-border/60 bg-muted/30 px-4 py-5 text-center sm:col-span-2 lg:col-span-2 xl:col-span-1">
+                    <Navigation className="h-6 w-6 shrink-0 text-primary" />
+                    <p className="mt-3 text-xs uppercase tracking-wide text-muted-foreground">Место встречи</p>
+                    <p className="mt-1 text-sm font-semibold leading-snug">{card.meetingPoint}</p>
                   </div>
                 )}
               </div>
             </div>
           )}
 
-          {/* For whom */}
-          {card.forWhom && card.forWhom.length > 0 && (
-            <div>
-              <h2 className="text-xl font-semibold mb-3">Для кого</h2>
-              <ul className="space-y-2">
-                {card.forWhom.map((item, index) => (
-                  <li key={index} className="flex items-start gap-2 text-muted-foreground">
-                    <Check className="h-4 w-4 shrink-0 text-primary mt-0.5" />
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
+          
           {/* Expression Photos */}
           {card.expressions && card.expressions.length > 0 && (
             <div>
@@ -751,8 +755,8 @@ export function TourDetailPage() {
         </div>
 
         {/* RIGHT — price, schedule, booking */}
-        <div className="lg:col-span-1 order-first lg:order-none" id="booking-panel">
-          <div className="sticky top-6 space-y-6 rounded-xl border bg-card p-4 md:p-6 shadow-sm">
+        <div className="lg:col-span-1 order-first lg:order-none lg:self-start" id="booking-panel">
+          <div className="space-y-6 rounded-xl border bg-card p-4 md:p-6 shadow-sm lg:sticky lg:top-16">
 
             {/* Price */}
             <div>
