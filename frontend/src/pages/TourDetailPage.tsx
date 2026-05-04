@@ -235,6 +235,7 @@ export function TourDetailPage() {
   const [calendarMonthIndex, setCalendarMonthIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [faqOpen, setFaqOpen] = useState<number | null>(0);
 
   const { data: card, isLoading } = useQuery({
     queryKey: ['card', id],
@@ -765,6 +766,60 @@ export function TourDetailPage() {
             </div>
           )}
 
+          {/* FAQ */}
+          {(() => {
+            const faqs = [
+              {
+                q: 'Нужна ли специальная физическая подготовка?',
+                a: 'Базовый уровень физической активности достаточен для большинства наших туров. Сложность конкретного маршрута указана в описании (уровень подготовки и набор высоты). Если у вас есть сомнения — уточните у гида перед бронированием.',
+              },
+              {
+                q: 'Что нужно взять с собой из снаряжения?',
+                a: 'Список необходимого снаряжения зависит от тура. Как правило, достаточно удобной одежды по погоде, трекинговой обуви и воды. Специализированное снаряжение (каски, страховки и пр.) предоставляется гидом — это указано в блоке «Включено».',
+              },
+              {
+                q: 'Что будет, если погода испортится?',
+                a: 'Мы следим за прогнозом и уведомляем вас заранее. При опасных погодных условиях тур переносится на ближайшую доступную дату или предоставляется полный возврат средств — по вашему выбору.',
+              },
+              {
+                q: 'Можно ли ехать с детьми?',
+                a: 'Возможность участия с детьми указана в параметрах тура. Если тур помечен как «Можно с детьми» — минимальный возраст и ограничения уточняются у гида. Для детей действуют специальные цены.',
+              },
+              {
+                q: 'Как отменить или перенести бронирование?',
+                a: 'Вы можете отменить бронирование в любое время до начала тура и получить полный возврат без каких-либо условий. Перенос на другую дату также возможен — просто свяжитесь с нами через форму обратной связи или по телефону.',
+              },
+            ];
+            return (
+              <div>
+                <h2 className="text-xl font-semibold mb-4">Частые вопросы</h2>
+                <div className="divide-y divide-border rounded-xl border border-border overflow-hidden">
+                  {faqs.map((item, idx) => (
+                    <div key={idx}>
+                      <button
+                        onClick={() => setFaqOpen(faqOpen === idx ? null : idx)}
+                        className="w-full flex items-center justify-between gap-4 px-5 py-4 text-left hover:bg-muted/40 transition-colors"
+                        aria-expanded={faqOpen === idx}
+                      >
+                        <span className="font-medium text-sm md:text-base">{item.q}</span>
+                        <ChevronRight
+                          className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 ${
+                            faqOpen === idx ? 'rotate-90' : ''
+                          }`}
+                        />
+                      </button>
+                      {faqOpen === idx && (
+                        <div className="px-5 pb-4 text-sm text-muted-foreground leading-relaxed">
+                          {item.a}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
+
           {/* Reviews */}
           {reviews.length > 0 && (
             <div>
@@ -1010,16 +1065,29 @@ export function TourDetailPage() {
 
             <Button
               size="lg"
-              className="w-full"
-              disabled={!selectedSlot}
+              className="w-full bg-amber-500 hover:bg-amber-400 text-white font-semibold"
               onClick={() => {
                 if (selectedSlot) {
                   navigate(`/booking/${card.id}?date=${selectedSlot.date}&time=${selectedSlot.time}`);
+                } else {
+                  document.getElementById('booking-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
               }}
             >
-              {selectedSlot ? 'Забронировать' : 'Выберите дату'}
+              {selectedSlot ? 'Забронировать' : 'Выбрать дату'}
             </Button>
+
+            {/* Payment & refund conditions */}
+            <div className="mt-3 rounded-lg bg-muted/40 border border-border/60 px-4 py-3 space-y-2 text-xs text-muted-foreground">
+              <div className="flex items-start gap-2">
+                <Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-green-500" />
+                <span>Предоплата <strong className="text-foreground">20%</strong> при бронировании, остаток — на месте</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-green-500" />
+                <span>Полный возврат в любой момент без условий</span>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -1039,8 +1107,7 @@ export function TourDetailPage() {
       </div>
       <Button
         size="lg"
-        className="shrink-0 px-6"
-        disabled={!selectedSlot}
+        className="shrink-0 px-6 bg-amber-500 hover:bg-amber-400 text-white font-semibold"
         onClick={() => {
           if (selectedSlot) {
             navigate(`/booking/${card.id}?date=${selectedSlot.date}&time=${selectedSlot.time}`);

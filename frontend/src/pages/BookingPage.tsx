@@ -70,6 +70,10 @@ export function BookingPage() {
   });
 
   useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  useEffect(() => {
     if (user) {
       setValue('customerName', user.name);
       setValue('customerEmail', user.email);
