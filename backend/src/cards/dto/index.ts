@@ -130,6 +130,11 @@ export class CreateCardDto {
   @IsOptional()
   @IsBoolean()
   noCover?: boolean;
+
+  @ApiProperty({ required: false, type: 'array', description: 'Tour program by days [{title, description}]' })
+  @IsOptional()
+  @IsArray()
+  tourProgram?: Array<{ title: string; description: string }>;
 }
 
 export class UpdateCardDto extends PartialType(CreateCardDto) {

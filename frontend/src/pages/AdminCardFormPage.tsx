@@ -14,6 +14,7 @@ import {
   MoveUp,
   MoveDown,
   Upload,
+  GripVertical,
 } from 'lucide-react';
 import { cardsApi, metaApi, ticketsApi, schedulesApi } from '../lib/api';
 import { handleApiError } from '../lib/axios';
@@ -56,6 +57,87 @@ function toOptionalNumber(value?: string) {
   if (!value || value.trim() === '') return undefined;
   const parsed = Number(value);
   return Number.isNaN(parsed) ? undefined : parsed;
+}
+
+// ─────────────────────────────────────────────────────────────
+// TourProgramSection — program by days (only for cardType slug='tour')
+// ─────────────────────────────────────────────────────────────
+interface TourDay {
+  title: string;
+  description: string;
+}
+
+function TourProgramSection({
+  days,
+  onChange,
+}: {
+  days: TourDay[];
+  onChange: (days: TourDay[]) => void;
+}) {
+  const updateDay = (index: number, field: keyof TourDay, value: string) => {
+    onChange(days.map((d, i) => (i === index ? { ...d, [field]: value } : d)));
+  };
+
+  const removeDay = (index: number) => {
+    onChange(days.filter((_, i) => i !== index));
+  };
+
+  const addDay = () => {
+    onChange([...days, { title: `День ${days.length + 1}`, description: '' }]);
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Программа по дням</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {days.map((day, index) => (
+          <div key={index} className="rounded-md border border-input bg-background p-4 space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+                <GripVertical className="h-4 w-4" />
+                День {index + 1}
+              </div>
+              {days.length > 1 && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2 text-destructive hover:text-destructive"
+                  onClick={() => removeDay(index)}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              )}
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Заголовок дня</Label>
+              <Input
+                value={day.title}
+                onChange={(e) => updateDay(index, 'title', e.target.value)}
+                placeholder="Например: Заезд и знакомство"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Описание</Label>
+              <textarea
+                rows={3}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-y"
+                value={day.description}
+                onChange={(e) => updateDay(index, 'description', e.target.value)}
+                placeholder="Что запланировано на этот день..."
+              />
+            </div>
+          </div>
+        ))}
+        <Button type="button" variant="outline" size="sm" onClick={addDay}>
+          <Plus className="mr-2 h-3.5 w-3.5" />
+          Добавить день
+        </Button>
+      </CardContent>
+    </Card>
+  );
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -1341,6 +1423,9 @@ export function AdminCardFormPage() {
   const [includedItems, setIncludedItems] = useState<string[]>([]);
   const [notIncludedItems, setNotIncludedItems] = useState<string[]>([]);
   const [forWhom, setForWhom] = useState<string[]>([]);
+  const [tourProgram, setTourProgram] = useState<Array<{ title: string; description: string }>>([
+    { title: 'День 1', description: '' },
+  ]);
 
   const { data: locations = [] } = useQuery({
     queryKey: ['meta-locations'],
@@ -1364,6 +1449,7 @@ export function AdminCardFormPage() {
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -1416,6 +1502,12 @@ export function AdminCardFormPage() {
     setIncludedItems((card.includedItems as string[] | null) || []);
     setNotIncludedItems((card.notIncludedItems as string[] | null) || []);
     setForWhom((card.forWhom as string[] | null) || []);
+    const loadedProgram = card.tourProgram as Array<{ title: string; description: string }> | null;
+    setTourProgram(
+      loadedProgram && loadedProgram.length > 0
+        ? loadedProgram
+        : [{ title: 'День 1', description: '' }]
+    );
   }, [card, reset]);
 
   const createMutation = useMutation({
@@ -1462,6 +1554,7 @@ export function AdminCardFormPage() {
       notIncludedItems,
       forWhom,
       noCover,
+      tourProgram,
     };
     if (isEditMode && id) {
       await updateMutation.mutateAsync({ cardId: id, payload: { ...payloadBase, status: values.status } });
@@ -1471,6 +1564,10 @@ export function AdminCardFormPage() {
   };
 
   const isSaving = isSubmitting || createMutation.isPending || updateMutation.isPending;
+
+  // Determine if selected card type is 'tour'
+  const watchedCardTypeId = watch('cardTypeId');
+  const isTourType = cardTypes.some((ct) => ct.id === watchedCardTypeId && ct.slug === 'tour');
 
   return (
     <div className="container py-10">
@@ -1677,6 +1774,10 @@ export function AdminCardFormPage() {
                   <EditableList title="❌ Не включено" items={notIncludedItems} onChange={setNotIncludedItems} />
                 </CardContent>
               </Card>
+
+              {isTourType && (
+                <TourProgramSection days={tourProgram} onChange={setTourProgram} />
+              )}
 
               <div className="flex justify-end">
                 <Button type="submit" disabled={isSaving} size="lg">

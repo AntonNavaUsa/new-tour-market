@@ -63,4 +63,18 @@ export const metaApi = {
   deleteTariffType: async (id: string): Promise<void> => {
     await api.delete(`/api/admin/tariff-types/${id}`);
   },
+
+  getSiteSettings: async (): Promise<Record<string, string>> => {
+    const response = await api.get<Record<string, string>>('/api/meta/site-settings');
+    return response.data;
+  },
+
+  uploadHeroCover: async (file: File): Promise<{ url: string }> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await api.post<{ url: string }>('/api/admin/settings/hero-cover', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
 };

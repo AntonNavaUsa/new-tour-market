@@ -182,7 +182,7 @@ function getDifficultyLabel(difficulty?: string | null): string {
 
 function renderDescriptionWithPullQuote(html: string, placeHistory?: string | null) {
   if (!placeHistory) {
-    return <div className="text-muted-foreground" dangerouslySetInnerHTML={{ __html: html }} />;
+    return <div className="text-foreground" dangerouslySetInnerHTML={{ __html: html }} />;
   }
   let count = 0;
   let splitIndex = -1;
@@ -198,12 +198,12 @@ function renderDescriptionWithPullQuote(html: string, placeHistory?: string | nu
   const after = splitIndex !== -1 ? html.slice(splitIndex) : '';
   return (
     <>
-      <div className="text-muted-foreground" dangerouslySetInnerHTML={{ __html: before }} />
+      <div className="text-foreground" dangerouslySetInnerHTML={{ __html: before }} />
       <div className="my-6 rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-800/50 dark:bg-amber-950/20 px-5 py-4">
         <p className="text-xs font-semibold uppercase tracking-widest text-amber-700 dark:text-amber-400 mb-2">История места</p>
         <p className="text-base leading-relaxed text-foreground italic">{placeHistory}</p>
       </div>
-      {after && <div className="text-muted-foreground" dangerouslySetInnerHTML={{ __html: after }} />}
+      {after && <div className="text-foreground" dangerouslySetInnerHTML={{ __html: after }} />}
     </>
   );
 }
@@ -650,6 +650,36 @@ export function TourDetailPage() {
             {renderDescriptionWithPullQuote(card.description, card.placeHistory)}
           </div>
 
+          {/* Tour Program by days */}
+          {card.tourProgram && Array.isArray(card.tourProgram) && card.tourProgram.length > 0 && (
+            <div>
+              <h2 className="text-xl font-semibold mb-4">Программа тура</h2>
+              <div className="space-y-0 rounded-xl border border-border overflow-hidden">
+                {(card.tourProgram as Array<{ title: string; description: string }>).map((day, index) => (
+                  <div
+                    key={index}
+                    className="flex gap-0 border-b border-border last:border-b-0"
+                  >
+                    {/* Day badge */}
+                    <div className="flex flex-col items-center shrink-0 w-14 bg-primary/5 border-r border-border px-2 py-4">
+                      <span className="text-xs font-semibold text-primary uppercase tracking-wide leading-none">День</span>
+                      <span className="text-2xl font-bold text-primary mt-1 leading-none">{index + 1}</span>
+                    </div>
+                    {/* Content */}
+                    <div className="flex-1 min-w-0 px-4 py-4">
+                      <p className="font-semibold text-foreground text-sm md:text-base leading-snug mb-1">
+                        {day.title}
+                      </p>
+                      {day.description && (
+                        <p className="text-sm text-foreground leading-relaxed">{day.description}</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Included / Not Included */}
           {((card.includedItems && card.includedItems.length > 0) || (card.notIncludedItems && card.notIncludedItems.length > 0)) && (
             <div>
@@ -660,7 +690,7 @@ export function TourDetailPage() {
                     <p className="text-sm font-medium text-green-700 dark:text-green-400 mb-2">Включено</p>
                     <ul className="space-y-1.5">
                       {card.includedItems.map((item, index) => (
-                        <li key={index} className="flex items-start gap-2 text-sm text-muted-foreground">
+                        <li key={index} className="flex items-start gap-2 text-sm text-foreground">
                           <Check className="h-4 w-4 shrink-0 text-green-500 mt-0.5" />
                           <span>{item}</span>
                         </li>
@@ -673,7 +703,7 @@ export function TourDetailPage() {
                     <p className="text-sm font-medium text-red-600 dark:text-red-400 mb-2">Не включено</p>
                     <ul className="space-y-1.5">
                       {card.notIncludedItems.map((item, index) => (
-                        <li key={index} className="flex items-start gap-2 text-sm text-muted-foreground">
+                        <li key={index} className="flex items-start gap-2 text-sm text-foreground">
                           <X className="h-4 w-4 shrink-0 text-red-400 mt-0.5" />
                           <span>{item}</span>
                         </li>
@@ -809,7 +839,7 @@ export function TourDetailPage() {
                         />
                       </button>
                       {faqOpen === idx && (
-                        <div className="px-5 pb-4 text-sm text-muted-foreground leading-relaxed">
+                        <div className="px-5 pb-4 text-sm text-foreground leading-relaxed">
                           {item.a}
                         </div>
                       )}

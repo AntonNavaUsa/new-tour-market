@@ -164,6 +164,7 @@ model Card {
   includedItems   Json?       @map("included_items")     // Array of included items
   notIncludedItems Json?      @map("not_included_items") // Array of not included items
   forWhom         Json?       @map("for_whom")           // Array of target audience items
+  tourProgram     Json?       @map("tour_program")       // Array of {title, description} per day
   
   status          CardStatus  @default(DRAFT)
   position        Int         @default(0) // For sorting in lists
@@ -429,4 +430,14 @@ model Review {
   @@index([cardId])
   @@index([isVisible])
   @@map("reviews")
+}
+
+model SiteSettings {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String   @db.Text
+
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("site_settings")
 }

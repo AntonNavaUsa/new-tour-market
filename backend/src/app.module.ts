@@ -10,6 +10,7 @@ import { OrdersModule } from './orders/orders.module';
 import { PaymentsModule } from './payments/payments.module';
 import { GuidesModule } from './guides/guides.module';
 import { ReviewsModule } from './reviews/reviews.module';
+import { FilesModule } from './files/files.module';
 import { AppController } from './app.controller';
 
 @Module({
@@ -40,6 +41,7 @@ import { AppController } from './app.controller';
     PaymentsModule,
     GuidesModule,
     ReviewsModule,
+    FilesModule,
   ],
   controllers: [AppController],
 })

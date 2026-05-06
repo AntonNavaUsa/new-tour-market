@@ -131,6 +131,7 @@ export interface Card {
   slideshowPhotos?: SlideshowPhoto[];
   expressions?: Expression[];
   schedules?: Schedule[];
+  tourProgram?: Array<{ title: string; description: string }> | null;
 }
 
 export interface Ticket {
@@ -295,6 +296,7 @@ export interface CreateCardRequest {
   notIncludedItems?: string[];
   forWhom?: string[];
   noCover?: boolean;
+  tourProgram?: Array<{ title: string; description: string }>;
 }
 
 export interface UpdateCardRequest extends Partial<CreateCardRequest> {

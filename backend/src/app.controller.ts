@@ -1,5 +1,7 @@
-import { Controller, Get, Post, Patch, Delete, UseGuards, Body, Param, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, UseGuards, Body, Param, BadRequestException, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { PrismaService } from './prisma/prisma.service';
+import { FilesService } from './files/files.service';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { RolesGuard } from './auth/guards/roles.guard';
 import { Roles } from './common/decorators/roles.decorator';
@@ -7,7 +9,10 @@ import { UserRole } from '@prisma/client';
 
 @Controller()
 export class AppController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly filesService: FilesService,
+  ) {}
 
   @Get()
   getRoot() {
@@ -271,5 +276,37 @@ export class AppController {
     return this.prisma.tariffType.delete({
       where: { id },
     });
+  }
+
+  // Site Settings
+  @Get('meta/site-settings')
+  async getSiteSettings() {
+    const settings = await this.prisma.siteSettings.findMany();
+    return Object.fromEntries(settings.map((s) => [s.key, s.value]));
+  }
+
+  @Post('admin/settings/hero-cover')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadHeroCover(@UploadedFile() file: Express.Multer.File) {
+    if (!file) {
+      throw new BadRequestException('Файл не предоставлен');
+    }
+
+    const url = await this.filesService.uploadImage(file, 'photos', {
+      maxWidth: 1920,
+      maxHeight: 1080,
+      quality: 85,
+      format: 'webp',
+    });
+
+    await this.prisma.siteSettings.upsert({
+      where: { key: 'heroCoverUrl' },
+      update: { value: url },
+      create: { key: 'heroCoverUrl', value: url },
+    });
+
+    return { url };
   }
 }

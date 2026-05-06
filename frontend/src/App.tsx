@@ -21,6 +21,7 @@ import { AdminTariffTypesPage } from './pages/AdminTariffTypesPage';
 import { AdminTariffTypeFormPage } from './pages/AdminTariffTypeFormPage';
 import { AdminReviewsPage } from './pages/AdminReviewsPage';
 import { KrasnayaPolyanaSpringPage } from './pages/KrasnayaPolyanaSpringPage';
+import { TourPackagesPage } from './pages/TourPackagesPage';
 import { UserRole } from './types';
 
 function App() {
@@ -35,6 +36,7 @@ function App() {
       <Route element={<RootLayout />}>
         <Route path="/" element={<HomePage />} />
         <Route path="/tours" element={<ToursPage />} />
+        <Route path="/tour-packages" element={<TourPackagesPage />} />
         <Route path="/tours/:id" element={<TourDetailPage />} />
         <Route path="/booking/:id" element={<BookingPage />} />
         {/* SEO Guides / Landings */}

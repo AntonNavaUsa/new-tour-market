@@ -21,6 +21,12 @@ export function Header() {
             >
               Походы и треккинги
             </Link>
+            <Link 
+              to="/tour-packages" 
+              className="transition-colors hover:text-foreground/80 text-foreground"
+            >
+              Туры с проживанием
+            </Link>
 
             {isAuthenticated && user?.role === 'ADMIN' && (
               <div className="flex items-center space-x-4">
