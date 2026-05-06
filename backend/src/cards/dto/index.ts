@@ -135,6 +135,11 @@ export class CreateCardDto {
   @IsOptional()
   @IsArray()
   tourProgram?: Array<{ title: string; description: string }>;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  accommodationDescription?: string;
 }
 
 export class UpdateCardDto extends PartialType(CreateCardDto) {

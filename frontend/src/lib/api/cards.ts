@@ -98,4 +98,29 @@ export const cardsApi = {
   deleteSlideshowPhoto: async (photoId: string): Promise<void> => {
     await api.delete(`/api/cards/photos/${photoId}`);
   },
+
+  // Загрузить фото проживания
+  uploadAccommodationPhotos: async (cardId: string, files: File[]): Promise<any> => {
+    const formData = new FormData();
+    files.forEach((file) => {
+      formData.append('files', file);
+    });
+    const response = await api.post(`/api/cards/${cardId}/photos/accommodation`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
+
+  // Удалить фото проживания
+  deleteAccommodationPhoto: async (photoId: string): Promise<void> => {
+    await api.delete(`/api/cards/photos/accommodation/${photoId}`);
+  },
+
+  // Изменить порядок фото проживания
+  reorderAccommodationPhotos: async (
+    cardId: string,
+    photos: Array<{ id: string; sortOrder: number }>
+  ): Promise<void> => {
+    await api.patch(`/api/cards/${cardId}/photos/accommodation/reorder`, { photos });
+  },
 };

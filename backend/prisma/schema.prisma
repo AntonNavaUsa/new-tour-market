@@ -165,6 +165,7 @@ model Card {
   notIncludedItems Json?      @map("not_included_items") // Array of not included items
   forWhom         Json?       @map("for_whom")           // Array of target audience items
   tourProgram     Json?       @map("tour_program")       // Array of {title, description} per day
+  accommodationDescription String? @db.Text @map("accommodation_description") // Description of accommodation for multi-day tours
   
   status          CardStatus  @default(DRAFT)
   position        Int         @default(0) // For sorting in lists
@@ -188,6 +189,7 @@ model Card {
   schedules       Schedule[]
   slideshowPhotos SlideshowPhoto[]
   expressions     Expression[]
+  accommodationPhotos AccommodationPhoto[]
   orders          Order[]
   reviews         Review[]
   
@@ -430,6 +432,21 @@ model Review {
   @@index([cardId])
   @@index([isVisible])
   @@map("reviews")
+}
+
+model AccommodationPhoto {
+  id        String   @id @default(uuid())
+  cardId    String   @map("card_id")
+  card      Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  url       String
+  sortOrder Int      @default(0) @map("sort_order")
+  caption   String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([cardId, sortOrder])
+  @@map("accommodation_photos")
 }
 
 model SiteSettings {

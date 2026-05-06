@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { MapPin, Clock, Users, Calendar, ChevronLeft, ChevronRight, X, Check, Ruler, TrendingUp, Baby, Navigation, Star, Activity } from 'lucide-react';
+import { MapPin, Clock, Users, Calendar, ChevronLeft, ChevronRight, X, Check, Ruler, TrendingUp, Baby, Navigation, Star, Activity, BedDouble } from 'lucide-react';
 import CardTypeIcon from '../components/CardTypeIcon';
 import { cardsApi, reviewsApi } from '../lib/api';
 import { Button } from '../components/ui/button';
@@ -266,6 +266,15 @@ export function TourDetailPage() {
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
   }, [lightboxOpen, allImages.length]);
+
+  // Auto-select time when only one option is available for the selected date
+  useEffect(() => {
+    if (!selectedDate || !card) return;
+    const times = getTimesForDate(card.schedules?.[0], selectedDate);
+    if (times.length === 1) {
+      setSelectedSlot({ date: selectedDate, time: times[0] });
+    }
+  }, [selectedDate, card]);
 
   if (isLoading) {
     return (
@@ -676,6 +685,36 @@ export function TourDetailPage() {
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {/* Accommodation */}
+          {(card.accommodationDescription || (card.accommodationPhotos && card.accommodationPhotos.length > 0)) && (
+            <div className="rounded-2xl border border-border overflow-hidden">
+              <div className="flex items-center gap-3 bg-primary/5 border-b border-border px-5 py-4">
+                <BedDouble className="h-5 w-5 text-primary shrink-0" />
+                <h2 className="text-lg font-semibold">Проживание</h2>
+              </div>
+              <div className="px-5 py-5 space-y-5">
+                {card.accommodationDescription && (
+                  <p className="text-sm leading-relaxed text-foreground whitespace-pre-line">
+                    {card.accommodationDescription}
+                  </p>
+                )}
+                {card.accommodationPhotos && card.accommodationPhotos.length > 0 && (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {card.accommodationPhotos.map((photo, index) => (
+                      <div key={photo.id} className="aspect-video rounded-xl overflow-hidden bg-muted">
+                        <img
+                          src={photo.url}
+                          alt={photo.caption ?? `Проживание ${index + 1}`}
+                          className="h-full w-full object-cover hover:scale-105 transition duration-300"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}

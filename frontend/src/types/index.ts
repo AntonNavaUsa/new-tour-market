@@ -130,8 +130,10 @@ export interface Card {
   tickets?: Ticket[];
   slideshowPhotos?: SlideshowPhoto[];
   expressions?: Expression[];
+  accommodationPhotos?: AccommodationPhoto[];
   schedules?: Schedule[];
   tourProgram?: Array<{ title: string; description: string }> | null;
+  accommodationDescription?: string | null;
 }
 
 export interface Ticket {
@@ -198,6 +200,15 @@ export interface Expression {
   sortOrder: number;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface AccommodationPhoto {
+  id: string;
+  cardId: string;
+  url: string;
+  caption: string | null;
+  sortOrder: number;
+  createdAt: string;
 }
 
 export interface Order {
@@ -297,6 +308,7 @@ export interface CreateCardRequest {
   forWhom?: string[];
   noCover?: boolean;
   tourProgram?: Array<{ title: string; description: string }>;
+  accommodationDescription?: string;
 }
 
 export interface UpdateCardRequest extends Partial<CreateCardRequest> {

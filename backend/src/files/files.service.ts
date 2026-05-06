@@ -12,6 +12,7 @@ export class FilesService {
     cards: 'cards',
     photos: 'photos',
     expressions: 'expressions',
+    accommodation: 'accommodation',
   };
 
   constructor(private configService: ConfigService) {

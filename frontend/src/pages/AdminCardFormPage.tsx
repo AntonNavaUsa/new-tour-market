@@ -25,7 +25,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { RichTextEditor } from '../components/RichTextEditor';
-import type { CardStatus, CreateCardRequest, UpdateCardRequest, SlideshowPhoto, Ticket, Price, GroupTier } from '../types';
+import type { CardStatus, CreateCardRequest, UpdateCardRequest, SlideshowPhoto, AccommodationPhoto, Ticket, Price, GroupTier } from '../types';
 import { PricingType } from '../types';
 import { formatTierLabel } from '../lib/utils';
 import type { WeeklySchedulePayload } from '../lib/api/schedules';
@@ -215,6 +215,7 @@ function PhotosTab({ cardId, headPhotoUrl }: { cardId: string; headPhotoUrl?: st
   const queryClient = useQueryClient();
   const mainPhotoInputRef = useRef<HTMLInputElement>(null);
   const slideshowInputRef = useRef<HTMLInputElement>(null);
+  const accommodationInputRef = useRef<HTMLInputElement>(null);
   const [photoError, setPhotoError] = useState('');
   const [cropFile, setCropFile] = useState<File | null>(null);
 
@@ -257,8 +258,42 @@ function PhotosTab({ cardId, headPhotoUrl }: { cardId: string; headPhotoUrl?: st
     },
   });
 
+  const uploadAccommodationMutation = useMutation({
+    mutationFn: (files: File[]) => cardsApi.uploadAccommodationPhotos(cardId, files),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-card', cardId] });
+      setPhotoError('');
+    },
+    onError: (err) => setPhotoError(handleApiError(err)),
+  });
+
+  const deleteAccommodationMutation = useMutation({
+    mutationFn: (photoId: string) => cardsApi.deleteAccommodationPhoto(photoId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-card', cardId] });
+    },
+    onError: (err) => setPhotoError(handleApiError(err)),
+  });
+
+  const reorderAccommodationMutation = useMutation({
+    mutationFn: (photos: Array<{ id: string; sortOrder: number }>) =>
+      cardsApi.reorderAccommodationPhotos(cardId, photos),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-card', cardId] });
+    },
+  });
+
   const currentHeadPhoto = card?.headPhotoUrl ?? headPhotoUrl;
   const slideshowPhotos: SlideshowPhoto[] = card?.slideshowPhotos ?? [];
+  const accommodationPhotos: AccommodationPhoto[] = card?.accommodationPhotos ?? [];
+
+  const moveAccommodationPhoto = (index: number, direction: 'up' | 'down') => {
+    const photos = [...accommodationPhotos];
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= photos.length) return;
+    [photos[index], photos[targetIndex]] = [photos[targetIndex], photos[index]];
+    reorderAccommodationMutation.mutate(photos.map((p, i) => ({ id: p.id, sortOrder: i })));
+  };
 
   const handleCoverFileSelected = (file: File) => {
     setCropFile(file);
@@ -445,6 +480,97 @@ function PhotosTab({ cardId, headPhotoUrl }: { cardId: string; headPhotoUrl?: st
                     disabled={deletePhotoMutation.isPending}
                     onClick={() => {
                       if (window.confirm('Удалить это фото?')) deletePhotoMutation.mutate(photo.id);
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="px-2 py-1 text-xs text-muted-foreground">#{index + 1}</div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Accommodation photos */}
+      <div>
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-lg font-semibold">
+            Фотографии проживания{' '}
+            <span className="text-sm font-normal text-muted-foreground">
+              ({accommodationPhotos.length} фото)
+            </span>
+          </h3>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={uploadAccommodationMutation.isPending}
+            onClick={() => accommodationInputRef.current?.click()}
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            {uploadAccommodationMutation.isPending ? 'Загрузка...' : 'Добавить фото'}
+          </Button>
+          <input
+            ref={accommodationInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={(e) => {
+              const files = e.target.files ? Array.from(e.target.files) : [];
+              if (files.length) uploadAccommodationMutation.mutate(files);
+              e.target.value = '';
+            }}
+          />
+        </div>
+
+        {accommodationPhotos.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-input p-12 text-center text-muted-foreground">
+            Фото проживания нет. Нажмите «Добавить фото».
+          </div>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {accommodationPhotos.map((photo, index) => (
+              <div key={photo.id} className="group relative overflow-hidden rounded-lg border border-input">
+                <img
+                  src={photo.url}
+                  alt={photo.caption ?? `Проживание ${index + 1}`}
+                  className="h-48 w-full object-cover"
+                />
+                <div className="absolute inset-0 flex items-end justify-between bg-black/40 p-2 opacity-0 transition-opacity group-hover:opacity-100">
+                  <div className="flex gap-1">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="secondary"
+                      className="h-8 w-8 p-0"
+                      disabled={index === 0}
+                      onClick={() => moveAccommodationPhoto(index, 'up')}
+                      title="Влево"
+                    >
+                      <MoveUp className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="secondary"
+                      className="h-8 w-8 p-0"
+                      disabled={index === accommodationPhotos.length - 1}
+                      onClick={() => moveAccommodationPhoto(index, 'down')}
+                      title="Вправо"
+                    >
+                      <MoveDown className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="destructive"
+                    className="h-8 w-8 p-0"
+                    disabled={deleteAccommodationMutation.isPending}
+                    onClick={() => {
+                      if (window.confirm('Удалить это фото?')) deleteAccommodationMutation.mutate(photo.id);
                     }}
                   >
                     <Trash2 className="h-4 w-4" />
@@ -1426,6 +1552,7 @@ export function AdminCardFormPage() {
   const [tourProgram, setTourProgram] = useState<Array<{ title: string; description: string }>>([
     { title: 'День 1', description: '' },
   ]);
+  const [accommodationDescription, setAccommodationDescription] = useState('');
 
   const { data: locations = [] } = useQuery({
     queryKey: ['meta-locations'],
@@ -1508,6 +1635,7 @@ export function AdminCardFormPage() {
         ? loadedProgram
         : [{ title: 'День 1', description: '' }]
     );
+    setAccommodationDescription(card.accommodationDescription || '');
   }, [card, reset]);
 
   const createMutation = useMutation({
@@ -1555,6 +1683,7 @@ export function AdminCardFormPage() {
       forWhom,
       noCover,
       tourProgram,
+      accommodationDescription: accommodationDescription || undefined,
     };
     if (isEditMode && id) {
       await updateMutation.mutateAsync({ cardId: id, payload: { ...payloadBase, status: values.status } });
@@ -1777,6 +1906,28 @@ export function AdminCardFormPage() {
 
               {isTourType && (
                 <TourProgramSection days={tourProgram} onChange={setTourProgram} />
+              )}
+
+              {isTourType && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>🏨 Проживание</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Описание проживания</label>
+                      <textarea
+                        className="w-full min-h-[120px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        placeholder="Опишите условия проживания: тип отеля, удобства, питание..."
+                        value={accommodationDescription}
+                        onChange={(e) => setAccommodationDescription(e.target.value)}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Фотографии проживания можно добавить во вкладке «Фотографии».
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
               )}
 
               <div className="flex justify-end">

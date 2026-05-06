@@ -192,4 +192,51 @@ export class CardsController {
     }
     return this.cardsService.uploadExpressionPhotos(cardId, userId, userRole, files);
   }
+
+  @Post(':id/photos/accommodation')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.PARTNER)
+  @ApiBearerAuth()
+  @UseInterceptors(FilesInterceptor('files', 10))
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Upload accommodation photos (max 10)' })
+  @ApiResponse({ status: 200, description: 'Photos uploaded successfully' })
+  async uploadAccommodationPhotos(
+    @Param('id') cardId: string,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('role') userRole: UserRole,
+    @UploadedFiles() files: Express.Multer.File[],
+  ) {
+    if (!files || files.length === 0) {
+      throw new BadRequestException('At least one file is required');
+    }
+    return this.cardsService.uploadAccommodationPhotos(cardId, userId, userRole, files);
+  }
+
+  @Delete('photos/accommodation/:photoId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.PARTNER)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Delete accommodation photo' })
+  async deleteAccommodationPhoto(
+    @Param('photoId') photoId: string,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('role') userRole: UserRole,
+  ) {
+    return this.cardsService.deleteAccommodationPhoto(photoId, userId, userRole);
+  }
+
+  @Patch(':id/photos/accommodation/reorder')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.PARTNER)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Reorder accommodation photos' })
+  async reorderAccommodationPhotos(
+    @Param('id') cardId: string,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('role') userRole: UserRole,
+    @Body() dto: ReorderPhotosDto,
+  ) {
+    return this.cardsService.reorderAccommodationPhotos(cardId, userId, userRole, dto.photos);
+  }
 }
