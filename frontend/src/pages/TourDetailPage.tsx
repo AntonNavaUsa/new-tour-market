@@ -235,6 +235,7 @@ export function TourDetailPage() {
   const [calendarMonthIndex, setCalendarMonthIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [accomLightboxIndex, setAccomLightboxIndex] = useState<number | null>(null);
   const [faqOpen, setFaqOpen] = useState<number | null>(0);
 
   const { data: card, isLoading } = useQuery({
@@ -705,7 +706,11 @@ export function TourDetailPage() {
                 {card.accommodationPhotos && card.accommodationPhotos.length > 0 && (
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {card.accommodationPhotos.map((photo, index) => (
-                      <div key={photo.id} className="aspect-video rounded-xl overflow-hidden bg-muted">
+                      <div
+                        key={photo.id}
+                        className="aspect-video rounded-xl overflow-hidden bg-muted cursor-pointer"
+                        onClick={() => setAccomLightboxIndex(index)}
+                      >
                         <img
                           src={photo.url}
                           alt={photo.caption ?? `Проживание ${index + 1}`}
@@ -1188,6 +1193,60 @@ export function TourDetailPage() {
         {selectedSlot ? 'Забронировать' : 'Выбрать дату'}
       </Button>
     </div>
+
+    {/* Accommodation Lightbox */}
+      {accomLightboxIndex !== null && card.accommodationPhotos && card.accommodationPhotos.length > 0 && (
+        <div
+          className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center"
+          onClick={() => setAccomLightboxIndex(null)}
+        >
+          <button
+            onClick={() => setAccomLightboxIndex(null)}
+            className="absolute top-4 right-4 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 rounded-full p-2 transition z-10"
+          >
+            <X className="h-6 w-6" />
+          </button>
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 text-white/70 text-sm">
+            {accomLightboxIndex + 1} / {card.accommodationPhotos.length}
+          </div>
+          {accomLightboxIndex > 0 && (
+            <button
+              onClick={(e) => { e.stopPropagation(); setAccomLightboxIndex(accomLightboxIndex - 1); }}
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 rounded-full p-3 transition"
+            >
+              <ChevronLeft className="h-7 w-7" />
+            </button>
+          )}
+          <img
+            src={card.accommodationPhotos[accomLightboxIndex].url}
+            alt={card.accommodationPhotos[accomLightboxIndex].caption ?? `Проживание ${accomLightboxIndex + 1}`}
+            className="max-h-[90vh] max-w-[90vw] object-contain select-none"
+            draggable={false}
+            onClick={(e) => e.stopPropagation()}
+          />
+          {accomLightboxIndex < card.accommodationPhotos.length - 1 && (
+            <button
+              onClick={(e) => { e.stopPropagation(); setAccomLightboxIndex(accomLightboxIndex + 1); }}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 rounded-full p-3 transition"
+            >
+              <ChevronRight className="h-7 w-7" />
+            </button>
+          )}
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 max-w-[90vw] overflow-x-auto pb-1">
+            {card.accommodationPhotos.map((p, i) => (
+              <button
+                key={p.id}
+                onClick={(e) => { e.stopPropagation(); setAccomLightboxIndex(i); }}
+                className={`flex-shrink-0 w-14 h-10 rounded overflow-hidden transition ${
+                  i === accomLightboxIndex ? 'ring-2 ring-white opacity-100' : 'opacity-50 hover:opacity-80'
+                }`}
+              >
+                <img src={p.url} alt="" className="w-full h-full object-cover" />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
     {/* Lightbox */}
       {lightboxOpen && (
