@@ -132,6 +132,11 @@ export function HomePage() {
 
         <div className="container relative z-10 py-24 md:py-32">
           <div className="max-w-3xl">
+            {/* Logo */}
+            <div className="mb-6">
+              <img src="/logo.png" alt="Сезон приключений" className="h-28 w-28 sm:h-36 sm:w-36 object-contain drop-shadow-2xl" />
+            </div>
+
             {/* Location badge */}
             <div className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-sm border border-white/25 text-white text-sm font-medium px-4 py-1.5 rounded-full mb-6">
               <MapPin className="h-3.5 w-3.5 text-emerald-400" />
