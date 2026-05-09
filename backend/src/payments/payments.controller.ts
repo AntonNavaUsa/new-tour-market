@@ -54,6 +54,13 @@ export class PaymentsController {
     return this.paymentsService.handleCallback(orderId);
   }
 
+  @Post('webhook')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'YooKassa webhook notification handler' })
+  async handleWebhook(@Body() body: any) {
+    return this.paymentsService.handleWebhook(body);
+  }
+
   @Post(':id/success')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Manual payment success handler (for testing)' })

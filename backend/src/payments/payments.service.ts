@@ -102,7 +102,7 @@ export class PaymentsService {
           },
           confirmation: {
             type: 'redirect',
-            return_url: `${frontendUrl}/orders`,
+            return_url: `${frontendUrl}/orders?payment=success`,
           },
           capture: true,
           description: `Предоплата 20% за заказ #${order.id.substring(0, 8)} - ${order.card.title}`,
@@ -144,17 +144,29 @@ export class PaymentsService {
           },
         });
 
-        // In development mode fall through to mock response
+        // In development mode — auto-complete payment as mock
         const isDev = this.config.get('NODE_ENV') !== 'production';
         if (isDev) {
-          this.logger.warn('YooKassa failed in dev mode — returning mock response');
+          this.logger.warn('YooKassa failed in dev mode — auto-completing mock payment');
+          const mockPayment = await this.prisma.payment.update({
+            where: { id: payment.id },
+            data: {
+              status: PaymentStatus.SUCCEEDED,
+              paidAt: new Date(),
+              metadata: { mock: true, note: `YooKassa error (dev mock): ${error.message}` },
+            },
+          });
+          await this.prisma.order.update({
+            where: { id: dto.orderId },
+            data: { status: OrderStatus.PAID },
+          });
           const frontendUrl = this.config.get('FRONTEND_URL') || 'http://localhost:5173';
           return {
-            paymentId: payment.id,
-            confirmationUrl: `${frontendUrl}/orders`,
+            paymentId: mockPayment.id,
+            confirmationUrl: `${frontendUrl}/orders?payment=success`,
             amount: paymentAmount,
             totalAmount: order.amount,
-            remainingAmount: Number(order.amount) - Number(paymentAmount),
+            remainingAmount: 0,
             note: `YooKassa error (dev mock): ${error.message}`,
           };
         }
@@ -163,15 +175,28 @@ export class PaymentsService {
       }
     }
 
-    // If YooKassa is not configured, return mock response for testing
+    // If YooKassa is not configured — auto-complete payment as mock
+    this.logger.warn('YooKassa not configured — auto-completing mock payment');
+    await this.prisma.payment.update({
+      where: { id: payment.id },
+      data: {
+        status: PaymentStatus.SUCCEEDED,
+        paidAt: new Date(),
+        metadata: { mock: true, note: 'YooKassa not configured' },
+      },
+    });
+    await this.prisma.order.update({
+      where: { id: dto.orderId },
+      data: { status: OrderStatus.PAID },
+    });
     const frontendUrl = this.config.get('FRONTEND_URL') || 'http://localhost:5173';
     return {
       paymentId: payment.id,
-      confirmationUrl: `${frontendUrl}/orders`,
+      confirmationUrl: `${frontendUrl}/orders?payment=success`,
       amount: paymentAmount,
       totalAmount: order.amount,
-      remainingAmount: Number(order.amount) - Number(paymentAmount),
-      note: 'YooKassa not configured. This is a test payment.',
+      remainingAmount: 0,
+      note: 'YooKassa not configured. Mock payment auto-completed.',
     };
   }
 
@@ -296,6 +321,73 @@ export class PaymentsService {
     }
 
     return { message: 'Payment processed successfully' };
+  }
+
+  async handleWebhook(body: any) {
+    const { event, object } = body || {};
+    this.logger.log(`YooKassa webhook: event=${event}, paymentId=${object?.id}`);
+
+    if (event === 'payment.succeeded' && object?.id) {
+      const payment = await this.prisma.payment.findFirst({
+        where: { paymentIdExternal: object.id },
+      });
+
+      if (!payment) {
+        this.logger.warn(`Webhook: payment with externalId=${object.id} not found`);
+        return { ok: true };
+      }
+
+      if (payment.status !== PaymentStatus.SUCCEEDED) {
+        await this.prisma.payment.update({
+          where: { id: payment.id },
+          data: {
+            status: PaymentStatus.SUCCEEDED,
+            paidAt: new Date(),
+            metadata: object,
+          },
+        });
+        await this.prisma.order.update({
+          where: { id: payment.orderId },
+          data: { status: OrderStatus.PAID },
+        });
+        this.logger.log(`Webhook: order ${payment.orderId} marked as PAID`);
+
+        // Уведомление
+        try {
+          const fullPayment = await this.prisma.payment.findUnique({
+            where: { id: payment.id },
+            include: { order: { include: { user: true, card: true } } },
+          });
+          if (fullPayment?.order?.user?.email) {
+            await this.notificationsService.sendPaymentSuccessNotification(
+              fullPayment.order.user.email,
+              {
+                orderId: fullPayment.order.id,
+                cardTitle: fullPayment.order.card.title,
+                amount: Number(fullPayment.amount),
+                paymentId: object.id,
+              },
+            );
+          }
+        } catch (err) {
+          this.logger.error('Failed to send payment success notification', err);
+        }
+      }
+    }
+
+    if (event === 'payment.canceled' && object?.id) {
+      const payment = await this.prisma.payment.findFirst({
+        where: { paymentIdExternal: object.id },
+      });
+      if (payment) {
+        await this.prisma.payment.update({
+          where: { id: payment.id },
+          data: { status: PaymentStatus.CANCELLED, metadata: object },
+        });
+      }
+    }
+
+    return { ok: true };
   }
 
   async handleCallback(orderId: string) {

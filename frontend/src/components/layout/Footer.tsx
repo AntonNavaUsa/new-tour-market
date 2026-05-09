@@ -83,8 +83,9 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-8 border-t pt-8 text-center text-sm text-muted-foreground">
+        <div className="mt-8 border-t pt-8 text-center text-sm text-muted-foreground space-y-1">
           <p>&copy; {currentYear} Сезон приключений! Все права защищены.</p>
+          <p>ИП Навакус Антон Борисович &mdash; ИНН&nbsp;665908836379</p>
         </div>
       </div>
     </footer>
