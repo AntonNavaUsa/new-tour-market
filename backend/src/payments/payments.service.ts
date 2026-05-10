@@ -102,7 +102,7 @@ export class PaymentsService {
           },
           confirmation: {
             type: 'redirect',
-            return_url: `${frontendUrl}/orders?payment=success`,
+            return_url: `${frontendUrl}/orders?payment=success&paymentId=${payment.id}`,
           },
           capture: true,
           description: `Предоплата 20% за заказ #${order.id.substring(0, 8)} - ${order.card.title}`,

@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { cardsApi, ordersApi, paymentsApi, authApi } from '../lib/api';
+import { cardsApi, ordersApi, authApi } from '../lib/api';
 import { useAuthStore } from '../store/authStore';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -196,7 +196,7 @@ export function BookingPage() {
           quantity,
         }));
 
-      const order = await ordersApi.createOrder({
+      await ordersApi.createOrder({
         cardId: card.id,
         date: selectedDate,
         time: selectedTime || undefined,
@@ -204,17 +204,7 @@ export function BookingPage() {
         ...data,
       });
 
-      // Создание платежа
-      const payment = await paymentsApi.createPayment({
-        orderId: order.id,
-      });
-
-      // Перенаправление на страницу оплаты
-      if (payment.confirmationUrl) {
-        window.location.href = payment.confirmationUrl;
-      } else {
-        navigate(`/orders`);
-      }
+      navigate('/orders');
     } catch (err) {
       setError(handleApiError(err));
     } finally {
@@ -436,7 +426,7 @@ export function BookingPage() {
                   size="lg"
                   disabled={isSubmitting || totalTickets === 0}
                 >
-                  {isSubmitting ? 'Обработка...' : `Оплатить предоплату ${formatPrice(Math.ceil(totalAmount * 0.2 / 100) * 100)}`}
+                  {isSubmitting ? 'Обработка...' : 'Забронировать'}
                 </Button>
               </CardContent>
             </Card>

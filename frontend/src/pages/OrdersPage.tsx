@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Package, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import { ordersApi, paymentsApi } from '../lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
@@ -42,10 +43,31 @@ const statusConfig: Record<string, { label: string; icon: any; className: string
 
 export function OrdersPage() {
   const [payingOrderId, setPayingOrderId] = useState<string | null>(null);
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const { data: orders, isLoading, refetch } = useQuery({
     queryKey: ['my-orders'],
     queryFn: () => ordersApi.getMyOrders(),
   });
+
+  useEffect(() => {
+    if (searchParams.get('payment') === 'success') {
+      setPaymentSuccess(true);
+      // Убираем параметр из URL
+      navigate('/orders', { replace: true });
+
+      const paymentId = searchParams.get('paymentId');
+      if (paymentId) {
+        // Триггерим синхронизацию статуса платежа с YooKassa перед обновлением заказов
+        paymentsApi.getPaymentStatus(paymentId)
+          .catch((err) => console.error('Failed to sync payment status:', err))
+          .finally(() => refetch());
+      } else {
+        refetch();
+      }
+    }
+  }, [searchParams, navigate, refetch]);
 
   const handleCancelOrder = async (orderId: string) => {
     if (confirm('Вы уверены, что хотите отменить этот заказ?')) {
@@ -108,6 +130,19 @@ export function OrdersPage() {
   return (
     <div className="container py-12">
       <h1 className="text-3xl font-bold mb-8">Мои заказы</h1>
+
+      {paymentSuccess && (
+        <div className="mb-6 flex items-center gap-3 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-green-800">
+          <CheckCircle className="h-5 w-5 shrink-0" />
+          <span className="font-medium">Оплата прошла успешно! Заказ подтверждён.</span>
+          <button
+            className="ml-auto text-green-600 hover:text-green-800"
+            onClick={() => setPaymentSuccess(false)}
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       <div className="space-y-6">
         {orders.map((order) => {

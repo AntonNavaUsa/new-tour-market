@@ -10,7 +10,8 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-12 items-center justify-between">
         <div className="flex items-center gap-3 md:gap-6 min-w-0">
-          <Link to="/" className="flex items-center space-x-2 shrink-0">
+          <Link to="/" className="flex items-center gap-2 shrink-0">
+            <img src="/logo.png" alt="Сезон приключений" className="h-9 w-9 rounded-full object-contain" />
             <span className="text-base sm:text-xl md:text-2xl font-bold text-primary whitespace-nowrap">Сезон приключений!</span>
           </Link>
           
