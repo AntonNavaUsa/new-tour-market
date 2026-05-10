@@ -50,7 +50,7 @@ services:
       MINIO_USE_SSL: "false"
       MINIO_BUCKET: ${MINIO_BUCKET}
       MINIO_PUBLIC_URL: https://szntravel.ru
-      FRONTEND_URL: ${FRONTEND_URL:-http://80.87.102.197:8090}
+      FRONTEND_URL: ${FRONTEND_URL:-https://szntravel.ru}
       YOOKASSA_SHOP_ID: ${YOOKASSA_SHOP_ID}
       YOOKASSA_SECRET_KEY: ${YOOKASSA_SECRET_KEY}
     ports:
