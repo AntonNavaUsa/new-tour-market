@@ -53,6 +53,7 @@ services:
       FRONTEND_URL: ${FRONTEND_URL:-https://szntravel.ru}
       YOOKASSA_SHOP_ID: ${YOOKASSA_SHOP_ID}
       YOOKASSA_SECRET_KEY: ${YOOKASSA_SECRET_KEY}
+      NODE_ENV: production
     ports:
       - "127.0.0.1:3010:3000"
     networks:

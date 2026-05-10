@@ -175,8 +175,19 @@ export class PaymentsService {
       }
     }
 
-    // If YooKassa is not configured — auto-complete payment as mock
-    this.logger.warn('YooKassa not configured — auto-completing mock payment');
+    // If YooKassa is not configured
+    const isDev = this.config.get('NODE_ENV') !== 'production';
+    if (!isDev) {
+      // In production — fail loudly so the admin knows credentials are missing
+      await this.prisma.payment.update({
+        where: { id: payment.id },
+        data: { status: PaymentStatus.FAILED, metadata: { error: 'YooKassa not configured' } },
+      });
+      throw new BadRequestException('Payment service is not configured. Please contact support.');
+    }
+
+    // In development — auto-complete payment as mock
+    this.logger.warn('YooKassa not configured — auto-completing mock payment (dev only)');
     await this.prisma.payment.update({
       where: { id: payment.id },
       data: {
