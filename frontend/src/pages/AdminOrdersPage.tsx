@@ -1,11 +1,13 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ordersApi } from '../lib/api/orders';
+import { messagesApi } from '../lib/api/messages';
 import { OrderStatus } from '../types';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { Badge } from '../components/ui/badge';
+import { Card, CardContent } from '../components/ui/card';
 import { Input } from '../components/ui/input';
-import { Search } from 'lucide-react';
+import { Button } from '../components/ui/button';
+import { Search, MessageCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { OrderChat } from '../components/OrderChat';
 import type { Order } from '../types';
 
 const STATUS_LABELS: Record<OrderStatus, string> = {
@@ -133,6 +135,20 @@ export function AdminOrdersPage() {
 }
 
 function OrderRow({ order }: { order: Order }) {
+  const [chatOpen, setChatOpen] = useState(false);
+
+  const { data: existingMessages } = useQuery({
+    queryKey: ['order-messages', order.id],
+    queryFn: () => messagesApi.getMessages(order.id),
+    staleTime: 60000,
+  });
+
+  useEffect(() => {
+    if (existingMessages && existingMessages.length > 0) {
+      setChatOpen(true);
+    }
+  }, [existingMessages]);
+
   const name = order.customerName || order.user?.name || '—';
   const email = order.customerEmail || order.user?.email || '—';
   const phone = order.customerPhone || order.user?.phone || '—';
@@ -204,6 +220,26 @@ function OrderRow({ order }: { order: Order }) {
             </div>
           </div>
         </div>
+
+        {/* Chat toggle */}
+        <div className="mt-3 pt-3 border-t">
+          <Button
+            variant={chatOpen ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setChatOpen((v) => !v)}
+            className="gap-2 text-xs h-8"
+          >
+            <MessageCircle className="h-3.5 w-3.5" />
+            Чат с клиентом
+            {chatOpen ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+          </Button>
+        </div>
+
+        {chatOpen && (
+          <div className="mt-3">
+            <OrderChat orderId={order.id} isOrganizer={true} />
+          </div>
+        )}
       </CardContent>
     </Card>
   );

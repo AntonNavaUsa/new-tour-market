@@ -95,6 +95,21 @@ export interface Guide {
   updatedAt: string;
 }
 
+export interface Partner {
+  id: string;
+  title: string;
+  description: string | null;
+  contacts: {
+    phone?: string;
+    email?: string;
+    website?: string;
+    address?: string;
+  } | null;
+  logoUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Card {
   id: string;
   userId: string;
@@ -135,6 +150,8 @@ export interface Card {
   schedules?: Schedule[];
   tourProgram?: Array<{ title: string; description: string }> | null;
   accommodationDescription?: string | null;
+  postPaymentInfo?: string | null;
+  partner?: Partner | null;
 }
 
 export interface Ticket {
@@ -264,6 +281,17 @@ export interface Payment {
   updatedAt: string;
 }
 
+export interface OrderMessage {
+  id: string;
+  orderId: string;
+  senderId: string;
+  text: string;
+  isFromOrganizer: boolean;
+  readAt: string | null;
+  createdAt: string;
+  sender?: { id: string; name: string };
+}
+
 // API Request/Response types
 
 export interface LoginRequest {
@@ -313,6 +341,7 @@ export interface CreateCardRequest {
   noCover?: boolean;
   tourProgram?: Array<{ title: string; description: string }>;
   accommodationDescription?: string;
+  postPaymentInfo?: string;
 }
 
 export interface UpdateCardRequest extends Partial<CreateCardRequest> {

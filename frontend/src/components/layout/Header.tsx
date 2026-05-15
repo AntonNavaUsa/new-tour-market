@@ -1,10 +1,22 @@
 import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '../../store/authStore';
 import { Button } from '../ui/button';
 import { User, LogOut } from 'lucide-react';
+import { messagesApi } from '../../lib/api/messages';
 
 export function Header() {
   const { user, isAuthenticated, logout } = useAuthStore();
+
+  const { data: unreadData } = useQuery({
+    queryKey: ['unread-count'],
+    queryFn: () => messagesApi.getUnreadCount(),
+    enabled: isAuthenticated,
+    refetchInterval: 30000,
+    staleTime: 20000,
+  });
+
+  const unreadCount = unreadData?.count ?? 0;
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -62,12 +74,19 @@ export function Header() {
                 >
                   Отзывы
                 </Link>
-                <Link 
-                  to="/admin/orders" 
-                  className="transition-colors hover:text-foreground/80 text-foreground"
-                >
-                  Заказы
-                </Link>
+                <span className="relative inline-block">
+                  <Link 
+                    to="/admin/orders" 
+                    className="transition-colors hover:text-foreground/80 text-foreground"
+                  >
+                    Заказы
+                  </Link>
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-2 -right-4 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white leading-none">
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </span>
+                  )}
+                </span>
               </div>
             )}
             {isAuthenticated && (user?.role === 'ADMIN' || user?.role === 'PARTNER') && (
@@ -91,11 +110,18 @@ export function Header() {
                 </Button>
               </Link>
               
-              <Link to="/orders">
-                <Button variant="outline" size="sm">
-                  Мои заказы
-                </Button>
-              </Link>
+              <span className="relative inline-block">
+                <Link to="/orders">
+                  <Button variant="outline" size="sm">
+                    Мои заказы
+                  </Button>
+                </Link>
+                {unreadCount > 0 && user?.role === 'USER' && (
+                  <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white leading-none pointer-events-none">
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </span>
+                )}
+              </span>
 
               <Button variant="ghost" size="sm" onClick={logout} className="gap-2">
                 <LogOut className="h-4 w-4" />

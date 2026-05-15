@@ -67,6 +67,7 @@ model User {
   orders        Order[]
   payments      Payment[]
   guides        Guide[]
+  sentMessages  OrderMessage[] @relation("MessageSender")
   
   @@map("users")
 }
@@ -167,6 +168,7 @@ model Card {
   forWhom         Json?       @map("for_whom")           // Array of target audience items
   tourProgram     Json?       @map("tour_program")       // Array of {title, description} per day
   accommodationDescription String? @db.Text @map("accommodation_description") // Description of accommodation for multi-day tours
+  postPaymentInfo String?     @db.Text @map("post_payment_info") // Info shown to user after successful payment
   
   status          CardStatus  @default(DRAFT)
   position        Int         @default(0) // For sorting in lists
@@ -310,6 +312,7 @@ model Order {
   // Relations
   orderTickets  OrderTicket[]
   payments      Payment[]
+  messages      OrderMessage[]
   
   @@index([userId])
   @@index([cardId])
@@ -461,4 +464,23 @@ model SiteSettings {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("site_settings")
+}
+
+model OrderMessage {
+  id              String    @id @default(uuid())
+  orderId         String    @map("order_id")
+  order           Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  senderId        String    @map("sender_id")
+  sender          User      @relation("MessageSender", fields: [senderId], references: [id])
+
+  text            String    @db.Text
+  isFromOrganizer Boolean   @default(false) @map("is_from_organizer")
+  readAt          DateTime? @map("read_at")
+
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  @@index([orderId])
+  @@index([readAt])
+  @@map("order_messages")
 }

@@ -5,6 +5,7 @@ import { Package, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react'
 import { ordersApi, paymentsApi } from '../lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
+import { PaidOrderCard } from '../components/PaidOrderCard';
 import { formatPrice, formatDateTime } from '../lib/utils';
 import { OrderStatus } from '../types';
 
@@ -245,6 +246,10 @@ export function OrdersPage() {
                       {payingOrderId === order.id ? 'Обработка...' : 'Оплатить'}
                     </Button>
                   </div>
+                )}
+
+                {(order.status === OrderStatus.PAID || order.status === OrderStatus.COMPLETED) && (
+                  <PaidOrderCard order={order} />
                 )}
               </CardContent>
             </Card>

@@ -95,7 +95,7 @@ function isEarlyBooking(dateStr: string): boolean {
 }
 
 function getDayNameRu(dateStr: string): string {
-  const dayNames = ['Вск', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+  const dayNames = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
   return dayNames[new Date(dateStr).getDay()];
 }
 
@@ -157,7 +157,7 @@ function getDateLabel(dateStr: string): { label: string; dayName: string } {
 
   const dateTime = date.getTime();
   
-  const dayNames = ['Вск', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+  const dayNames = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
   const dayName = dayNames[date.getDay()];
 
   if (dateTime === today.getTime()) {

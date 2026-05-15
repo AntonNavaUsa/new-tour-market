@@ -74,6 +74,8 @@ export class CardsService {
         forWhom: dto.forWhom || [],
         noCover: dto.noCover ?? false,
         tourProgram: dto.tourProgram ?? [],
+        accommodationDescription: dto.accommodationDescription,
+        postPaymentInfo: dto.postPaymentInfo,
       },
       include: {
         location: true,

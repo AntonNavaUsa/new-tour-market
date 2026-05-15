@@ -8,10 +8,9 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
-} from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiQuery } from '@nestjs/swagger';
+} from '@nestjs/common';import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { OrdersService } from './orders.service';
-import { CreateOrderDto, OrderFilterDto } from './dto';
+import { CreateOrderDto, OrderFilterDto, CreateMessageDto } from './dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -89,5 +88,46 @@ export class OrdersController {
     @CurrentUser('role') userRole: UserRole,
   ) {
     return this.ordersService.cancelOrder(id, userId, userRole);
+  }
+
+  // ─── Chat ─────────────────────────────────────────────────────────
+
+  @Get('messages/unread-count')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get unread messages count for current user' })
+  async getUnreadCount(
+    @CurrentUser('id') userId: string,
+    @CurrentUser('role') userRole: UserRole,
+    @CurrentUser('partnerId') partnerId: string,
+  ) {
+    return this.ordersService.getUnreadCount(userId, userRole, partnerId ?? null);
+  }
+
+  @Get(':id/messages')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get messages for an order' })
+  async getMessages(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('role') userRole: UserRole,
+    @CurrentUser('partnerId') partnerId: string,
+  ) {
+    return this.ordersService.getMessages(id, userId, userRole, partnerId ?? null);
+  }
+
+  @Post(':id/messages')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Send a message for an order' })
+  async sendMessage(
+    @Param('id') id: string,
+    @Body() dto: CreateMessageDto,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('role') userRole: UserRole,
+    @CurrentUser('partnerId') partnerId: string,
+  ) {
+    return this.ordersService.sendMessage(id, userId, userRole, partnerId ?? null, dto);
   }
 }

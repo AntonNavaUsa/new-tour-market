@@ -10,7 +10,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { TicketsService } from '../tickets/tickets.service';
 import { SchedulesService } from '../schedules/schedules.service';
 import { NotificationsService } from '../notifications/notifications.service';
-import { CreateOrderDto, OrderFilterDto } from './dto';
+import { CreateOrderDto, OrderFilterDto, CreateMessageDto } from './dto';
 import { OrderStatus, UserRole } from '@prisma/client';
 
 @Injectable()
@@ -325,6 +325,24 @@ export class OrdersService {
               id: true,
               title: true,
               headPhotoUrl: true,
+              meetingPoint: true,
+              postPaymentInfo: true,
+              partner: {
+                select: {
+                  id: true,
+                  title: true,
+                  contacts: true,
+                  logoUrl: true,
+                },
+              },
+              location: {
+                select: {
+                  id: true,
+                  city: true,
+                  region: true,
+                  country: true,
+                },
+              },
             },
           },
           orderTickets: {
@@ -506,5 +524,123 @@ export class OrdersService {
     if (expiredOrders.count > 0) {
       this.logger.log(`Marked ${expiredOrders.count} orders as expired`);
     }
+  }
+
+  // ─── Chat / Messages ──────────────────────────────────────────────
+
+  private async checkOrderAccess(
+    orderId: string,
+    userId: string,
+    userRole: UserRole,
+    partnerId: string | null,
+  ) {
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      include: { card: { select: { partnerId: true } } },
+    });
+    if (!order) throw new NotFoundException('Order not found');
+
+    if (userRole === UserRole.ADMIN) return order;
+    if (order.userId === userId) return order;
+    if (
+      userRole === UserRole.PARTNER &&
+      partnerId &&
+      order.card.partnerId === partnerId
+    )
+      return order;
+
+    throw new ForbiddenException('Access denied');
+  }
+
+  async getMessages(
+    orderId: string,
+    userId: string,
+    userRole: UserRole,
+    partnerId: string | null,
+  ) {
+    await this.checkOrderAccess(orderId, userId, userRole, partnerId);
+
+    const isOrganizer =
+      userRole === UserRole.ADMIN || userRole === UserRole.PARTNER;
+
+    // Mark incoming messages as read
+    await this.prisma.orderMessage.updateMany({
+      where: {
+        orderId,
+        readAt: null,
+        isFromOrganizer: !isOrganizer, // messages from the other side
+      },
+      data: { readAt: new Date() },
+    });
+
+    return this.prisma.orderMessage.findMany({
+      where: { orderId },
+      orderBy: { createdAt: 'asc' },
+      include: {
+        sender: { select: { id: true, name: true } },
+      },
+    });
+  }
+
+  async sendMessage(
+    orderId: string,
+    senderId: string,
+    userRole: UserRole,
+    partnerId: string | null,
+    dto: CreateMessageDto,
+  ) {
+    await this.checkOrderAccess(orderId, senderId, userRole, partnerId);
+
+    const isOrganizer =
+      userRole === UserRole.ADMIN || userRole === UserRole.PARTNER;
+
+    return this.prisma.orderMessage.create({
+      data: {
+        orderId,
+        senderId,
+        text: dto.text.trim(),
+        isFromOrganizer: isOrganizer,
+      },
+      include: {
+        sender: { select: { id: true, name: true } },
+      },
+    });
+  }
+
+  async getUnreadCount(
+    userId: string,
+    userRole: UserRole,
+    partnerId: string | null,
+  ): Promise<{ count: number }> {
+    const isOrganizer =
+      userRole === UserRole.ADMIN || userRole === UserRole.PARTNER;
+
+    if (userRole === UserRole.ADMIN) {
+      const count = await this.prisma.orderMessage.count({
+        where: { isFromOrganizer: false, readAt: null },
+      });
+      return { count };
+    }
+
+    if (isOrganizer && partnerId) {
+      const count = await this.prisma.orderMessage.count({
+        where: {
+          isFromOrganizer: false,
+          readAt: null,
+          order: { card: { partnerId } },
+        },
+      });
+      return { count };
+    }
+
+    // Regular user
+    const count = await this.prisma.orderMessage.count({
+      where: {
+        isFromOrganizer: true,
+        readAt: null,
+        order: { userId },
+      },
+    });
+    return { count };
   }
 }

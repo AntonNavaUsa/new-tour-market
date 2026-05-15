@@ -9,6 +9,8 @@ import {
   IsEmail,
   IsEnum,
   ValidateNested,
+  MaxLength,
+  MinLength,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
@@ -90,4 +92,12 @@ export class OrderFilterDto {
   @IsInt()
   @Min(1)
   take?: number;
+}
+
+export class CreateMessageDto {
+  @ApiProperty({ description: 'Message text', maxLength: 2000 })
+  @IsString()
+  @MinLength(1)
+  @MaxLength(2000)
+  text: string;
 }

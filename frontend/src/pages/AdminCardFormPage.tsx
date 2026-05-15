@@ -45,6 +45,7 @@ const formSchema = z.object({
   placeHistory: z.string().optional(),
   childFriendly: z.string().optional(),
   meetingPoint: z.string().optional(),
+  postPaymentInfo: z.string().optional(),
   minParticipants: z.string().optional(),
   maxParticipants: z.string().optional(),
   position: z.string().optional(),
@@ -1595,6 +1596,7 @@ export function AdminCardFormPage() {
       placeHistory: '',
       childFriendly: '',
       meetingPoint: '',
+      postPaymentInfo: '',
       minParticipants: '',
       maxParticipants: '',
       position: '0',
@@ -1619,6 +1621,7 @@ export function AdminCardFormPage() {
       placeHistory: card.placeHistory || '',
       childFriendly: card.childFriendly === true ? 'yes' : card.childFriendly === false ? 'no' : '',
       meetingPoint: card.meetingPoint || '',
+      postPaymentInfo: (card as any).postPaymentInfo || '',
       minParticipants: card.minParticipants?.toString() || '',
       maxParticipants: card.maxParticipants?.toString() || '',
       position: card.position.toString(),
@@ -1675,6 +1678,7 @@ export function AdminCardFormPage() {
       placeHistory: values.placeHistory || undefined,
       childFriendly: values.childFriendly === 'yes' ? true : values.childFriendly === 'no' ? false : undefined,
       meetingPoint: values.meetingPoint || undefined,
+      postPaymentInfo: (values as any).postPaymentInfo || undefined,
       minParticipants: toOptionalNumber(values.minParticipants),
       maxParticipants: toOptionalNumber(values.maxParticipants),
       position: toOptionalNumber(values.position) ?? 0,
@@ -1891,6 +1895,24 @@ export function AdminCardFormPage() {
                     className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-y"
                     placeholder="Расскажите историю этого места..."
                     {...register('placeHistory')}
+                  />
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>📋 Информация после оплаты</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="mb-3 text-sm text-muted-foreground">
+                    Этот текст будет показан клиенту в карточке оплаченного заказа. Укажите инструкции, контакты, особые условия — всё, что нужно знать после оплаты.
+                  </p>
+                  <textarea
+                    id="postPaymentInfo"
+                    rows={6}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-y"
+                    placeholder="Например: Встреча у главного входа. Возьмите удобную обувь и воду. При необходимости звоните: +7 (999) 123-45-67"
+                    {...register('postPaymentInfo')}
                   />
                 </CardContent>
               </Card>

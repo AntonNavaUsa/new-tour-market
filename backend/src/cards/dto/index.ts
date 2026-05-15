@@ -140,6 +140,11 @@ export class CreateCardDto {
   @IsOptional()
   @IsString()
   accommodationDescription?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  postPaymentInfo?: string;
 }
 
 export class UpdateCardDto extends PartialType(CreateCardDto) {
