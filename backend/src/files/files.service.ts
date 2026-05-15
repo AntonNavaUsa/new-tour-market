@@ -119,15 +119,72 @@ export class FilesService {
       );
 
       // Возврат URL
-      const minioPublicUrl = this.configService.get('MINIO_PUBLIC_URL');
-      const url = minioPublicUrl
-        ? `${minioPublicUrl}/${bucket}/${filename}`
-        : `http://${this.configService.get('MINIO_ENDPOINT')}:${this.configService.get('MINIO_PORT')}/${bucket}/${filename}`;
-      
+      const url = this.buildUrl(bucket, filename);
       this.logger.log(`Image uploaded successfully: ${url}`);
       return url;
     } catch (error) {
       this.logger.error('Error uploading image:', error);
+      throw new BadRequestException('Failed to upload image');
+    }
+  }
+
+  async uploadImageWithThumb(
+    file: Express.Multer.File,
+    bucketName: keyof typeof this.buckets = 'photos',
+    options?: {
+      maxWidth?: number;
+      maxHeight?: number;
+      quality?: number;
+      thumbWidth?: number;
+      thumbHeight?: number;
+      thumbQuality?: number;
+    },
+  ): Promise<{ url: string; thumbUrl: string }> {
+    const {
+      maxWidth = 1920,
+      maxHeight = 1080,
+      quality = 85,
+      thumbWidth = 800,
+      thumbHeight = 600,
+      thumbQuality = 72,
+    } = options || {};
+
+    if (!file.mimetype.startsWith('image/')) {
+      throw new BadRequestException('File must be an image');
+    }
+
+    try {
+      const [originalBuffer, thumbBuffer] = await Promise.all([
+        sharp(file.buffer)
+          .resize(maxWidth, maxHeight, { fit: 'inside', withoutEnlargement: true })
+          .webp({ quality })
+          .toBuffer(),
+        sharp(file.buffer)
+          .resize(thumbWidth, thumbHeight, { fit: 'inside', withoutEnlargement: true })
+          .webp({ quality: thumbQuality })
+          .toBuffer(),
+      ]);
+
+      const uuid = randomUUID();
+      const filename = `${uuid}.webp`;
+      const thumbFilename = `${uuid}_thumb.webp`;
+      const bucket = this.buckets[bucketName];
+
+      await Promise.all([
+        this.minioClient.putObject(bucket, filename, originalBuffer, originalBuffer.length, {
+          'Content-Type': 'image/webp',
+        }),
+        this.minioClient.putObject(bucket, thumbFilename, thumbBuffer, thumbBuffer.length, {
+          'Content-Type': 'image/webp',
+        }),
+      ]);
+
+      return {
+        url: this.buildUrl(bucket, filename),
+        thumbUrl: this.buildUrl(bucket, thumbFilename),
+      };
+    } catch (error) {
+      this.logger.error('Error uploading image with thumb:', error);
       throw new BadRequestException('Failed to upload image');
     }
   }
@@ -146,6 +203,28 @@ export class FilesService {
       this.uploadImage(file, bucketName, options),
     );
     return Promise.all(uploadPromises);
+  }
+
+  async uploadMultipleImagesWithThumb(
+    files: Express.Multer.File[],
+    bucketName: keyof typeof this.buckets = 'photos',
+    options?: {
+      maxWidth?: number;
+      maxHeight?: number;
+      quality?: number;
+      thumbWidth?: number;
+      thumbHeight?: number;
+      thumbQuality?: number;
+    },
+  ): Promise<Array<{ url: string; thumbUrl: string }>> {
+    return Promise.all(files.map((file) => this.uploadImageWithThumb(file, bucketName, options)));
+  }
+
+  private buildUrl(bucket: string, filename: string): string {
+    const minioPublicUrl = this.configService.get('MINIO_PUBLIC_URL');
+    return minioPublicUrl
+      ? `${minioPublicUrl}/${bucket}/${filename}`
+      : `http://${this.configService.get('MINIO_ENDPOINT')}:${this.configService.get('MINIO_PORT')}/${bucket}/${filename}`;
   }
 
   async deleteImage(url: string): Promise<void> {

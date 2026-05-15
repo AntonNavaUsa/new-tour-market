@@ -154,8 +154,9 @@ model Card {
   description     String      @db.Text
   shortDescription String?    @db.Text @map("short_description")
   
-  headPhotoUrl    String?     @map("head_photo_url")
-  noCover         Boolean     @default(false) @map("no_cover")
+  headPhotoUrl      String?     @map("head_photo_url")
+  headPhotoThumbUrl String?     @map("head_photo_thumb_url")
+  noCover           Boolean     @default(false) @map("no_cover")
   
   tags            Json?       // Array of tags for filtering
   
@@ -371,6 +372,7 @@ model SlideshowPhoto {
   card      Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
   
   url       String
+  thumbUrl  String?  @map("thumb_url")
   sortOrder Int      @default(0) @map("sort_order")
   caption   String?
   
@@ -381,13 +383,14 @@ model SlideshowPhoto {
 }
 
 model Expression {
-  id        String   @id @default(uuid())
-  cardId    String   @map("card_id")
-  card      Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  id           String   @id @default(uuid())
+  cardId       String   @map("card_id")
+  card         Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
   
-  photoUrl  String   @map("photo_url")
-  sortOrder Int      @default(0) @map("sort_order")
-  title     String?
+  photoUrl     String   @map("photo_url")
+  thumbUrl     String?  @map("thumb_url")
+  sortOrder    Int      @default(0) @map("sort_order")
+  title        String?
   
   createdAt DateTime @default(now()) @map("created_at")
   
@@ -440,6 +443,7 @@ model AccommodationPhoto {
   card      Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
 
   url       String
+  thumbUrl  String?  @map("thumb_url")
   sortOrder Int      @default(0) @map("sort_order")
   caption   String?
 

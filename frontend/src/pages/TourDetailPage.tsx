@@ -95,7 +95,7 @@ function isEarlyBooking(dateStr: string): boolean {
 }
 
 function getDayNameRu(dateStr: string): string {
-  const dayNames = ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'];
+  const dayNames = ['Вск', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
   return dayNames[new Date(dateStr).getDay()];
 }
 
@@ -256,6 +256,11 @@ export function TourDetailPage() {
     validUrl(card?.headPhotoUrl),
     ...(card?.slideshowPhotos || []).map((photo: any) => validUrl(photo.url)),
   ].filter((image): image is string => Boolean(image));
+
+  const allThumbs = [
+    validUrl(card?.headPhotoThumbUrl) ?? validUrl(card?.headPhotoUrl),
+    ...(card?.slideshowPhotos || []).map((photo: any) => validUrl(photo.thumbUrl) ?? validUrl(photo.url)),
+  ].filter((img): img is string => Boolean(img));
 
   useEffect(() => {
     if (!lightboxOpen) return;
@@ -514,7 +519,7 @@ export function TourDetailPage() {
                 className="w-full h-[460px] block group"
                 onClick={() => openLightbox(0)}
               >
-                <img src={allImages[0]} alt={card.title} className="w-full h-full object-cover group-hover:brightness-90 transition" />
+                <img src={allImages[0]} alt={card.title} className="w-full h-full object-cover group-hover:brightness-90 transition" loading="eager" decoding="async" />
               </button>
             )}
 
@@ -522,7 +527,7 @@ export function TourDetailPage() {
               <div className="grid grid-cols-2 gap-2 h-[460px]">
                 {allImages.map((img, i) => (
                   <button key={i} className="group overflow-hidden rounded-none first:rounded-l-2xl last:rounded-r-2xl" onClick={() => openLightbox(i)}>
-                    <img src={img} alt={`${card.title} ${i + 1}`} className="w-full h-full object-cover group-hover:brightness-90 transition" />
+                    <img src={i === 0 ? img : (allThumbs[i] || img)} alt={`${card.title} ${i + 1}`} className="w-full h-full object-cover group-hover:brightness-90 transition" loading={i === 0 ? 'eager' : 'lazy'} decoding="async" />
                   </button>
                 ))}
               </div>
@@ -535,7 +540,7 @@ export function TourDetailPage() {
                   className="col-span-2 row-span-2 group overflow-hidden rounded-l-2xl"
                   onClick={() => openLightbox(0)}
                 >
-                  <img src={allImages[0]} alt={card.title} className="w-full h-full object-cover group-hover:brightness-90 transition duration-300" />
+                  <img src={allImages[0]} alt={card.title} className="w-full h-full object-cover group-hover:brightness-90 transition duration-300" loading="eager" decoding="async" />
                 </button>
                 {/* Grid 2×2 on right */}
                 {allImages.slice(1, 5).map((img, i) => {
@@ -550,9 +555,11 @@ export function TourDetailPage() {
                       onClick={() => openLightbox(pos)}
                     >
                       <img
-                        src={img}
+                        src={allThumbs[pos] || img}
                         alt={`${card.title} ${pos + 1}`}
                         className="w-full h-full object-cover group-hover:brightness-90 transition duration-300"
+                        loading="lazy"
+                        decoding="async"
                       />
                       {/* "Show all" overlay on last visible cell */}
                       {i === 3 && allImages.length > 5 && (
@@ -588,7 +595,7 @@ export function TourDetailPage() {
                 onClick={() => openLightbox(index)}
                 className="flex-shrink-0 w-64 h-44 rounded-xl overflow-hidden snap-start"
               >
-                <img src={image} alt={`${card.title} ${index + 1}`} className="w-full h-full object-cover" />
+                <img src={index === 0 ? image : (allThumbs[index] || image)} alt={`${card.title} ${index + 1}`} className="w-full h-full object-cover" loading={index === 0 ? 'eager' : 'lazy'} decoding="async" />
               </button>
             ))}
             </div>
@@ -712,9 +719,11 @@ export function TourDetailPage() {
                         onClick={() => setAccomLightboxIndex(index)}
                       >
                         <img
-                          src={photo.url}
+                          src={photo.thumbUrl || photo.url}
                           alt={photo.caption ?? `Проживание ${index + 1}`}
                           className="h-full w-full object-cover hover:scale-105 transition duration-300"
+                          loading="lazy"
+                          decoding="async"
                         />
                       </div>
                     ))}
@@ -804,9 +813,11 @@ export function TourDetailPage() {
                 {card.expressions.map((photo, index) => (
                   <div key={photo.id} className="aspect-square rounded-lg overflow-hidden">
                     <img
-                      src={photo.photoUrl}
+                      src={photo.thumbUrl || photo.photoUrl}
                       alt={`Expression ${index + 1}`}
                       className="w-full h-full object-cover hover:scale-110 transition"
+                      loading="lazy"
+                      decoding="async"
                     />
                   </div>
                 ))}

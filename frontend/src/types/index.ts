@@ -105,6 +105,7 @@ export interface Card {
   description: string;
   shortDescription: string | null;
   headPhotoUrl: string | null;
+  headPhotoThumbUrl: string | null;
   noCover: boolean;
   tags: string[];
   includedItems: string[] | null;
@@ -187,6 +188,7 @@ export interface SlideshowPhoto {
   id: string;
   cardId: string;
   url: string;
+  thumbUrl: string | null;
   caption: string | null;
   sortOrder: number;
   createdAt: string;
@@ -197,6 +199,7 @@ export interface Expression {
   id: string;
   cardId: string;
   photoUrl: string;
+  thumbUrl: string | null;
   sortOrder: number;
   createdAt: string;
   updatedAt: string;
@@ -206,6 +209,7 @@ export interface AccommodationPhoto {
   id: string;
   cardId: string;
   url: string;
+  thumbUrl: string | null;
   caption: string | null;
   sortOrder: number;
   createdAt: string;

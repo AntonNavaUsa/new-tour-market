@@ -414,9 +414,13 @@ export class CardsService {
       throw new ForbiddenException('You do not have permission to delete this photo');
     }
 
-    await this.prisma.slideshowPhoto.delete({
-      where: { id: photoId },
-    });
+    await this.prisma.slideshowPhoto.delete({ where: { id: photoId } });
+
+    // Delete files from storage (ignore errors)
+    try { await this.filesService.deleteImage(photo.url); } catch {}
+    if (photo.thumbUrl) {
+      try { await this.filesService.deleteImage(photo.thumbUrl); } catch {}
+    }
 
     return { message: 'Photo deleted successfully' };
   }
@@ -443,23 +447,25 @@ export class CardsService {
     if (card.headPhotoUrl) {
       try {
         await this.filesService.deleteImage(card.headPhotoUrl);
+        if (card.headPhotoThumbUrl) {
+          await this.filesService.deleteImage(card.headPhotoThumbUrl);
+        }
       } catch (error) {
         // Continue if deletion fails
       }
     }
 
-    // Upload new photo
-    const photoUrl = await this.filesService.uploadImage(file, 'cards', {
+    // Upload new photo with thumbnail
+    const { url: photoUrl, thumbUrl: photoThumbUrl } = await this.filesService.uploadImageWithThumb(file, 'cards', {
       maxWidth: 1920,
       maxHeight: 1080,
       quality: 85,
-      format: 'webp',
     });
 
     // Update card
     const updatedCard = await this.prisma.card.update({
       where: { id: cardId },
-      data: { headPhotoUrl: photoUrl },
+      data: { headPhotoUrl: photoUrl, headPhotoThumbUrl: photoThumbUrl },
       include: {
         location: true,
         cardType: true,
@@ -499,21 +505,21 @@ export class CardsService {
 
     let currentOrder = (maxOrder?.sortOrder || 0) + 1;
 
-    // Upload all files
-    const photoUrls = await this.filesService.uploadMultipleImages(files, 'photos', {
+    // Upload all files with thumbnails
+    const uploadResults = await this.filesService.uploadMultipleImagesWithThumb(files, 'photos', {
       maxWidth: 1920,
       maxHeight: 1080,
       quality: 85,
-      format: 'webp',
     });
 
     // Create slideshow photo records
     const photos = await this.prisma.$transaction(
-      photoUrls.map((url) =>
+      uploadResults.map(({ url, thumbUrl }) =>
         this.prisma.slideshowPhoto.create({
           data: {
             cardId,
             url,
+            thumbUrl,
             sortOrder: currentOrder++,
           },
         }),
@@ -552,21 +558,21 @@ export class CardsService {
 
     let currentOrder = (maxOrder?.sortOrder || 0) + 1;
 
-    // Upload all files
-    const photoUrls = await this.filesService.uploadMultipleImages(files, 'expressions', {
+    // Upload all files with thumbnails
+    const uploadResults = await this.filesService.uploadMultipleImagesWithThumb(files, 'expressions', {
       maxWidth: 1920,
       maxHeight: 1080,
       quality: 85,
-      format: 'webp',
     });
 
     // Create expression photo records
     const expressions = await this.prisma.$transaction(
-      photoUrls.map((url) =>
+      uploadResults.map(({ url, thumbUrl }) =>
         this.prisma.expression.create({
           data: {
             cardId,
             photoUrl: url,
+            thumbUrl,
             sortOrder: currentOrder++,
           },
         }),
@@ -604,19 +610,19 @@ export class CardsService {
 
     let currentOrder = (maxOrder?.sortOrder || 0) + 1;
 
-    const photoUrls = await this.filesService.uploadMultipleImages(files, 'accommodation', {
+    const uploadResults = await this.filesService.uploadMultipleImagesWithThumb(files, 'accommodation', {
       maxWidth: 1920,
       maxHeight: 1080,
       quality: 85,
-      format: 'webp',
     });
 
     const photos = await this.prisma.$transaction(
-      photoUrls.map((url) =>
+      uploadResults.map(({ url, thumbUrl }) =>
         this.prisma.accommodationPhoto.create({
           data: {
             cardId,
             url,
+            thumbUrl,
             sortOrder: currentOrder++,
           },
         }),
@@ -643,9 +649,12 @@ export class CardsService {
       throw new ForbiddenException('You do not have permission to delete this photo');
     }
 
-    await this.prisma.accommodationPhoto.delete({
-      where: { id: photoId },
-    });
+    await this.prisma.accommodationPhoto.delete({ where: { id: photoId } });
+
+    try { await this.filesService.deleteImage(photo.url); } catch {}
+    if (photo.thumbUrl) {
+      try { await this.filesService.deleteImage(photo.thumbUrl); } catch {}
+    }
 
     return { message: 'Accommodation photo deleted successfully' };
   }
