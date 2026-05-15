@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { User as UserIcon, Mail, Phone, Shield, Plus, Pencil, Trash2, Camera, Check, X } from 'lucide-react';
+import { User as UserIcon, Mail, Phone, Shield, Plus, Pencil, Trash2, Camera, Check, X, Send } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { authApi, guidesApi } from '../lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
@@ -10,6 +10,7 @@ import { Label } from '../components/ui/label';
 import { formatDateTime } from '../lib/utils';
 import { handleApiError } from '../lib/axios';
 import type { Guide } from '../types';
+import api from '../lib/axios';
 
 const roleNames: Record<string, string> = {
   USER: 'Пользователь',
@@ -280,6 +281,72 @@ function AddGuideForm({ onAdded }: { onAdded: () => void }) {
   );
 }
 
+// ---- Test Email Card (admin only) ----
+function TestEmailCard({ defaultEmail }: { defaultEmail: string }) {
+  const [to, setTo] = useState(defaultEmail);
+  const [status, setStatus] = useState<'idle' | 'sending' | 'ok' | 'error'>('idle');
+  const [errorMsg, setErrorMsg] = useState('');
+
+  const handleSend = async () => {
+    if (!to.trim()) return;
+    setStatus('sending');
+    setErrorMsg('');
+    try {
+      await api.post('/api/notifications/test-email', { to: to.trim() });
+      setStatus('ok');
+      setTimeout(() => setStatus('idle'), 4000);
+    } catch (e: any) {
+      setErrorMsg(handleApiError(e));
+      setStatus('error');
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Send className="h-5 w-5" />
+          Тест отправки email
+        </CardTitle>
+        <p className="text-sm text-muted-foreground mt-1">
+          Отправьте тестовое письмо чтобы проверить настройки SMTP
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="test-email-to">Адрес получателя</Label>
+          <Input
+            id="test-email-to"
+            type="email"
+            value={to}
+            onChange={(e) => setTo(e.target.value)}
+            placeholder="email@example.com"
+          />
+        </div>
+        <Button
+          onClick={handleSend}
+          disabled={status === 'sending' || !to.trim()}
+          className="w-full"
+        >
+          {status === 'sending' ? 'Отправляем...' : 'Отправить тестовое письмо'}
+        </Button>
+        {status === 'ok' && (
+          <div className="flex items-center gap-2 text-sm text-green-600 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+            <Check className="h-4 w-4 shrink-0" />
+            Письмо успешно отправлено на {to}
+          </div>
+        )}
+        {status === 'error' && (
+          <div className="flex items-start gap-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+            <X className="h-4 w-4 shrink-0 mt-0.5" />
+            <span>{errorMsg || 'Ошибка отправки. Проверьте настройки SMTP.'}</span>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 export function ProfilePage() {
   const { user } = useAuthStore();
   const [showAddForm, setShowAddForm] = useState(false);
@@ -446,6 +513,10 @@ export function ProfilePage() {
                 )}
               </CardContent>
             </Card>
+          )}
+          {/* Test email block — only for ADMIN */}
+          {displayUser.role === 'ADMIN' && (
+            <TestEmailCard defaultEmail={displayUser.email} />
           )}
         </div>
       </div>

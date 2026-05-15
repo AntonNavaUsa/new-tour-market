@@ -28,7 +28,7 @@ export class NotificationsService {
     this.transporter = nodemailer.createTransport({
       host: smtpHost,
       port: smtpPort,
-      secure: false, // true for 465, false for other ports
+      secure: smtpPort === 465,  // ← заменить
       auth: smtpUser && smtpPassword ? {
         user: smtpUser,
         pass: smtpPassword,
