@@ -157,7 +157,7 @@ function getDateLabel(dateStr: string): { label: string; dayName: string } {
 
   const dateTime = date.getTime();
   
-  const dayNames = ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'];
+  const dayNames = ['Вск', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
   const dayName = dayNames[date.getDay()];
 
   if (dateTime === today.getTime()) {
