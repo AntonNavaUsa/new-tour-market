@@ -20,6 +20,7 @@ import { AdminCardTypeFormPage } from './pages/AdminCardTypeFormPage';
 import { AdminTariffTypesPage } from './pages/AdminTariffTypesPage';
 import { AdminTariffTypeFormPage } from './pages/AdminTariffTypeFormPage';
 import { AdminReviewsPage } from './pages/AdminReviewsPage';
+import { AdminOrdersPage } from './pages/AdminOrdersPage';
 import { KrasnayaPolyanaSpringPage } from './pages/KrasnayaPolyanaSpringPage';
 import { TourPackagesPage } from './pages/TourPackagesPage';
 import { UserRole } from './types';
@@ -164,6 +165,14 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
               <AdminReviewsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/orders"
+          element={
+            <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
+              <AdminOrdersPage />
             </ProtectedRoute>
           }
         />

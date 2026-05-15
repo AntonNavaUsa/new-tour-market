@@ -314,7 +314,7 @@ export class PaymentsService {
 
     this.logger.log(`Order ${payment.orderId} marked as PAID`);
 
-    // Send email notification to user
+    // Send email notifications
     try {
       await this.notificationsService.sendPaymentSuccessNotification(
         payment.order.user.email,
@@ -325,6 +325,21 @@ export class PaymentsService {
           paymentId: payment.paymentIdExternal || payment.id,
         },
       );
+
+      // Notify admin about payment
+      const adminEmail = process.env.ADMIN_EMAIL || 'admin@travelio.local';
+      await this.notificationsService.sendAdminOrderNotification(adminEmail, {
+        orderId: payment.order.id,
+        cardTitle: payment.order.card.title,
+        userName: payment.order.user.name,
+        userEmail: payment.order.user.email,
+        date: payment.order.date.toLocaleDateString('ru-RU'),
+        time: payment.order.time || 'Будет уточнено',
+        quantity: payment.order.quantity,
+        totalAmount: Number(payment.amount),
+        isPaid: true,
+      });
+
       this.logger.log(`Payment success notification sent to ${payment.order.user.email}`);
     } catch (error) {
       this.logger.error(`Failed to send payment success notification:`, error);

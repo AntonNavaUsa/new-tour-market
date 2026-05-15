@@ -216,11 +216,19 @@ export class NotificationsService {
     cardTitle: string;
     userName: string;
     userEmail: string;
+    userPhone?: string | null;
     date: string;
     time: string;
     quantity: number;
     totalAmount: number;
+    isPaid?: boolean;
   }): Promise<void> {
+    const statusLabel = orderData.isPaid
+      ? '<span style="background:#10B981;color:white;padding:4px 12px;border-radius:12px;font-size:13px;">✓ Оплачен</span>'
+      : '<span style="background:#F59E0B;color:white;padding:4px 12px;border-radius:12px;font-size:13px;">⏳ Предзаказ (ожидает оплаты)</span>';
+    const headerColor = orderData.isPaid ? '#10B981' : '#EF4444';
+    const headerText = orderData.isPaid ? '💳 Заказ оплачен!' : '🎫 Новый предзаказ';
+
     const html = `
       <!DOCTYPE html>
       <html>
@@ -228,60 +236,61 @@ export class NotificationsService {
           <style>
             body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
             .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background: #EF4444; color: white; padding: 20px; text-align: center; }
-            .content { background: #f9fafb; padding: 20px; }
-            .order-details { background: white; padding: 15px; margin: 20px 0; border-radius: 8px; }
-            .detail-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e5e7eb; }
-            .detail-label { font-weight: bold; }
-            .footer { text-align: center; padding: 20px; font-size: 12px; color: #6b7280; }
+            .header { background: ${headerColor}; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+            .content { background: #f9fafb; padding: 20px; border-radius: 0 0 8px 8px; }
+            .order-details { background: white; padding: 15px; margin: 15px 0; border-radius: 8px; border: 1px solid #e5e7eb; }
+            .detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f3f4f6; }
+            .detail-row:last-child { border-bottom: none; }
+            .detail-label { font-weight: bold; color: #6b7280; font-size: 13px; }
+            .detail-value { font-size: 13px; }
+            .footer { text-align: center; padding: 15px; font-size: 11px; color: #9ca3af; }
           </style>
         </head>
         <body>
           <div class="container">
             <div class="header">
-              <h1>🎫 Новый заказ</h1>
+              <h1 style="margin:0;font-size:22px;">${headerText}</h1>
             </div>
             <div class="content">
-              <p>Получен новый заказ!</p>
-              
+              <div style="text-align:center;margin:10px 0;">${statusLabel}</div>
               <div class="order-details">
-                <h2>Информация о заказе</h2>
                 <div class="detail-row">
                   <span class="detail-label">Номер заказа:</span>
-                  <span>${orderData.orderId}</span>
+                  <span class="detail-value">#${orderData.orderId.slice(-8).toUpperCase()}</span>
                 </div>
                 <div class="detail-row">
                   <span class="detail-label">Тур:</span>
-                  <span>${orderData.cardTitle}</span>
+                  <span class="detail-value">${orderData.cardTitle}</span>
                 </div>
                 <div class="detail-row">
                   <span class="detail-label">Клиент:</span>
-                  <span>${orderData.userName}</span>
+                  <span class="detail-value">${orderData.userName}</span>
                 </div>
                 <div class="detail-row">
                   <span class="detail-label">Email:</span>
-                  <span>${orderData.userEmail}</span>
+                  <span class="detail-value">${orderData.userEmail}</span>
                 </div>
+                ${orderData.userPhone ? `<div class="detail-row"><span class="detail-label">Телефон:</span><span class="detail-value">${orderData.userPhone}</span></div>` : ''}
                 <div class="detail-row">
                   <span class="detail-label">Дата:</span>
-                  <span>${orderData.date}</span>
+                  <span class="detail-value">${orderData.date}</span>
                 </div>
                 <div class="detail-row">
                   <span class="detail-label">Время:</span>
-                  <span>${orderData.time}</span>
+                  <span class="detail-value">${orderData.time}</span>
                 </div>
                 <div class="detail-row">
                   <span class="detail-label">Участников:</span>
-                  <span>${orderData.quantity}</span>
+                  <span class="detail-value">${orderData.quantity}</span>
                 </div>
                 <div class="detail-row">
                   <span class="detail-label">Сумма:</span>
-                  <span><strong>${orderData.totalAmount} ₽</strong></span>
+                  <span class="detail-value"><strong>${orderData.totalAmount} ₽</strong></span>
                 </div>
               </div>
             </div>
             <div class="footer">
-              <p>&copy; 2026 Travelio Admin Panel</p>
+              <p>&copy; ${new Date().getFullYear()} Сезон приключений</p>
             </div>
           </div>
         </body>
@@ -290,9 +299,11 @@ export class NotificationsService {
 
     await this.sendEmail({
       to: adminEmail,
-      subject: `Новый заказ #${orderData.orderId} - ${orderData.cardTitle}`,
+      subject: orderData.isPaid
+        ? `✅ Оплачен заказ #${orderData.orderId.slice(-8).toUpperCase()} — ${orderData.cardTitle}`
+        : `🆕 Новый заказ #${orderData.orderId.slice(-8).toUpperCase()} — ${orderData.cardTitle}`,
       html,
-      text: `Новый заказ #${orderData.orderId}. Клиент: ${orderData.userName} (${orderData.userEmail}). Тур: ${orderData.cardTitle}. Сумма: ${orderData.totalAmount} ₽`,
+      text: `${orderData.isPaid ? 'Оплачен' : 'Новый'} заказ. Клиент: ${orderData.userName} (${orderData.userEmail}${orderData.userPhone ? ', ' + orderData.userPhone : ''}). Тур: ${orderData.cardTitle}. Дата: ${orderData.date}. Сумма: ${orderData.totalAmount} ₽`,
     });
   }
 }

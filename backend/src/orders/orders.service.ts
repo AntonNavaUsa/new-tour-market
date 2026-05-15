@@ -179,6 +179,25 @@ export class OrdersService {
       },
     });
 
+    // Notify admin about new pre-order
+    try {
+      const adminEmail = process.env.ADMIN_EMAIL || 'admin@travelio.local';
+      await this.notificationsService.sendAdminOrderNotification(adminEmail, {
+        orderId: order.id,
+        cardTitle: order.card.title,
+        userName: dto.customerName || 'Не указано',
+        userEmail: dto.customerEmail || 'Не указано',
+        userPhone: dto.customerPhone,
+        date: new Date(dto.date).toLocaleDateString('ru-RU'),
+        time: dto.time || 'Будет уточнено',
+        quantity: order.quantity,
+        totalAmount: Number(order.amount),
+        isPaid: false,
+      });
+    } catch (error) {
+      this.logger.error(`Failed to send admin notification for order ${order.id}:`, error);
+    }
+
     return order;
   }
 

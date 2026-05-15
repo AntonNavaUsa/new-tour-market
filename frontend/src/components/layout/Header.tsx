@@ -62,6 +62,12 @@ export function Header() {
                 >
                   Отзывы
                 </Link>
+                <Link 
+                  to="/admin/orders" 
+                  className="transition-colors hover:text-foreground/80 text-foreground"
+                >
+                  Заказы
+                </Link>
               </div>
             )}
             {isAuthenticated && (user?.role === 'ADMIN' || user?.role === 'PARTNER') && (
