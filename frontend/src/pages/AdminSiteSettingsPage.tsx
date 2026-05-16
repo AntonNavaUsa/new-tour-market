@@ -6,7 +6,6 @@ import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import { Textarea } from '../components/ui/textarea';
 
 export function AdminSiteSettingsPage() {
   const queryClient = useQueryClient();
@@ -99,12 +98,13 @@ export function AdminSiteSettingsPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="siteDescription">Описание сайта</Label>
-                <Textarea
+                <textarea
                   id="siteDescription"
                   value={siteDescription}
                   onChange={(e) => setSiteDescription(e.target.value)}
                   placeholder="Горные походы и экскурсии в Красной Поляне"
                   rows={3}
+                  className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 />
                 <p className="text-xs text-muted-foreground">
                   Краткое описание для поисковых систем
