@@ -53,15 +53,6 @@ export function PaidOrderCard({ order }: PaidOrderCardProps) {
   const downloadVoucher = async () => {
     setPdfLoading(true);
     try {
-      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-
-      // Encoding for Cyrillic: jsPDF requires a font that supports Cyrillic.
-      // We'll use a workaround with Latin transliteration or use the built-in
-      // encoding approach. Since we can't embed fonts easily without CDN,
-      // we'll use a data-URI approach by rendering to canvas via HTML.
-      // Simpler approach: use jsPDF with base64 font or fall back to window.print.
-
-      // Use window.print fallback with a print-specific styled div
       const printWindow = window.open('', '_blank', 'width=800,height=900');
       if (!printWindow) {
         setPdfLoading(false);
