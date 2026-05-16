@@ -5,10 +5,10 @@ import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
 import {
   Mountain, Users, Shield, Upload,
-  Star, ChevronRight, MapPin, Compass, Tent, Award, Clock
+  Star, ChevronRight, MapPin, Compass, Tent, Award, Clock, Calendar
 } from 'lucide-react';
 import { metaApi, cardsApi } from '../lib/api';
-import { formatPrice, formatDuration, getMinPriceFromTiers } from '../lib/utils';
+import { formatPrice, formatDuration, formatDays, getMinPriceFromTiers } from '../lib/utils';
 import { useAuthStore } from '../store/authStore';
 import { UserRole } from '../types';
 import type { CardFilterParams, Card as TourCard } from '../types';
@@ -405,6 +405,12 @@ export function HomePage() {
                                 <div className="flex items-center gap-1">
                                   <Clock className="h-4 w-4" />
                                   <span>{formatDuration(card.durationFrom)}</span>
+                                </div>
+                              )}
+                              {card.durationDays != null && (
+                                <div className="flex items-center gap-1">
+                                  <Calendar className="h-4 w-4" />
+                                  <span>{formatDays(card.durationDays)}</span>
                                 </div>
                               )}
                               {card.maxParticipants && (

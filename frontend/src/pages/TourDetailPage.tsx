@@ -5,7 +5,7 @@ import { MapPin, Clock, Users, Calendar, ChevronLeft, ChevronRight, X, Check, Ru
 import CardTypeIcon from '../components/CardTypeIcon';
 import { cardsApi, reviewsApi } from '../lib/api';
 import { Button } from '../components/ui/button';
-import { formatPrice, formatDate, formatDurationRange, getMinPriceFromTiers, formatTierLabel } from '../lib/utils';
+import { formatPrice, formatDate, formatDurationRange, formatDays, getMinPriceFromTiers, formatTierLabel } from '../lib/utils';
 import type { Price, Schedule, Ticket } from '../types';
 
 type TimeSlot = {
@@ -421,6 +421,12 @@ export function TourDetailPage() {
                 <span>{formatDurationRange(card.durationFrom, card.durationTo)}</span>
               </div>
             )}
+            {card.durationDays != null && (
+              <div className="flex items-center gap-1.5 bg-white/15 backdrop-blur-sm border border-white/20 text-white px-3 py-1.5 rounded-full text-xs">
+                <Calendar className="h-3.5 w-3.5 shrink-0" />
+                <span>{formatDays(card.durationDays)}</span>
+              </div>
+            )}
           </div>
           <a
             href="#booking-panel"
@@ -490,6 +496,12 @@ export function TourDetailPage() {
               <div className="flex items-center gap-1.5 bg-white/15 backdrop-blur-sm border border-white/20 text-white px-3 py-1.5 rounded-full text-sm">
                 <Clock className="h-4 w-4 shrink-0" />
                 <span>{formatDurationRange(card.durationFrom, card.durationTo)}</span>
+              </div>
+            )}
+            {card.durationDays != null && (
+              <div className="flex items-center gap-1.5 bg-white/15 backdrop-blur-sm border border-white/20 text-white px-3 py-1.5 rounded-full text-sm">
+                <Calendar className="h-4 w-4 shrink-0" />
+                <span>{formatDays(card.durationDays)}</span>
               </div>
             )}
           </div>
@@ -630,12 +642,17 @@ export function TourDetailPage() {
               <span>{formatDurationRange(card.durationFrom, card.durationTo)}</span>
             </div>
           )}
+          {card.durationDays != null && (
+            <div className="flex items-center gap-1.5 bg-muted border border-border text-foreground px-3 py-1.5 rounded-full text-sm">
+              <Calendar className="h-3.5 w-3.5 shrink-0 text-primary" />
+              <span>{formatDays(card.durationDays)}</span>
+            </div>
+          )}
         </div>
       )}
 
       
       {/* Two-column content */}
-      <div className="grid lg:grid-cols-3 gap-6 lg:gap-10 items-start">
 
         {/* LEFT — description, meta, expression photos */}
         <div className="lg:col-span-2 space-y-8 order-last lg:order-none">

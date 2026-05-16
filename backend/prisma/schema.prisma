@@ -176,6 +176,7 @@ model Card {
   
   durationFrom    Int?        @map("duration_from") // Duration range start in hours
   durationTo      Int?        @map("duration_to")   // Duration range end in hours
+  durationDays    Int?        @map("duration_days") // Number of days for multi-day tours
   distanceKm      Float?      @map("distance_km")   // Route distance in km
   elevationGain   Int?        @map("elevation_gain") // Elevation gain in meters
   difficulty      String?     @map("difficulty")     // EASY | MEDIUM | ABOVE_MEDIUM

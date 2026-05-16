@@ -53,6 +53,15 @@ function hoursLabel(h: number): string {
   return 'часов';
 }
 
+export function formatDays(days: number): string {
+  const last2 = days % 100;
+  const last1 = days % 10;
+  if (last2 >= 11 && last2 <= 14) return `${days} дней`;
+  if (last1 === 1) return `${days} день`;
+  if (last1 >= 2 && last1 <= 4) return `${days} дня`;
+  return `${days} дней`;
+}
+
 export function formatDurationRange(
   from: number | null | undefined,
   to: number | null | undefined,

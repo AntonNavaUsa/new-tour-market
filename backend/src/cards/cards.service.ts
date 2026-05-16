@@ -60,6 +60,7 @@ export class CardsService {
         status: CardStatus.DRAFT,
         durationFrom: dto.durationFrom,
         durationTo: dto.durationTo,
+        durationDays: dto.durationDays,
         distanceKm: dto.distanceKm,
         elevationGain: dto.elevationGain,
         difficulty: dto.difficulty,

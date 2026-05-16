@@ -5,8 +5,8 @@ import { cardsApi, metaApi } from '../lib/api';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
-import { formatPrice, formatDuration, getMinPriceFromTiers } from '../lib/utils';
-import { Search, MapPin, Clock, Users, BedDouble } from 'lucide-react';
+import { formatPrice, formatDuration, formatDays, getMinPriceFromTiers } from '../lib/utils';
+import { Search, MapPin, Clock, Users, BedDouble, Calendar } from 'lucide-react';
 import type { CardFilterParams, Card as CardType } from '../types';
 
 function getMinPrice(card: CardType): number | null {
@@ -153,6 +153,12 @@ export function TourPackagesPage() {
                         <div className="flex items-center gap-1">
                           <Clock className="h-4 w-4" />
                           <span>{formatDuration(card.durationFrom ?? card.durationTo ?? 0)}</span>
+                        </div>
+                      )}
+                      {card.durationDays != null && (
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-4 w-4" />
+                          <span>{formatDays(card.durationDays)}</span>
                         </div>
                       )}
                       {card.maxParticipants && (

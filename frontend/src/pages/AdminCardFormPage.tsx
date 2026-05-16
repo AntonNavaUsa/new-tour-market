@@ -39,6 +39,7 @@ const formSchema = z.object({
   tags: z.string().optional(),
   durationFrom: z.string().optional(),
   durationTo: z.string().optional(),
+  durationDays: z.string().optional(),
   distanceKm: z.string().optional(),
   elevationGain: z.string().optional(),
   difficulty: z.string().optional(),
@@ -1590,6 +1591,7 @@ export function AdminCardFormPage() {
       tags: '',
       durationFrom: '',
       durationTo: '',
+      durationDays: '',
       distanceKm: '',
       elevationGain: '',
       difficulty: '',
@@ -1615,6 +1617,7 @@ export function AdminCardFormPage() {
       tags: (card.tags || []).join(', '),
       durationFrom: card.durationFrom?.toString() || '',
       durationTo: card.durationTo?.toString() || '',
+      durationDays: card.durationDays?.toString() || '',
       distanceKm: card.distanceKm?.toString() || '',
       elevationGain: card.elevationGain?.toString() || '',
       difficulty: card.difficulty || '',
@@ -1672,6 +1675,7 @@ export function AdminCardFormPage() {
       tags: values.tags ? values.tags.split(',').map((t) => t.trim()).filter(Boolean) : [],
       durationFrom: toOptionalNumber(values.durationFrom),
       durationTo: toOptionalNumber(values.durationTo),
+      durationDays: toOptionalNumber(values.durationDays),
       distanceKm: toOptionalNumber(values.distanceKm),
       elevationGain: toOptionalNumber(values.elevationGain),
       difficulty: values.difficulty || undefined,
@@ -1838,6 +1842,10 @@ export function AdminCardFormPage() {
                       <span className="text-muted-foreground shrink-0">—</span>
                       <Input type="number" min="0" placeholder="до" {...register('durationTo')} />
                     </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="durationDays">Количество дней</Label>
+                    <Input id="durationDays" type="number" min="1" placeholder="н-р: 3" {...register('durationDays')} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="distanceKm">Длина маршрута, км</Label>

@@ -130,6 +130,7 @@ export interface Card {
   status: CardStatus;
   durationFrom: number | null;
   durationTo: number | null;
+  durationDays: number | null;
   distanceKm: number | null;
   elevationGain: number | null;
   difficulty: string | null;
@@ -327,6 +328,7 @@ export interface CreateCardRequest {
   tags?: string[];
   durationFrom?: number;
   durationTo?: number;
+  durationDays?: number;
   distanceKm?: number;
   elevationGain?: number;
   difficulty?: string;

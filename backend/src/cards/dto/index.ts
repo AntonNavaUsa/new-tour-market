@@ -60,6 +60,12 @@ export class CreateCardDto {
 
   @ApiProperty({ required: false })
   @IsOptional()
+  @IsInt()
+  @Min(1)
+  durationDays?: number;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
   @IsNumber()
   @Min(0)
   distanceKm?: number;
