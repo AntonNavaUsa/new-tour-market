@@ -13,22 +13,22 @@ const HikingIcon = ({ className }: { className?: string }) => (
     strokeLinejoin="round"
     className={className}
   >
-    {/* Head */}
-    <circle cx="12" cy="3" r="1.5" />
-    {/* Body */}
-    <line x1="12" y1="4.5" x2="12" y2="13" />
-    {/* Left arm (short, to grip) */}
-    <line x1="12" y1="8" x2="8.5" y2="10.5" />
-    {/* Left trekking pole */}
-    <line x1="8.5" y1="10.5" x2="6.5" y2="21" />
-    {/* Right arm (short, to grip) */}
-    <line x1="12" y1="8" x2="15.5" y2="10.5" />
-    {/* Right trekking pole */}
-    <line x1="15.5" y1="10.5" x2="17.5" y2="21" />
-    {/* Left leg (step forward) */}
-    <polyline points="12,13 10,17.5 9,21" />
-    {/* Right leg (step back) */}
-    <polyline points="12,13 13.5,17.5 14.5,21" />
+    {/* Head (side profile, facing right) */}
+    <circle cx="13" cy="3" r="1.5" />
+    {/* Body (slight forward lean) */}
+    <line x1="12.5" y1="4.5" x2="11" y2="13" />
+    {/* Front arm → grip */}
+    <line x1="12" y1="8" x2="15" y2="9.5" />
+    {/* Front trekking pole */}
+    <line x1="15" y1="9.5" x2="18" y2="21" />
+    {/* Back arm → grip */}
+    <line x1="12" y1="8.5" x2="9" y2="10" />
+    {/* Back trekking pole */}
+    <line x1="9" y1="10" x2="6" y2="21" />
+    {/* Front leg (step forward) */}
+    <polyline points="11,13 13,17.5 14,21" />
+    {/* Back leg */}
+    <polyline points="11,13 9.5,17 9,21" />
   </svg>
 );
 
