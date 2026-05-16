@@ -1,5 +1,5 @@
 import React from 'react';
-import { Mountain, Bike, Waves, Camera, Snowflake, Ship, Tag, Compass } from 'lucide-react';
+import { Mountain, Bike, Waves, Camera, Snowflake, Ship, Tag, Compass, BedDouble } from 'lucide-react';
 
 // ---- Custom SVG icons ----
 
@@ -14,20 +14,21 @@ const HikingIcon = ({ className }: { className?: string }) => (
     className={className}
   >
     {/* Head */}
-    <circle cx="12" cy="3.5" r="1.5" />
-    {/* Body */}
-    <line x1="12" y1="5" x2="12" y2="13" />
-    {/* Left arm → left trekking pole */}
-    <polyline points="12,8 8.5,11 5,20" />
-    {/* Right arm → right trekking pole */}
-    <polyline points="12,8 15.5,11 19,20" />
-    {/* Pole tips */}
-    <line x1="5" y1="20" x2="4" y2="22" />
-    <line x1="19" y1="20" x2="20" y2="22" />
-    {/* Left leg (step forward) */}
-    <polyline points="12,13 9,18 8,21" />
-    {/* Right leg (back) */}
-    <polyline points="12,13 15,18 16,21" />
+    <circle cx="13" cy="3.5" r="1.5" />
+    {/* Torso (slight forward lean) */}
+    <line x1="13" y1="5" x2="11" y2="13" />
+    {/* Front arm */}
+    <line x1="12" y1="7.5" x2="9.5" y2="9" />
+    {/* Front trekking pole (forward diagonal) */}
+    <line x1="9.5" y1="9" x2="5.5" y2="21" />
+    {/* Back arm */}
+    <line x1="12" y1="7.5" x2="14.5" y2="9" />
+    {/* Back trekking pole (backward diagonal) */}
+    <line x1="14.5" y1="9" x2="18.5" y2="21" />
+    {/* Front leg (step forward) */}
+    <polyline points="11,13 8.5,18 7.5,21" />
+    {/* Back leg */}
+    <polyline points="11,13 13.5,18 14.5,21" />
   </svg>
 );
 
@@ -104,7 +105,8 @@ export type CardTypeIconKey =
   | 'photo'
   | 'winter'
   | 'boat'
-  | 'compass';
+  | 'compass'
+  | 'hotel';
 
 export interface IconOption {
   key: CardTypeIconKey;
@@ -150,6 +152,11 @@ export const ICON_OPTIONS: IconOption[] = [
     key: 'compass',
     label: 'Обзорный',
     component: ({ className }) => <Compass className={className} />,
+  },
+  {
+    key: 'hotel',
+    label: 'Отель / Проживание',
+    component: ({ className }) => <BedDouble className={className} />,
   },
 ];
 
