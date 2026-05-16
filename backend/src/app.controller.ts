@@ -50,7 +50,7 @@ export class AppController {
   @Get('meta/card-types')
   async getCardTypes() {
     return this.prisma.cardType.findMany({
-      orderBy: { name: 'asc' },
+      orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
     });
   }
 
@@ -138,7 +138,7 @@ export class AppController {
   @Post('admin/card-types')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
-  async createCardType(@Body() data: { name: string; slug: string; icon?: string }) {
+  async createCardType(@Body() data: { name: string; slug: string; icon?: string; sortOrder?: number }) {
     // Check if name or slug already exist
     const existing = await this.prisma.cardType.findFirst({
       where: {
@@ -154,6 +154,7 @@ export class AppController {
         name: data.name,
         slug: data.slug,
         icon: data.icon ?? null,
+        sortOrder: data.sortOrder ?? 0,
       },
     });
   }
@@ -163,7 +164,7 @@ export class AppController {
   @Roles(UserRole.ADMIN)
   async updateCardType(
     @Param('id') id: string,
-    @Body() data: { name?: string; slug?: string; icon?: string | null }
+    @Body() data: { name?: string; slug?: string; icon?: string | null; sortOrder?: number }
   ) {
     // Check if name or slug conflict with other types
     if (data.name || data.slug) {

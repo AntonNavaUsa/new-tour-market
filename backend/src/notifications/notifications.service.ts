@@ -142,61 +142,69 @@ export class NotificationsService {
     cardTitle: string;
     amount: number;
     paymentId: string;
+    userName?: string;
+    date?: string;
+    time?: string;
+    quantity?: number;
   }): Promise<void> {
+    const ordersUrl = 'https://szntravel.ru/orders';
+    const orderNum = paymentData.orderId.slice(-8).toUpperCase();
+
     const html = `
       <!DOCTYPE html>
       <html>
         <head>
           <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
             .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background: #10B981; color: white; padding: 20px; text-align: center; }
-            .content { background: #f9fafb; padding: 20px; }
-            .payment-details { background: white; padding: 15px; margin: 20px 0; border-radius: 8px; }
-            .detail-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e5e7eb; }
-            .detail-label { font-weight: bold; }
-            .success-badge { background: #10B981; color: white; padding: 10px 20px; border-radius: 20px; display: inline-block; margin: 20px 0; }
-            .footer { text-align: center; padding: 20px; font-size: 12px; color: #6b7280; }
+            .header { background: #10B981; color: white; padding: 24px 20px; text-align: center; border-radius: 8px 8px 0 0; }
+            .content { background: #f9fafb; padding: 24px 20px; border-radius: 0 0 8px 8px; }
+            .payment-details { background: white; padding: 15px; margin: 20px 0; border-radius: 8px; border: 1px solid #e5e7eb; }
+            .detail-row { display: flex; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid #f3f4f6; }
+            .detail-row:last-child { border-bottom: none; }
+            .detail-label { font-weight: bold; color: #6b7280; font-size: 13px; }
+            .detail-value { font-size: 13px; }
+            .btn { display: inline-block; background: #10B981; color: white !important; text-decoration: none; padding: 13px 30px; border-radius: 8px; font-size: 15px; font-weight: bold; margin: 16px 0; }
+            .footer { text-align: center; padding: 20px; font-size: 12px; color: #9ca3af; }
           </style>
         </head>
         <body>
           <div class="container">
             <div class="header">
-              <h1>✓ Оплата прошла успешно!</h1>
+              <h1 style="margin:0;font-size:22px;">✓ Оплата прошла успешно!</h1>
             </div>
             <div class="content">
-              <div style="text-align: center;">
-                <span class="success-badge">Оплачено</span>
-              </div>
-              
-              <p>Здравствуйте!</p>
-              <p>Ваш платеж успешно обработан.</p>
-              
+              <p>Здравствуйте${paymentData.userName ? ', ' + paymentData.userName : ''}!</p>
+              <p>Ваш платёж получен, бронирование подтверждено.</p>
+
               <div class="payment-details">
-                <h2>Детали платежа</h2>
                 <div class="detail-row">
                   <span class="detail-label">Номер заказа:</span>
-                  <span>${paymentData.orderId}</span>
+                  <span class="detail-value">#${orderNum}</span>
                 </div>
                 <div class="detail-row">
                   <span class="detail-label">Тур:</span>
-                  <span>${paymentData.cardTitle}</span>
+                  <span class="detail-value">${paymentData.cardTitle}</span>
                 </div>
+                ${paymentData.date ? `<div class="detail-row"><span class="detail-label">Дата:</span><span class="detail-value">${paymentData.date}</span></div>` : ''}
+                ${paymentData.time ? `<div class="detail-row"><span class="detail-label">Время:</span><span class="detail-value">${paymentData.time}</span></div>` : ''}
+                ${paymentData.quantity ? `<div class="detail-row"><span class="detail-label">Участников:</span><span class="detail-value">${paymentData.quantity}</span></div>` : ''}
                 <div class="detail-row">
-                  <span class="detail-label">Сумма:</span>
-                  <span><strong>${paymentData.amount} ₽</strong></span>
-                </div>
-                <div class="detail-row">
-                  <span class="detail-label">ID платежа:</span>
-                  <span>${paymentData.paymentId}</span>
+                  <span class="detail-label">Оплачено:</span>
+                  <span class="detail-value"><strong>${paymentData.amount} ₽</strong></span>
                 </div>
               </div>
-              
-              <p>Спасибо за покупку! Мы отправили вам подробную информацию о бронировании.</p>
+
+              <p>Посмотреть детали заказа и историю оплат можно в личном кабинете:</p>
+              <div style="text-align:center;">
+                <a class="btn" href="${ordersUrl}">Мои заказы</a>
+              </div>
+
+              <p style="font-size:13px;color:#6b7280;">Если у вас возникли вопросы — ответьте на это письмо или напишите нам.</p>
             </div>
             <div class="footer">
               <p>Это автоматическое письмо, пожалуйста, не отвечайте на него.</p>
-              <p>&copy; 2026 Travelio. Все права защищены.</p>
+              <p>&copy; ${new Date().getFullYear()} Сезон приключений. Все права защищены.</p>
             </div>
           </div>
         </body>
@@ -205,9 +213,9 @@ export class NotificationsService {
 
     await this.sendEmail({
       to: userEmail,
-      subject: `Оплата успешно получена - Заказ #${paymentData.orderId}`,
+      subject: `✅ Бронирование подтверждено — #${orderNum} ${paymentData.cardTitle}`,
       html,
-      text: `Ваш платеж на сумму ${paymentData.amount} ₽ успешно обработан. Номер заказа: ${paymentData.orderId}`,
+      text: `Ваш платёж на сумму ${paymentData.amount} ₽ успешно обработан. Заказ #${orderNum}: ${paymentData.cardTitle}${paymentData.date ? ', дата: ' + paymentData.date : ''}. Посмотреть заказ: https://szntravel.ru/orders`,
     });
   }
 
@@ -288,6 +296,9 @@ export class NotificationsService {
                   <span class="detail-value"><strong>${orderData.totalAmount} ₽</strong></span>
                 </div>
               </div>
+              <p style="font-size:13px;">
+                Все заказы: <a href="https://szntravel.ru/orders" style="color:#4F46E5;">https://szntravel.ru/orders</a>
+              </p>
             </div>
             <div class="footer">
               <p>&copy; ${new Date().getFullYear()} Сезон приключений</p>

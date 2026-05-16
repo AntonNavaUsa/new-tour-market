@@ -323,20 +323,25 @@ export class PaymentsService {
           cardTitle: payment.order.card.title,
           amount: Number(payment.amount),
           paymentId: payment.paymentIdExternal || payment.id,
+          userName: payment.order.user.name,
+          date: payment.order.date.toLocaleDateString('ru-RU'),
+          time: payment.order.time || undefined,
+          quantity: payment.order.quantity,
         },
       );
 
       // Notify admin about payment
-      const adminEmail = process.env.ADMIN_EMAIL || 'admin@travelio.local';
+      const adminEmail = this.config.get('ADMIN_EMAIL') || 'admin@szntravel.ru';
       await this.notificationsService.sendAdminOrderNotification(adminEmail, {
         orderId: payment.order.id,
         cardTitle: payment.order.card.title,
         userName: payment.order.user.name,
         userEmail: payment.order.user.email,
+        userPhone: payment.order.user.phone,
         date: payment.order.date.toLocaleDateString('ru-RU'),
         time: payment.order.time || 'Будет уточнено',
         quantity: payment.order.quantity,
-        totalAmount: Number(payment.amount),
+        totalAmount: Number(payment.order.amount),
         isPaid: true,
       });
 
@@ -392,8 +397,26 @@ export class PaymentsService {
                 cardTitle: fullPayment.order.card.title,
                 amount: Number(fullPayment.amount),
                 paymentId: object.id,
+                userName: fullPayment.order.user.name,
+                date: fullPayment.order.date.toLocaleDateString('ru-RU'),
+                time: fullPayment.order.time || undefined,
+                quantity: fullPayment.order.quantity,
               },
             );
+
+            const adminEmail = this.config.get('ADMIN_EMAIL') || 'admin@szntravel.ru';
+            await this.notificationsService.sendAdminOrderNotification(adminEmail, {
+              orderId: fullPayment.order.id,
+              cardTitle: fullPayment.order.card.title,
+              userName: fullPayment.order.user.name,
+              userEmail: fullPayment.order.user.email,
+              userPhone: fullPayment.order.user.phone,
+              date: fullPayment.order.date.toLocaleDateString('ru-RU'),
+              time: fullPayment.order.time || 'Будет уточнено',
+              quantity: fullPayment.order.quantity,
+              totalAmount: Number(fullPayment.order.amount),
+              isPaid: true,
+            });
           }
         } catch (err) {
           this.logger.error('Failed to send payment success notification', err);

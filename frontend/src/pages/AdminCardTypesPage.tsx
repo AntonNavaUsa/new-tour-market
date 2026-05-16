@@ -105,7 +105,7 @@ export function AdminCardTypesPage() {
                   <div>
                     <h3 className="font-semibold">{type.name}</h3>
                     <div className="text-sm text-muted-foreground">
-                      slug: <code>{type.slug}</code>
+                      slug: <code>{type.slug}</code> · порядок: {type.sortOrder}
                     </div>
                   </div>
                 </div>

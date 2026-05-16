@@ -61,6 +61,7 @@ export function AdminGuidePageFormPage() {
       isNew ? guidePagesApi.create(data) : guidePagesApi.update(id!, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-guide-pages'] });
+      queryClient.invalidateQueries({ queryKey: ['guide-pages-nav'] });
       navigate('/admin/guide-pages');
     },
     onError: (err: any) => setError(err?.response?.data?.message ?? 'Ошибка сохранения'),

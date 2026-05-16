@@ -15,7 +15,7 @@ export function GuidePagePage() {
 
   if (isLoading) {
     return (
-      <div className="container py-16 max-w-3xl">
+      <div className="container py-16">
         <div className="space-y-4 animate-pulse">
           <div className="h-8 bg-stone-100 rounded w-2/3" />
           <div className="h-4 bg-stone-100 rounded w-1/3" />
@@ -42,7 +42,7 @@ export function GuidePagePage() {
   }
 
   return (
-    <div className="container py-10 max-w-3xl">
+    <div className="container py-10">
       {/* Back */}
       <Link to="/#tours" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors">
         <ArrowLeft className="h-4 w-4" />
@@ -70,7 +70,7 @@ export function GuidePagePage() {
 
       {/* Content */}
       <article
-        className="prose prose-stone max-w-none prose-headings:font-bold prose-a:text-emerald-600"
+        className="prose max-w-none"
         dangerouslySetInnerHTML={{ __html: page.content }}
       />
     </div>

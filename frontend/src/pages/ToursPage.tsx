@@ -49,7 +49,13 @@ function groupByType(cards: TourCard[]): Map<string, TourCard[]> {
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key)!.push(card);
   }
-  return groups;
+  return new Map(
+    [...groups.entries()].sort(([, a], [, b]) => {
+      const orderA = a[0]?.cardType?.sortOrder ?? 999;
+      const orderB = b[0]?.cardType?.sortOrder ?? 999;
+      return orderA - orderB;
+    })
+  );
 }
 
 export function ToursPage() {

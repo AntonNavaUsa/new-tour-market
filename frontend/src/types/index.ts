@@ -63,6 +63,7 @@ export interface CardType {
   name: string;
   slug: string;
   icon: string | null;
+  sortOrder: number;
   createdAt: string;
 }
 

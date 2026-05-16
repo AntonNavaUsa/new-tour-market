@@ -17,6 +17,7 @@ const cardTypeSchema = z.object({
   name: z.string().min(1, 'Название обязательно'),
   slug: z.string().min(1, 'Slug обязателен').regex(/^[a-z0-9-]+$/, 'Только латинские буквы, цифры и дефисы'),
   icon: z.string().nullable().optional(),
+  sortOrder: z.coerce.number().int().min(0, 'Порядок не может быть отрицательным').default(0),
 });
 
 type CardTypeFormData = z.infer<typeof cardTypeSchema>;
@@ -50,6 +51,7 @@ export function AdminCardTypeFormPage() {
       name: '',
       slug: '',
       icon: null,
+      sortOrder: 0,
     },
   });
 
@@ -61,12 +63,13 @@ export function AdminCardTypeFormPage() {
         name: cardType.name,
         slug: cardType.slug,
         icon: cardType.icon,
+        sortOrder: cardType.sortOrder ?? 0,
       });
     }
   }, [cardType, isEditMode, reset]);
 
   const createMutation = useMutation({
-    mutationFn: (data: CardTypeFormData) => metaApi.createCardType({ ...data, icon: data.icon ?? null }),
+    mutationFn: (data: CardTypeFormData) => metaApi.createCardType({ ...data, icon: data.icon ?? null, sortOrder: data.sortOrder ?? 0 }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['admin-card-types'] });
       await queryClient.invalidateQueries({ queryKey: ['card-types'] });
@@ -75,7 +78,7 @@ export function AdminCardTypeFormPage() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: (data: CardTypeFormData) => metaApi.updateCardType(id!, { ...data, icon: data.icon ?? null }),
+    mutationFn: (data: CardTypeFormData) => metaApi.updateCardType(id!, { ...data, icon: data.icon ?? null, sortOrder: data.sortOrder ?? 0 }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['admin-card-types'] });
       await queryClient.invalidateQueries({ queryKey: ['card-types'] });
@@ -138,6 +141,24 @@ export function AdminCardTypeFormPage() {
               )}
               <p className="text-xs text-muted-foreground">
                 Только латинские буквы, цифры и дефисы
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="sortOrder">Порядок отображения</Label>
+              <Input
+                id="sortOrder"
+                type="number"
+                min={0}
+                placeholder="0"
+                {...register('sortOrder')}
+                disabled={isLoading}
+              />
+              {errors.sortOrder && (
+                <p className="text-sm text-destructive">{errors.sortOrder.message}</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Меньшее значение — выше в списке. Типы с одинаковым порядком сортируются по названию.
               </p>
             </div>
 
