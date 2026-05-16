@@ -484,3 +484,19 @@ model OrderMessage {
   @@index([readAt])
   @@map("order_messages")
 }
+
+model GuidePage {
+  id           String   @id @default(uuid())
+  title        String
+  slug         String   @unique
+  content      String   @db.Text
+  excerpt      String?  @db.Text
+  headPhotoUrl String?  @map("head_photo_url")
+  isPublished  Boolean  @default(false) @map("is_published")
+  sortOrder    Int      @default(0) @map("sort_order")
+
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("guide_pages")
+}

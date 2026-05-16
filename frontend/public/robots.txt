@@ -1,0 +1,16 @@
+User-agent: *
+Allow: /
+
+# Страницы под авторизацией — не индексировать
+Disallow: /admin/
+Disallow: /login
+Disallow: /register
+Disallow: /tours
+Disallow: /tour-packages
+Disallow: /tours/
+Disallow: /booking/
+Disallow: /orders/
+Disallow: /profile
+Disallow: /cart
+
+Sitemap: https://szntravel.ru/sitemap.xml

@@ -45,11 +45,11 @@ const locations: Location[] = [
       'Променад вдоль бурлящей реки. Весной здесь зацветает магнолия и черешня, а воздух наполняется ароматом цветущих садов. Отличное место для утренних прогулок и вечерних посиделок у воды.',
     howToGet:
       'Пешком или на велосипеде вдоль берега. Электробусы курсируют от автостанции Эсто-Садок.',
-    image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80',
+    image: '/img/photo-1506905925346-21bda4d32df4.jpg',
     gallery: [
-      'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80',
-      'https://images.unsplash.com/photo-1470770903676-69b98201ea1c?w=1200&q=80',
-      'https://images.unsplash.com/photo-1501854140801-50d01698950b?w=1200&q=80',
+      '/img/photo-1506905925346-21bda4d32df4.jpg',
+      '/img/photo-1506905925346-21bda4d32df4.jpg',
+      '/img/photo-1454496522488-7a8e488e8606.jpg',
     ],
     status: 'Доступно сейчас',
     statusColor: 'text-green-700 bg-green-50',
@@ -62,11 +62,11 @@ const locations: Location[] = [
       'Лучшая панорамная точка для пикника с видом на всю долину и заснеженные вершины. Подъем занимает 30–40 минут по тропе через реликтовый лес.',
     howToGet:
       'Трейл начинается у серебряной стелы в парке «Южные культуры». GPS: 43.6789, 40.3204.',
-    image: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=800&q=80',
+    image: '/img/photo-1464822759023-fed622ff2c3b.jpg',
     gallery: [
-      'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1200&q=80',
-      'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1200&q=80',
-      'https://images.unsplash.com/photo-1454496522488-7a8e488e8606?w=1200&q=80',
+      '/img/photo-1464822759023-fed622ff2c3b.jpg',
+      '/img/photo-1464822759023-fed622ff2c3b.jpg',
+      '/img/photo-1454496522488-7a8e488e8606.jpg',
     ],
     status: 'Доступно сейчас',
     statusColor: 'text-green-700 bg-green-50',
@@ -79,11 +79,11 @@ const locations: Location[] = [
       'Самый полноводный водопад Красной Поляны именно весной. Маршрут проходит в тени деревьев мимо мхов и папоротников — доступен даже новичкам.',
     howToGet:
       'Маршрут стартует от поворота на ул. Горная. Парковка у кафе «Лесная».',
-    image: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&q=80',
+    image: '/img/photo-1551632811-561732d1e306.jpg',
     gallery: [
-      'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=1200&q=80',
-      'https://images.unsplash.com/photo-1501854140801-50d01698950b?w=1200&q=80',
-      'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80',
+      '/img/photo-1551632811-561732d1e306.jpg',
+      '/img/photo-1454496522488-7a8e488e8606.jpg',
+      '/img/photo-1506905925346-21bda4d32df4.jpg',
     ],
     status: 'Пик полноводия',
     statusColor: 'text-blue-700 bg-blue-50',
@@ -96,11 +96,11 @@ const locations: Location[] = [
       'Обаятельные альпаки на высоте 1100 м. Весной животные особенно активны — можно кормить, гладить и делать невероятные фото на фоне белеющих вершин.',
     howToGet:
       'Маршрутное такси № 6 до остановки «Горная Олимпийская деревня», далее 300 м пешком.',
-    image: 'https://images.unsplash.com/photo-1589924691106-07c2633f6360?w=800&q=80',
+    image: '/img/photo-1483728642387-6c3bdd6c93e5.jpg',
     gallery: [
-      'https://images.unsplash.com/photo-1589924691106-07c2633f6360?w=1200&q=80',
-      'https://images.unsplash.com/photo-1589182397057-b82bca68c740?w=1200&q=80',
-      'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80',
+      '/img/photo-1483728642387-6c3bdd6c93e5.jpg',
+      '/img/photo-1483728642387-6c3bdd6c93e5.jpg',
+      '/img/photo-1506905925346-21bda4d32df4.jpg',
     ],
     status: 'Открыто',
     statusColor: 'text-green-700 bg-green-50',
@@ -113,11 +113,11 @@ const locations: Location[] = [
       'Понаблюдайте за зубрами и кавказскими леопардами в их естественной среде обитания. Весной в вольерах появляется молодняк — особенно трогательное зрелище.',
     howToGet:
       'На автомобиле или такси до санатория «Лаура». Бесплатная парковка на территории.',
-    image: 'https://images.unsplash.com/photo-1474511320723-9a56873867b5?w=800&q=80',
+    image: '/img/photo-1551632811-561732d1e306.jpg',
     gallery: [
-      'https://images.unsplash.com/photo-1474511320723-9a56873867b5?w=1200&q=80',
-      'https://images.unsplash.com/photo-1547036967-23d11aacaee0?w=1200&q=80',
-      'https://images.unsplash.com/photo-1446329813274-7c9036bd9a1f?w=1200&q=80',
+      '/img/photo-1551632811-561732d1e306.jpg',
+      '/img/photo-1454496522488-7a8e488e8606.jpg',
+      '/img/photo-1551632811-561732d1e306.jpg',
     ],
     status: 'Открыто',
     statusColor: 'text-green-700 bg-green-50',
@@ -129,11 +129,11 @@ const locations: Location[] = [
       'Древние мегалиты — место силы в лесной тишине. Возраст некоторых камней превышает 4000 лет. Весной тропа к ним особенно живописна.',
     howToGet:
       'От поселка Медовеевка по грунтовой дороге 2 км. Удобнее всего на внедорожнике или пешком.',
-    image: 'https://images.unsplash.com/photo-1547036967-23d11aacaee0?w=800&q=80',
+    image: '/img/photo-1454496522488-7a8e488e8606.jpg',
     gallery: [
-      'https://images.unsplash.com/photo-1547036967-23d11aacaee0?w=1200&q=80',
-      'https://images.unsplash.com/photo-1446329813274-7c9036bd9a1f?w=1200&q=80',
-      'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1200&q=80',
+      '/img/photo-1454496522488-7a8e488e8606.jpg',
+      '/img/photo-1551632811-561732d1e306.jpg',
+      '/img/photo-1464822759023-fed622ff2c3b.jpg',
     ],
     status: 'Доступно сейчас',
     statusColor: 'text-green-700 bg-green-50',
@@ -146,11 +146,11 @@ const locations: Location[] = [
       'Оборудованные дорожки в лесу с мягким набором высоты и скамейками через каждые 500 м. Идеально для тех, кто хочет насладиться природой без лишней нагрузки.',
     howToGet:
       'Вход на терренкур № 1 — у санатория «Красная Поляна», вход на № 2 — от ул. Заповедная.',
-    image: 'https://images.unsplash.com/photo-1446329813274-7c9036bd9a1f?w=800&q=80',
+    image: '/img/photo-1551632811-561732d1e306.jpg',
     gallery: [
-      'https://images.unsplash.com/photo-1446329813274-7c9036bd9a1f?w=1200&q=80',
-      'https://images.unsplash.com/photo-1470770903676-69b98201ea1c?w=1200&q=80',
-      'https://images.unsplash.com/photo-1501854140801-50d01698950b?w=1200&q=80',
+      '/img/photo-1551632811-561732d1e306.jpg',
+      '/img/photo-1506905925346-21bda4d32df4.jpg',
+      '/img/photo-1454496522488-7a8e488e8606.jpg',
     ],
     status: 'Доступно сейчас',
     statusColor: 'text-green-700 bg-green-50',
@@ -440,7 +440,7 @@ export function KrasnayaPolyanaSpringPage() {
     },
     datePublished: '2026-04-22',
     dateModified: '2026-04-22',
-    image: 'https://images.unsplash.com/photo-1549213713-02feee584631?w=1200&q=80',
+    image: '/img/photo-1506905925346-21bda4d32df4.jpg',
     mainEntityOfPage: 'https://seasonadventures.ru/guides/krasnaya-polyana-spring',
   };
 
@@ -456,7 +456,7 @@ export function KrasnayaPolyanaSpringPage() {
       >
         <div className="absolute inset-0 z-0">
           <img
-            src="https://images.unsplash.com/photo-1549213713-02feee584631?w=1600&q=80"
+            src="/img/photo-1506905925346-21bda4d32df4.jpg"
             alt="Красная Поляна весной"
             className="w-full h-full object-cover opacity-55"
             loading="eager"

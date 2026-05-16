@@ -1,6 +1,7 @@
 export * from './auth';
 export * from './cards';
 export * from './guides';
+export * from './guide-pages';
 export * from './messages';
 export * from './meta';
 export * from './orders';

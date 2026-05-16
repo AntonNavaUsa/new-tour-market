@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Routes, Route, Link } from 'react-router-dom';
+import { Routes, Route, Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from './store/authStore';
 import { RootLayout } from './components/layout/RootLayout';
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -21,16 +21,27 @@ import { AdminTariffTypesPage } from './pages/AdminTariffTypesPage';
 import { AdminTariffTypeFormPage } from './pages/AdminTariffTypeFormPage';
 import { AdminReviewsPage } from './pages/AdminReviewsPage';
 import { AdminOrdersPage } from './pages/AdminOrdersPage';
+import { AdminGuidePagesPage } from './pages/AdminGuidePagesPage';
+import { AdminGuidePageFormPage } from './pages/AdminGuidePageFormPage';
+import { GuidePagePage } from './pages/GuidePagePage';
 import { KrasnayaPolyanaSpringPage } from './pages/KrasnayaPolyanaSpringPage';
 import { TourPackagesPage } from './pages/TourPackagesPage';
 import { UserRole } from './types';
 
 function App() {
   const loadUser = useAuthStore((state) => state.loadUser);
+  const location = useLocation();
 
   useEffect(() => {
     loadUser();
   }, [loadUser]);
+
+  // Отслеживание SPA-переходов для Яндекс Метрики
+  useEffect(() => {
+    if (typeof ym !== 'undefined') {
+      ym(109252216, 'hit', window.location.href);
+    }
+  }, [location]);
 
   return (
     <Routes>
@@ -42,6 +53,7 @@ function App() {
         <Route path="/booking/:id" element={<BookingPage />} />
         {/* SEO Guides / Landings */}
         <Route path="/guides/krasnaya-polyana-spring" element={<KrasnayaPolyanaSpringPage />} />
+        <Route path="/guides/:slug" element={<GuidePagePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         
@@ -173,6 +185,22 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
               <AdminOrdersPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/guide-pages"
+          element={
+            <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
+              <AdminGuidePagesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/guide-pages/:id"
+          element={
+            <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
+              <AdminGuidePageFormPage />
             </ProtectedRoute>
           }
         />
