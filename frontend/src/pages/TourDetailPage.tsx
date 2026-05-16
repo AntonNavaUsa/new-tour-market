@@ -653,6 +653,7 @@ export function TourDetailPage() {
 
       
       {/* Two-column content */}
+      <div className="grid lg:grid-cols-3 gap-6 lg:gap-10 items-start">
 
         {/* LEFT — description, meta, expression photos */}
         <div className="lg:col-span-2 space-y-8 order-last lg:order-none">
