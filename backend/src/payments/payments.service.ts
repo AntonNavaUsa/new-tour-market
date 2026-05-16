@@ -331,7 +331,7 @@ export class PaymentsService {
       );
 
       // Notify admin about payment
-      const adminEmail = this.config.get('ADMIN_EMAIL') || 'admin@szntravel.ru';
+      const adminEmail = await this.getAdminEmail();
       await this.notificationsService.sendAdminOrderNotification(adminEmail, {
         orderId: payment.order.id,
         cardTitle: payment.order.card.title,
@@ -404,7 +404,7 @@ export class PaymentsService {
               },
             );
 
-            const adminEmail = this.config.get('ADMIN_EMAIL') || 'admin@szntravel.ru';
+            const adminEmail = await this.getAdminEmail();
             await this.notificationsService.sendAdminOrderNotification(adminEmail, {
               orderId: fullPayment.order.id,
               cardTitle: fullPayment.order.card.title,
@@ -546,5 +546,13 @@ export class PaymentsService {
         hasMore: skip + take < total,
       },
     };
+  }
+
+  private async getAdminEmail(): Promise<string> {
+    try {
+      const setting = await this.prisma.siteSettings.findUnique({ where: { key: 'adminEmail' } });
+      if (setting?.value) return setting.value;
+    } catch {}
+    return this.config.get('ADMIN_EMAIL') || 'admin@szntravel.ru';
   }
 }

@@ -69,6 +69,16 @@ export const metaApi = {
     return response.data;
   },
 
+  getAdminSettings: async (): Promise<Record<string, string>> => {
+    const response = await api.get<Record<string, string>>('/api/admin/settings');
+    return response.data;
+  },
+
+  updateSiteSettings: async (data: Partial<{ siteName: string; siteDescription: string; adminEmail: string }>): Promise<Record<string, string>> => {
+    const response = await api.patch<Record<string, string>>('/api/admin/settings', data);
+    return response.data;
+  },
+
   uploadHeroCover: async (file: File): Promise<{ url: string }> => {
     const formData = new FormData();
     formData.append('file', file);

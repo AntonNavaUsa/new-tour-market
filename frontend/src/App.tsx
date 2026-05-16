@@ -23,6 +23,7 @@ import { AdminReviewsPage } from './pages/AdminReviewsPage';
 import { AdminOrdersPage } from './pages/AdminOrdersPage';
 import { AdminGuidePagesPage } from './pages/AdminGuidePagesPage';
 import { AdminGuidePageFormPage } from './pages/AdminGuidePageFormPage';
+import { AdminSiteSettingsPage } from './pages/AdminSiteSettingsPage';
 import { GuidePagePage } from './pages/GuidePagePage';
 import { KrasnayaPolyanaSpringPage } from './pages/KrasnayaPolyanaSpringPage';
 import { TourPackagesPage } from './pages/TourPackagesPage';
@@ -201,6 +202,14 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
               <AdminGuidePageFormPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/settings"
+          element={
+            <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
+              <AdminSiteSettingsPage />
             </ProtectedRoute>
           }
         />

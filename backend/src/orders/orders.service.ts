@@ -181,7 +181,7 @@ export class OrdersService {
 
     // Notify admin about new pre-order
     try {
-      const adminEmail = process.env.ADMIN_EMAIL || 'admin@travelio.local';
+      const adminEmail = await this.getAdminEmail();
       await this.notificationsService.sendAdminOrderNotification(adminEmail, {
         orderId: order.id,
         cardTitle: order.card.title,
@@ -256,7 +256,7 @@ export class OrdersService {
       });
 
       // Send notification to admin
-      const adminEmail = process.env.ADMIN_EMAIL || 'admin@travelio.local';
+      const adminEmail = await this.getAdminEmail();
       await this.notificationsService.sendAdminOrderNotification(adminEmail, {
         orderId: confirmed.id,
         cardTitle: confirmed.card.title,
@@ -642,5 +642,13 @@ export class OrdersService {
       },
     });
     return { count };
+  }
+
+  private async getAdminEmail(): Promise<string> {
+    try {
+      const setting = await this.prisma.siteSettings.findUnique({ where: { key: 'adminEmail' } });
+      if (setting?.value) return setting.value;
+    } catch {}
+    return process.env.ADMIN_EMAIL || 'admin@szntravel.ru';
   }
 }

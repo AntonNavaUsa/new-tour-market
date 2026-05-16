@@ -127,6 +127,12 @@ export function Header() {
                 >
                   Путеводитель
                 </Link>
+                <Link 
+                  to="/admin/settings" 
+                  className="transition-colors hover:text-foreground/80 text-foreground"
+                >
+                  Настройки
+                </Link>
                 <span className="relative inline-block">
                   <Link 
                     to="/admin/orders" 

@@ -286,6 +286,31 @@ export class AppController {
     return Object.fromEntries(settings.map((s) => [s.key, s.value]));
   }
 
+  @Get('admin/settings')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async getAdminSettings() {
+    const settings = await this.prisma.siteSettings.findMany();
+    return Object.fromEntries(settings.map((s) => [s.key, s.value]));
+  }
+
+  @Patch('admin/settings')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async updateAdminSettings(@Body() body: Record<string, string>) {
+    const allowedKeys = ['siteName', 'siteDescription', 'adminEmail'];
+    for (const [key, value] of Object.entries(body)) {
+      if (!allowedKeys.includes(key)) continue;
+      await this.prisma.siteSettings.upsert({
+        where: { key },
+        update: { value: String(value) },
+        create: { key, value: String(value) },
+      });
+    }
+    const settings = await this.prisma.siteSettings.findMany();
+    return Object.fromEntries(settings.map((s) => [s.key, s.value]));
+  }
+
   @Post('admin/settings/hero-cover')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
