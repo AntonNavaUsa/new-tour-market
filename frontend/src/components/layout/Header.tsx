@@ -150,15 +150,6 @@ export function Header() {
                 )}
               </div>
             )}
-
-            {isAuthenticated && (user?.role === 'ADMIN' || user?.role === 'PARTNER') && (
-              <Link 
-                to="/my-cards" 
-                className="transition-colors hover:text-foreground/80 text-foreground"
-              >
-                Мои туры
-              </Link>
-            )}
           </nav>
         </div>
 
