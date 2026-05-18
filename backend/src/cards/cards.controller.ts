@@ -133,6 +133,23 @@ export class CardsController {
     return this.cardsService.deleteSlideshowPhoto(photoId, userId, userRole);
   }
 
+  @Put('photos/:photoId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.PARTNER)
+  @ApiBearerAuth()
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Replace slideshow photo file (keeps same position)' })
+  async replaceSlideshowPhoto(
+    @Param('photoId') photoId: string,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('role') userRole: UserRole,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    if (!file) throw new BadRequestException('File is required');
+    return this.cardsService.replaceSlideshowPhoto(photoId, userId, userRole, file);
+  }
+
   @Post(':id/photos/main')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.PARTNER)
@@ -224,6 +241,23 @@ export class CardsController {
     @CurrentUser('role') userRole: UserRole,
   ) {
     return this.cardsService.deleteAccommodationPhoto(photoId, userId, userRole);
+  }
+
+  @Put('photos/accommodation/:photoId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.PARTNER)
+  @ApiBearerAuth()
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Replace accommodation photo file (keeps same position)' })
+  async replaceAccommodationPhoto(
+    @Param('photoId') photoId: string,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('role') userRole: UserRole,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    if (!file) throw new BadRequestException('File is required');
+    return this.cardsService.replaceAccommodationPhoto(photoId, userId, userRole, file);
   }
 
   @Patch(':id/photos/accommodation/reorder')

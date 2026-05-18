@@ -74,6 +74,8 @@ export class CardsService {
         notIncludedItems: dto.notIncludedItems || [],
         forWhom: dto.forWhom || [],
         noCover: dto.noCover ?? false,
+        heroType: dto.heroType ?? 'cover',
+        heroPerks: dto.heroPerks ?? [],
         tourProgram: dto.tourProgram ?? [],
         accommodationDescription: dto.accommodationDescription,
         postPaymentInfo: dto.postPaymentInfo,
@@ -660,6 +662,76 @@ export class CardsService {
     }
 
     return { message: 'Accommodation photo deleted successfully' };
+  }
+
+  async replaceSlideshowPhoto(
+    photoId: string,
+    userId: string,
+    userRole: UserRole,
+    file: Express.Multer.File,
+  ) {
+    const photo = await this.prisma.slideshowPhoto.findUnique({
+      where: { id: photoId },
+      include: { card: true },
+    });
+
+    if (!photo) throw new NotFoundException('Photo not found');
+    if (userRole !== UserRole.ADMIN && photo.card.userId !== userId) {
+      throw new ForbiddenException('You do not have permission to update this photo');
+    }
+
+    const { url, thumbUrl } = await this.filesService.uploadImageWithThumb(file, 'photos', {
+      maxWidth: 1920,
+      maxHeight: 1080,
+      quality: 85,
+    });
+
+    try { await this.filesService.deleteImage(photo.url); } catch {}
+    if (photo.thumbUrl) {
+      try { await this.filesService.deleteImage(photo.thumbUrl); } catch {}
+    }
+
+    const updated = await this.prisma.slideshowPhoto.update({
+      where: { id: photoId },
+      data: { url, thumbUrl },
+    });
+
+    return { message: 'Photo replaced successfully', photo: updated };
+  }
+
+  async replaceAccommodationPhoto(
+    photoId: string,
+    userId: string,
+    userRole: UserRole,
+    file: Express.Multer.File,
+  ) {
+    const photo = await this.prisma.accommodationPhoto.findUnique({
+      where: { id: photoId },
+      include: { card: true },
+    });
+
+    if (!photo) throw new NotFoundException('Photo not found');
+    if (userRole !== UserRole.ADMIN && photo.card.userId !== userId) {
+      throw new ForbiddenException('You do not have permission to update this photo');
+    }
+
+    const { url, thumbUrl } = await this.filesService.uploadImageWithThumb(file, 'accommodation', {
+      maxWidth: 1920,
+      maxHeight: 1080,
+      quality: 85,
+    });
+
+    try { await this.filesService.deleteImage(photo.url); } catch {}
+    if (photo.thumbUrl) {
+      try { await this.filesService.deleteImage(photo.thumbUrl); } catch {}
+    }
+
+    const updated = await this.prisma.accommodationPhoto.update({
+      where: { id: photoId },
+      data: { url, thumbUrl },
+    });
+
+    return { message: 'Accommodation photo replaced successfully', photo: updated };
   }
 
   async reorderAccommodationPhotos(

@@ -137,6 +137,16 @@ export class CreateCardDto {
   @IsBoolean()
   noCover?: boolean;
 
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  heroType?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsArray()
+  heroPerks?: Array<{ icon: string; title: string; detail?: string }>;
+
   @ApiProperty({ required: false, type: 'array', description: 'Tour program by days [{title, description}]' })
   @IsOptional()
   @IsArray()

@@ -37,6 +37,11 @@ function App() {
     loadUser();
   }, [loadUser]);
 
+  // Прокрутка наверх при переходе между страницами
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
+
   // Отслеживание SPA-переходов для Яндекс Метрики
   useEffect(() => {
     if (typeof ym !== 'undefined') {

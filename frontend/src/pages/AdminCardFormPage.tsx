@@ -4,6 +4,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import * as LucideIcons from 'lucide-react';
 import {
   ArrowLeft,
   Save,
@@ -15,17 +16,21 @@ import {
   MoveDown,
   Upload,
   GripVertical,
+  Pencil,
+  Search,
+  ChevronDown,
 } from 'lucide-react';
 import { cardsApi, metaApi, ticketsApi, schedulesApi } from '../lib/api';
 import { handleApiError } from '../lib/axios';
 import { CoverCropModal } from '../components/CoverCropModal';
+import { PhotoEditModal } from '../components/PhotoEditModal';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { RichTextEditor } from '../components/RichTextEditor';
-import type { CardStatus, CreateCardRequest, UpdateCardRequest, SlideshowPhoto, AccommodationPhoto, Ticket, Price, GroupTier } from '../types';
+import type { CardStatus, CreateCardRequest, UpdateCardRequest, SlideshowPhoto, AccommodationPhoto, Ticket, Price, GroupTier, HeroPerk } from '../types';
 import { PricingType } from '../types';
 import { formatTierLabel } from '../lib/utils';
 import type { WeeklySchedulePayload } from '../lib/api/schedules';
@@ -211,6 +216,230 @@ function EditableList({
 }
 
 // ─────────────────────────────────────────────────────────────
+// Hero type — icon picker + perks editor
+// ─────────────────────────────────────────────────────────────
+const LUCIDE_ICON_LIST: { name: string; label: string }[] = [
+  { name: 'MapPin', label: 'Место' },
+  { name: 'Map', label: 'Карта' },
+  { name: 'Navigation', label: 'Навигация' },
+  { name: 'Compass', label: 'Компас' },
+  { name: 'Route', label: 'Маршрут' },
+  { name: 'Milestone', label: 'Км' },
+  { name: 'Flag', label: 'Флаг' },
+  { name: 'Mountain', label: 'Горы' },
+  { name: 'Waves', label: 'Вода' },
+  { name: 'TreePine', label: 'Лес' },
+  { name: 'Sun', label: 'Солнце' },
+  { name: 'Cloud', label: 'Облака' },
+  { name: 'Snowflake', label: 'Снег' },
+  { name: 'Flame', label: 'Огонь' },
+  { name: 'Wind', label: 'Ветер' },
+  { name: 'Thermometer', label: 'Темп.' },
+  { name: 'Umbrella', label: 'Зонт' },
+  { name: 'Sunset', label: 'Закат' },
+  { name: 'Users', label: 'Группа' },
+  { name: 'User', label: 'Человек' },
+  { name: 'Baby', label: 'Ребёнок' },
+  { name: 'Heart', label: 'Сердце' },
+  { name: 'Star', label: 'Звезда' },
+  { name: 'Car', label: 'Авто' },
+  { name: 'Bus', label: 'Автобус' },
+  { name: 'Train', label: 'Поезд' },
+  { name: 'Bike', label: 'Велосипед' },
+  { name: 'Plane', label: 'Самолёт' },
+  { name: 'Ship', label: 'Корабль' },
+  { name: 'Footprints', label: 'Пешком' },
+  { name: 'Home', label: 'Дом' },
+  { name: 'Building2', label: 'Здание' },
+  { name: 'BedDouble', label: 'Кровать' },
+  { name: 'Key', label: 'Ключ' },
+  { name: 'Tent', label: 'Палатка' },
+  { name: 'Camera', label: 'Камера' },
+  { name: 'Trophy', label: 'Трофей' },
+  { name: 'Medal', label: 'Медаль' },
+  { name: 'Dumbbell', label: 'Спорт' },
+  { name: 'Anchor', label: 'Якорь' },
+  { name: 'Binoculars', label: 'Бинокль' },
+  { name: 'Backpack', label: 'Рюкзак' },
+  { name: 'Clock', label: 'Время' },
+  { name: 'Calendar', label: 'Дата' },
+  { name: 'Timer', label: 'Таймер' },
+  { name: 'CheckCircle', label: 'Успех' },
+  { name: 'Shield', label: 'Защита' },
+  { name: 'ShieldCheck', label: 'Безопасность' },
+  { name: 'Info', label: 'Инфо' },
+  { name: 'Coffee', label: 'Кофе' },
+  { name: 'Utensils', label: 'Еда' },
+  { name: 'Wine', label: 'Напитки' },
+  { name: 'Apple', label: 'Питание' },
+  { name: 'Gift', label: 'Подарок' },
+  { name: 'Music', label: 'Музыка' },
+  { name: 'BookOpen', label: 'Книга' },
+  { name: 'Activity', label: 'Активность' },
+  { name: 'Ruler', label: 'Дистанция' },
+  { name: 'TrendingUp', label: 'Набор выс.' },
+  { name: 'Zap', label: 'Энергия' },
+];
+
+function LucideIconButton({ name, size = 4 }: { name: string; size?: number }) {
+  const Icon = (LucideIcons as Record<string, any>)[name] as React.FC<React.SVGProps<SVGSVGElement>> | undefined;
+  if (!Icon) return <span className="text-xs text-muted-foreground">?</span>;
+  return <Icon className={`h-${size} w-${size}`} />;
+}
+
+function LucideIconPicker({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (name: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState('');
+
+  const filtered = LUCIDE_ICON_LIST.filter(
+    (i) =>
+      !search ||
+      i.label.toLowerCase().includes(search.toLowerCase()) ||
+      i.name.toLowerCase().includes(search.toLowerCase()),
+  );
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="flex h-9 w-9 items-center justify-center rounded-md border border-input bg-background hover:bg-accent transition"
+        title={value || 'Выбрать иконку'}
+      >
+        {value ? (
+          <LucideIconButton name={value} size={4} />
+        ) : (
+          <ChevronDown className="h-4 w-4 text-muted-foreground" />
+        )}
+      </button>
+      {open && (
+        <div className="absolute left-0 top-10 z-50 w-72 rounded-lg border border-input bg-background shadow-lg p-3">
+          <div className="relative mb-2">
+            <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+            <input
+              autoFocus
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Поиск иконки..."
+              className="h-8 w-full rounded-md border border-input bg-background pl-8 pr-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            />
+          </div>
+          <div className="grid grid-cols-6 gap-1 max-h-52 overflow-y-auto">
+            {filtered.map((icon) => (
+              <button
+                key={icon.name}
+                type="button"
+                title={icon.label}
+                onClick={() => {
+                  onChange(icon.name);
+                  setOpen(false);
+                  setSearch('');
+                }}
+                className={`flex flex-col items-center gap-0.5 rounded p-1.5 text-xs transition hover:bg-accent ${value === icon.name ? 'bg-primary/10 ring-1 ring-primary/40' : ''}`}
+              >
+                <LucideIconButton name={icon.name} size={4} />
+                <span className="truncate w-full text-center text-[9px] text-muted-foreground leading-none">{icon.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function HeroPerksEditor({
+  perks,
+  onChange,
+}: {
+  perks: HeroPerk[];
+  onChange: (perks: HeroPerk[]) => void;
+}) {
+  const addPerk = () => {
+    onChange([...perks, { icon: 'Star', title: '' }]);
+  };
+
+  const updatePerk = (index: number, field: keyof HeroPerk, value: string) => {
+    onChange(perks.map((p, i) => (i === index ? { ...p, [field]: value } : p)));
+  };
+
+  const removePerk = (index: number) => {
+    onChange(perks.filter((_, i) => i !== index));
+  };
+
+  const movePerk = (index: number, dir: 'up' | 'down') => {
+    const next = [...perks];
+    const target = dir === 'up' ? index - 1 : index + 1;
+    if (target < 0 || target >= next.length) return;
+    [next[index], next[target]] = [next[target], next[index]];
+    onChange(next);
+  };
+
+  return (
+    <div className="space-y-3 mt-4">
+      <Label>Список преимуществ</Label>
+      {perks.length === 0 && (
+        <p className="text-sm text-muted-foreground">Добавьте хотя бы одно преимущество.</p>
+      )}
+      {perks.map((perk, i) => (
+        <div key={i} className="flex items-start gap-2 rounded-md border border-input bg-background p-2">
+          <LucideIconPicker value={perk.icon} onChange={(name) => updatePerk(i, 'icon', name)} />
+          <div className="flex-1 grid grid-cols-2 gap-2">
+            <input
+              value={perk.title}
+              onChange={(e) => updatePerk(i, 'title', e.target.value)}
+              placeholder="Название преимущества"
+              className="h-9 rounded-md border border-input bg-background px-3 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            />
+            <input
+              value={perk.detail ?? ''}
+              onChange={(e) => updatePerk(i, 'detail', e.target.value)}
+              placeholder="Доп. текст (необязательно)"
+              className="h-9 rounded-md border border-input bg-background px-3 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            />
+          </div>
+          <div className="flex flex-col gap-0.5">
+            <button
+              type="button"
+              onClick={() => movePerk(i, 'up')}
+              disabled={i === 0}
+              className="h-4 w-4 text-muted-foreground hover:text-foreground disabled:opacity-30"
+            >
+              <MoveUp className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => movePerk(i, 'down')}
+              disabled={i === perks.length - 1}
+              className="h-4 w-4 text-muted-foreground hover:text-foreground disabled:opacity-30"
+            >
+              <MoveDown className="h-4 w-4" />
+            </button>
+          </div>
+          <button
+            type="button"
+            onClick={() => removePerk(i)}
+            className="h-9 w-9 flex items-center justify-center text-destructive hover:bg-destructive/10 rounded"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
+      ))}
+      <Button type="button" variant="outline" size="sm" onClick={addPerk}>
+        <Plus className="mr-1.5 h-3.5 w-3.5" />
+        Добавить преимущество
+      </Button>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
 // PhotosTab
 // ─────────────────────────────────────────────────────────────
 function PhotosTab({ cardId, headPhotoUrl }: { cardId: string; headPhotoUrl?: string | null }) {
@@ -220,6 +449,23 @@ function PhotosTab({ cardId, headPhotoUrl }: { cardId: string; headPhotoUrl?: st
   const accommodationInputRef = useRef<HTMLInputElement>(null);
   const [photoError, setPhotoError] = useState('');
   const [cropFile, setCropFile] = useState<File | null>(null);
+
+  // Pre-upload edit queues
+  const [slideshowEditQueue, setSlideshowEditQueue] = useState<File[]>([]);
+  const [slideshowEditIdx, setSlideshowEditIdx] = useState(0);
+  const [slideshowEditAccum, setSlideshowEditAccum] = useState<File[]>([]);
+
+  const [accommodationEditQueue, setAccommodationEditQueue] = useState<File[]>([]);
+  const [accommodationEditIdx, setAccommodationEditIdx] = useState(0);
+  const [accommodationEditAccum, setAccommodationEditAccum] = useState<File[]>([]);
+
+  // Editing existing uploaded photos
+  const [editingPhoto, setEditingPhoto] = useState<{
+    id: string;
+    type: 'slideshow' | 'accommodation';
+    file: File;
+  } | null>(null);
+  const [loadingPhotoId, setLoadingPhotoId] = useState<string | null>(null);
 
   const { data: card, isLoading } = useQuery({
     queryKey: ['admin-card', cardId],
@@ -285,6 +531,26 @@ function PhotosTab({ cardId, headPhotoUrl }: { cardId: string; headPhotoUrl?: st
     },
   });
 
+  const replaceSlideshowMutation = useMutation({
+    mutationFn: ({ photoId, file }: { photoId: string; file: File }) =>
+      cardsApi.replaceSlideshowPhoto(photoId, file),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-card', cardId] });
+      setPhotoError('');
+    },
+    onError: (err) => setPhotoError(handleApiError(err)),
+  });
+
+  const replaceAccommodationMutation = useMutation({
+    mutationFn: ({ photoId, file }: { photoId: string; file: File }) =>
+      cardsApi.replaceAccommodationPhoto(photoId, file),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-card', cardId] });
+      setPhotoError('');
+    },
+    onError: (err) => setPhotoError(handleApiError(err)),
+  });
+
   const currentHeadPhoto = card?.headPhotoUrl ?? headPhotoUrl;
   const slideshowPhotos: SlideshowPhoto[] = card?.slideshowPhotos ?? [];
   const accommodationPhotos: AccommodationPhoto[] = card?.accommodationPhotos ?? [];
@@ -295,6 +561,22 @@ function PhotosTab({ cardId, headPhotoUrl }: { cardId: string; headPhotoUrl?: st
     if (targetIndex < 0 || targetIndex >= photos.length) return;
     [photos[index], photos[targetIndex]] = [photos[targetIndex], photos[index]];
     reorderAccommodationMutation.mutate(photos.map((p, i) => ({ id: p.id, sortOrder: i })));
+  };
+
+  const loadPhotoForEdit = async (
+    photoId: string,
+    url: string,
+    type: 'slideshow' | 'accommodation',
+  ) => {
+    setLoadingPhotoId(photoId);
+    try {
+      const file = await cardsApi.proxyImageToFile(url, `photo-${photoId}.jpg`);
+      setEditingPhoto({ id: photoId, type, file });
+    } catch {
+      setPhotoError('Не удалось загрузить фото для редактирования');
+    } finally {
+      setLoadingPhotoId(null);
+    }
   };
 
   const handleCoverFileSelected = (file: File) => {
@@ -330,6 +612,79 @@ function PhotosTab({ cardId, headPhotoUrl }: { cardId: string; headPhotoUrl?: st
         file={cropFile}
         onConfirm={handleCropConfirm}
         onCancel={handleCropCancel}
+      />
+    )}
+    {/* Pre-upload edit: slideshow */}
+    {slideshowEditQueue.length > 0 && slideshowEditIdx < slideshowEditQueue.length && (
+      <PhotoEditModal
+        file={slideshowEditQueue[slideshowEditIdx]}
+        title={
+          slideshowEditQueue.length > 1
+            ? `Фото ${slideshowEditIdx + 1} из ${slideshowEditQueue.length}`
+            : 'Редактировать фото'
+        }
+        onConfirm={(editedFile) => {
+          const newAccum = [...slideshowEditAccum, editedFile];
+          if (slideshowEditIdx + 1 < slideshowEditQueue.length) {
+            setSlideshowEditAccum(newAccum);
+            setSlideshowEditIdx((i) => i + 1);
+          } else {
+            uploadSlideshowMutation.mutate(newAccum);
+            setSlideshowEditQueue([]);
+            setSlideshowEditIdx(0);
+            setSlideshowEditAccum([]);
+          }
+        }}
+        onCancel={() => {
+          setSlideshowEditQueue([]);
+          setSlideshowEditIdx(0);
+          setSlideshowEditAccum([]);
+        }}
+      />
+    )}
+    {/* Pre-upload edit: accommodation */}
+    {accommodationEditQueue.length > 0 && accommodationEditIdx < accommodationEditQueue.length && (
+      <PhotoEditModal
+        file={accommodationEditQueue[accommodationEditIdx]}
+        title={
+          accommodationEditQueue.length > 1
+            ? `Фото ${accommodationEditIdx + 1} из ${accommodationEditQueue.length}`
+            : 'Редактировать фото'
+        }
+        onConfirm={(editedFile) => {
+          const newAccum = [...accommodationEditAccum, editedFile];
+          if (accommodationEditIdx + 1 < accommodationEditQueue.length) {
+            setAccommodationEditAccum(newAccum);
+            setAccommodationEditIdx((i) => i + 1);
+          } else {
+            uploadAccommodationMutation.mutate(newAccum);
+            setAccommodationEditQueue([]);
+            setAccommodationEditIdx(0);
+            setAccommodationEditAccum([]);
+          }
+        }}
+        onCancel={() => {
+          setAccommodationEditQueue([]);
+          setAccommodationEditIdx(0);
+          setAccommodationEditAccum([]);
+        }}
+      />
+    )}
+    {/* Edit existing uploaded photo */}
+    {editingPhoto && (
+      <PhotoEditModal
+        file={editingPhoto.file}
+        title="Редактировать фото"
+        onConfirm={(editedFile) => {
+          const { id, type } = editingPhoto;
+          setEditingPhoto(null);
+          if (type === 'slideshow') {
+            replaceSlideshowMutation.mutate({ photoId: id, file: editedFile });
+          } else {
+            replaceAccommodationMutation.mutate({ photoId: id, file: editedFile });
+          }
+        }}
+        onCancel={() => setEditingPhoto(null)}
       />
     )}
     <div className="space-y-8">
@@ -430,7 +785,11 @@ function PhotosTab({ cardId, headPhotoUrl }: { cardId: string; headPhotoUrl?: st
             className="hidden"
             onChange={(e) => {
               const files = e.target.files ? Array.from(e.target.files) : [];
-              if (files.length) uploadSlideshowMutation.mutate(files);
+              if (files.length) {
+                setSlideshowEditQueue(files);
+                setSlideshowEditIdx(0);
+                setSlideshowEditAccum([]);
+              }
               e.target.value = '';
             }}
           />
@@ -472,6 +831,21 @@ function PhotosTab({ cardId, headPhotoUrl }: { cardId: string; headPhotoUrl?: st
                       title="Вправо"
                     >
                       <MoveDown className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="secondary"
+                      className="h-8 w-8 p-0"
+                      disabled={loadingPhotoId === photo.id || replaceSlideshowMutation.isPending}
+                      onClick={() => loadPhotoForEdit(photo.id, photo.url, 'slideshow')}
+                      title="Редактировать фото"
+                    >
+                      {loadingPhotoId === photo.id ? (
+                        <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                      ) : (
+                        <Pencil className="h-4 w-4" />
+                      )}
                     </Button>
                   </div>
                   <Button
@@ -521,7 +895,11 @@ function PhotosTab({ cardId, headPhotoUrl }: { cardId: string; headPhotoUrl?: st
             className="hidden"
             onChange={(e) => {
               const files = e.target.files ? Array.from(e.target.files) : [];
-              if (files.length) uploadAccommodationMutation.mutate(files);
+              if (files.length) {
+                setAccommodationEditQueue(files);
+                setAccommodationEditIdx(0);
+                setAccommodationEditAccum([]);
+              }
               e.target.value = '';
             }}
           />
@@ -563,6 +941,21 @@ function PhotosTab({ cardId, headPhotoUrl }: { cardId: string; headPhotoUrl?: st
                       title="Вправо"
                     >
                       <MoveDown className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="secondary"
+                      className="h-8 w-8 p-0"
+                      disabled={loadingPhotoId === photo.id || replaceAccommodationMutation.isPending}
+                      onClick={() => loadPhotoForEdit(photo.id, photo.url, 'accommodation')}
+                      title="Редактировать фото"
+                    >
+                      {loadingPhotoId === photo.id ? (
+                        <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                      ) : (
+                        <Pencil className="h-4 w-4" />
+                      )}
                     </Button>
                   </div>
                   <Button
@@ -1547,7 +1940,8 @@ export function AdminCardFormPage() {
   const [formError, setFormError] = useState('');
 
   const [description, setDescription] = useState('');
-  const [noCover, setNoCover] = useState(false);
+  const [heroType, setHeroType] = useState<'cover' | 'no_cover' | 'perks'>('cover');
+  const [heroPerks, setHeroPerks] = useState<HeroPerk[]>([]);
   const [includedItems, setIncludedItems] = useState<string[]>([]);
   const [notIncludedItems, setNotIncludedItems] = useState<string[]>([]);
   const [forWhom, setForWhom] = useState<string[]>([]);
@@ -1631,7 +2025,8 @@ export function AdminCardFormPage() {
       status: card.status,
     });
     setDescription(card.description || '');
-    setNoCover(card.noCover ?? false);
+    setHeroType(((card.heroType as string | undefined) ?? (card.noCover ? 'no_cover' : 'cover')) as 'cover' | 'no_cover' | 'perks');
+    setHeroPerks((card.heroPerks as HeroPerk[] | null) ?? []);
     setIncludedItems((card.includedItems as string[] | null) || []);
     setNotIncludedItems((card.notIncludedItems as string[] | null) || []);
     setForWhom((card.forWhom as string[] | null) || []);
@@ -1689,7 +2084,9 @@ export function AdminCardFormPage() {
       includedItems,
       notIncludedItems,
       forWhom,
-      noCover,
+      noCover: heroType === 'no_cover',
+      heroType,
+      heroPerks: heroPerks,
       tourProgram,
       accommodationDescription: accommodationDescription || undefined,
     };
@@ -1809,17 +2206,28 @@ export function AdminCardFormPage() {
                     <Label htmlFor="position">Позиция (сортировка)</Label>
                     <Input id="position" type="number" min="0" {...register('position')} />
                   </div>
-                  <div className="flex items-center gap-3 pt-1">
-                    <input
-                      id="noCover"
-                      type="checkbox"
-                      checked={noCover}
-                      onChange={(e) => setNoCover(e.target.checked)}
-                      className="h-4 w-4 rounded border-input accent-primary"
-                    />
-                    <Label htmlFor="noCover" className="cursor-pointer font-normal">
-                      Без обложки (скрыть hero-секцию на странице тура)
-                    </Label>
+                  <div className="space-y-3 md:col-span-2">
+                    <Label>Тип шапки (hero-секция)</Label>
+                    <div className="grid grid-cols-3 gap-3">
+                      {([
+                        { value: 'cover', title: 'С обложкой', desc: 'Большое фото в шапке' },
+                        { value: 'no_cover', title: 'Без обложки', desc: 'Простой заголовок' },
+                        { value: 'perks', title: 'С преимуществами', desc: 'Фото + список выгод' },
+                      ] as const).map((opt) => (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => setHeroType(opt.value)}
+                          className={`rounded-lg border p-3 text-left transition ${heroType === opt.value ? 'border-primary bg-primary/5 ring-1 ring-primary/30' : 'border-input hover:border-primary/40'}`}
+                        >
+                          <div className="font-medium text-sm">{opt.title}</div>
+                          <div className="text-xs text-muted-foreground mt-0.5">{opt.desc}</div>
+                        </button>
+                      ))}
+                    </div>
+                    {heroType === 'perks' && (
+                      <HeroPerksEditor perks={heroPerks} onChange={setHeroPerks} />
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="minParticipants">Мин. участников</Label>

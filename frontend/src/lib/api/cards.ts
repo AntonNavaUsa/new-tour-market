@@ -123,4 +123,34 @@ export const cardsApi = {
   ): Promise<void> => {
     await api.patch(`/api/cards/${cardId}/photos/accommodation/reorder`, { photos });
   },
+
+  // Заменить фото в слайдшоу (поворот/кадрирование)
+  replaceSlideshowPhoto: async (photoId: string, file: File): Promise<any> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await api.put(`/api/cards/photos/${photoId}`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
+
+  // Заменить фото проживания (поворот/кадрирование)
+  replaceAccommodationPhoto: async (photoId: string, file: File): Promise<any> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await api.put(`/api/cards/photos/accommodation/${photoId}`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
+
+  // Загрузить существующее фото через прокси для редактирования
+  proxyImageToFile: async (url: string, fileName: string): Promise<File> => {
+    const response = await api.get('/api/files/proxy', {
+      params: { url },
+      responseType: 'blob',
+    });
+    const blob: Blob = response.data;
+    return new File([blob], fileName, { type: blob.type || 'image/jpeg' });
+  },
 };

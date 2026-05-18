@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { MapPin, Clock, Users, Calendar, ChevronLeft, ChevronRight, X, Check, Ruler, TrendingUp, Baby, Navigation, Star, Activity, BedDouble } from 'lucide-react';
+import * as LucideIcons from 'lucide-react';
+import { MapPin, Clock, Users, Calendar, ChevronLeft, ChevronRight, X, Check, Ruler, TrendingUp, Baby, Navigation, Star, Activity, BedDouble, RotateCcw, ShieldCheck } from 'lucide-react';
 import CardTypeIcon from '../components/CardTypeIcon';
 import { cardsApi, reviewsApi } from '../lib/api';
 import { Button } from '../components/ui/button';
@@ -348,7 +349,7 @@ export function TourDetailPage() {
   return (
     <>
     {/* ─── Hero Cover ─── */}
-    {card.noCover ? (
+    {(card.heroType === 'no_cover' || card.noCover) ? (
       /* No-cover variant: simple page header */
       <div className="bg-background">
         <div className="container py-6 md:py-8">
@@ -364,6 +365,175 @@ export function TourDetailPage() {
           </div>
         </div>
       </div>
+    ) : card.heroType === 'perks' ? (
+      /* ── Perks hero variant ── */
+      (() => {
+        const heroPerks = Array.isArray(card.heroPerks)
+          ? (card.heroPerks as Array<{ icon: string; title: string; detail?: string }>)
+          : [];
+        const avgRating =
+          reviews.length > 0
+            ? reviews.reduce((s: number, r: any) => s + (r.rating ?? 0), 0) / reviews.length
+            : 0;
+        return (
+          <div className="bg-background py-6 md:py-10">
+            <div className="container">
+              <div className="max-w-6xl mx-auto overflow-hidden rounded-2xl shadow-lg border border-border md:grid md:grid-cols-[1fr_300px]">
+                {/* ── Photo side ── */}
+                <div className="relative min-h-[260px] md:min-h-[400px]">
+                  {validUrl(card.headPhotoUrl) ? (
+                    <img
+                      src={validUrl(card.headPhotoUrl)!}
+                      alt={card.title}
+                      className="absolute inset-0 w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 bg-gradient-to-br from-slate-700 to-slate-900" />
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-b from-black/22 to-black/76" />
+                  {/* Badge top-left */}
+                  {card.cardType && (
+                    <span className="absolute top-3.5 left-3.5 bg-emerald-500/18 border border-emerald-400/40 text-emerald-300 text-[11px] font-medium uppercase tracking-widest px-3 py-1 rounded-full backdrop-blur-sm">
+                      {card.cardType.name}
+                    </span>
+                  )}
+                  {/* Breadcrumbs top-right on desktop */}
+                  <nav className="hidden md:flex absolute top-3.5 right-3.5 items-center gap-1 text-[11px] text-white/70">
+                    <Link to="/" className="hover:text-white transition">Главная</Link>
+                    <ChevronRight className="h-2.5 w-2.5 shrink-0" />
+                    <Link to="/tours" className="hover:text-white transition">Туры</Link>
+                  </nav>
+                  {/* Breadcrumbs on mobile */}
+                  <nav className="md:hidden absolute top-[2.75rem] left-3.5 right-3.5 flex items-center gap-1 text-[11px] text-white/70">
+                    <Link to="/" className="hover:text-white transition">Главная</Link>
+                    <ChevronRight className="h-2.5 w-2.5 shrink-0" />
+                    <Link to="/tours" className="hover:text-white transition">Туры</Link>
+                    <ChevronRight className="h-2.5 w-2.5 shrink-0" />
+                    <span className="text-white/60 truncate">{stripEmoji(card.title)}</span>
+                  </nav>
+                  {/* Title + subtitle + badges */}
+                  <div className="absolute inset-0 flex flex-col justify-end md:justify-center px-4 pb-4 md:pb-0 md:px-6">
+                    <h1 className="text-[26px] md:text-[38px] font-bold text-white leading-tight drop-shadow-lg mb-2">
+                      {stripEmoji(card.title)}
+                    </h1>
+                    {card.shortDescription && (
+                      <p className="text-sm md:text-base text-white/90 mb-3 leading-relaxed drop-shadow line-clamp-2">
+                        {card.shortDescription}
+                      </p>
+                    )}
+                    <div className="flex flex-wrap gap-2">
+                      <div className="hidden md:flex items-center gap-1.5 bg-white/15 backdrop-blur-sm border border-white/20 text-white px-3 py-1.5 rounded-full text-xs">
+                        <MapPin className="h-3.5 w-3.5 shrink-0" />
+                        <span>{locationLabel}</span>
+                      </div>
+                      {card.difficulty && (
+                        <div className="hidden md:flex items-center gap-1.5 bg-white/15 backdrop-blur-sm border border-white/20 text-white px-3 py-1.5 rounded-full text-xs">
+                          <Activity className="h-3.5 w-3.5 shrink-0" />
+                          <span>{getDifficultyLabel(card.difficulty)}</span>
+                        </div>
+                      )}
+                      {card.distanceKm != null && (
+                        <div className="flex items-center gap-1.5 bg-white/15 backdrop-blur-sm border border-white/20 text-white px-3 py-1.5 rounded-full text-xs">
+                          <Ruler className="h-3.5 w-3.5 shrink-0" />
+                          <span>{card.distanceKm} км</span>
+                        </div>
+                      )}
+                      {(card.durationFrom || card.durationTo) && (
+                        <div className="flex items-center gap-1.5 bg-white/15 backdrop-blur-sm border border-white/20 text-white px-3 py-1.5 rounded-full text-xs">
+                          <Clock className="h-3.5 w-3.5 shrink-0" />
+                          <span>{formatDurationRange(card.durationFrom, card.durationTo)}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* ── Body panel ── */}
+                <div className="bg-card flex flex-col justify-between p-[18px] md:p-[22px]">
+
+                  {/* Perks list */}
+                  {heroPerks.length > 0 && (
+                    <ul className="mb-4">
+                      {heroPerks.map((perk, idx) => {
+                        const DynIcon = (LucideIcons as Record<string, any>)[perk.icon] as
+                          | React.FC<React.SVGProps<SVGSVGElement>>
+                          | undefined;
+                        return (
+                          <li
+                            key={idx}
+                            className="flex items-center gap-2.5 py-2.5 border-b border-border/70 last:border-b-0 text-sm text-foreground/80"
+                          >
+                            {DynIcon ? (
+                              <DynIcon className="h-[18px] w-[18px] flex-shrink-0 stroke-emerald-600" />
+                            ) : (
+                              <Star className="h-[18px] w-[18px] flex-shrink-0 stroke-emerald-600" />
+                            )}
+                            <span className="flex-1">{perk.title}</span>
+                            {perk.detail && (
+                              <span className="text-xs text-muted-foreground shrink-0">{perk.detail}</span>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+
+                  {/* Price row */}
+                  {minPrice > 0 && (
+                    <div className="flex items-end justify-between gap-2.5 py-3.5 border-y border-border/70 mb-3.5">
+                      <div>
+                        <div className="text-[11px] uppercase tracking-[0.7px] text-muted-foreground mb-1">
+                          Стоимость тура
+                        </div>
+                        <div className="text-[30px] md:text-[32px] font-medium text-foreground leading-none mb-1">
+                          {formatPrice(minPrice)}
+                        </div>
+                        {(card as any).postPaymentInfo && (
+                          <div className="text-xs text-emerald-600 leading-tight">
+                            {(card as any).postPaymentInfo}
+                          </div>
+                        )}
+                      </div>
+                      {quickDateOptions.length > 0 && (
+                        <div className="bg-amber-50 text-amber-800 text-[11px] font-medium px-2.5 py-1.5 rounded-xl text-center leading-snug shrink-0 border border-amber-200">
+                          Ближайшая<br />дата доступна
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* CTA */}
+                  <a
+                    href="#booking-panel"
+                    className="block w-full text-center rounded-[10px] bg-amber-500 hover:bg-amber-600 transition text-white font-medium text-[15px] py-[15px] mb-3"
+                  >
+                    Забронировать место →
+                  </a>
+
+                  {/* Trust row */}
+                  <div className="flex justify-between flex-wrap gap-1">
+                    {reviews.length > 0 && (
+                      <span className="flex items-center gap-1 text-[11.5px] text-muted-foreground">
+                        <Star className="h-3.5 w-3.5 fill-yellow-400 stroke-yellow-400 flex-shrink-0" />
+                        {avgRating.toFixed(1)} · {reviews.length} {reviews.length === 1 ? 'отзыв' : reviews.length < 5 ? 'отзыва' : 'отзывов'}
+                      </span>
+                    )}
+                    <span className="flex items-center gap-1 text-[11.5px] text-muted-foreground">
+                      <RotateCcw className="h-3.5 w-3.5 stroke-emerald-600 shrink-0" />
+                      Полный возврат
+                    </span>
+                    <span className="flex items-center gap-1 text-[11.5px] text-muted-foreground">
+                      <ShieldCheck className="h-3.5 w-3.5 stroke-emerald-600 shrink-0" />
+                      Сертифицированный гид
+                    </span>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()
     ) : (
       <>
     {/* Mobile: full-screen hero with centered overlay text */}
@@ -428,12 +598,18 @@ export function TourDetailPage() {
               </div>
             )}
           </div>
-          <a
-            href="#booking-panel"
+          <button
+            onClick={() => {
+              const el = document.getElementById('booking-panel');
+              if (el) {
+                const top = el.getBoundingClientRect().top + window.scrollY - 80;
+                window.scrollTo({ top, behavior: 'smooth' });
+              }
+            }}
             className="inline-flex items-center justify-center rounded-full bg-yellow-400 text-black font-semibold text-sm px-8 py-3 shadow-lg hover:bg-yellow-300 transition"
           >
             {minPrice > 0 ? `Забронировать от ${formatPrice(minPrice)}` : 'Забронировать'}
-          </a>
+          </button>
         </div>
       </div>
     </div>
@@ -505,12 +681,18 @@ export function TourDetailPage() {
               </div>
             )}
           </div>
-          <a
-            href="#booking-panel"
+          <button
+            onClick={() => {
+              const el = document.getElementById('booking-panel');
+              if (el) {
+                const top = el.getBoundingClientRect().top + window.scrollY - 80;
+                window.scrollTo({ top, behavior: 'smooth' });
+              }
+            }}
             className="inline-flex items-center justify-center rounded-full bg-yellow-400 text-black font-bold text-base px-10 py-3.5 shadow-xl hover:bg-yellow-300 transition"
           >
             {minPrice > 0 ? `Забронировать от ${formatPrice(minPrice)}` : 'Забронировать'}
-          </a>
+          </button>
         </div>
         </div>
       </div>
@@ -616,7 +798,7 @@ export function TourDetailPage() {
       )}
 
       {/* noCover: badges row under photo gallery */}
-      {card.noCover && (card.location || card.difficulty || card.distanceKm != null || card.durationFrom || card.durationTo) && (
+      {(card.heroType === 'no_cover' || card.noCover) && (card.location || card.difficulty || card.distanceKm != null || card.durationFrom || card.durationTo) && (
         <div className="mb-6 flex flex-wrap gap-2">
           {card.location && (
             <div className="flex items-center gap-1.5 bg-muted border border-border text-foreground px-3 py-1.5 rounded-full text-sm">
@@ -656,9 +838,9 @@ export function TourDetailPage() {
       <div className="grid lg:grid-cols-3 gap-6 lg:gap-10 items-start">
 
         {/* LEFT — description, meta, expression photos */}
-        <div className="lg:col-span-2 space-y-8 order-last lg:order-none">
+        <div className="lg:col-span-2 space-y-8">
 
-      {card.noCover && card.shortDescription && (
+      {(card.heroType === 'no_cover' || card.noCover) && card.shortDescription && (
         <div className="mb-10 max-w-3xl rounded-2xl border border-primary/20 bg-primary/5 px-5 py-4 shadow-sm">
           <p className="text-base md:text-lg font-medium text-foreground leading-relaxed">{card.shortDescription}</p>
         </div>
@@ -968,7 +1150,7 @@ export function TourDetailPage() {
         </div>
 
         {/* RIGHT — price, schedule, booking */}
-        <div className="lg:col-span-1 order-first lg:order-none lg:self-start" id="booking-panel">
+        <div className="lg:col-span-1 lg:self-start" id="booking-panel">
           <div className="space-y-6 rounded-xl border bg-card p-4 md:p-6 shadow-sm lg:sticky lg:top-16">
 
             {/* Price */}
@@ -1173,7 +1355,11 @@ export function TourDetailPage() {
                 if (selectedSlot) {
                   navigate(`/booking/${card.id}?date=${selectedSlot.date}&time=${selectedSlot.time}`);
                 } else {
-                  document.getElementById('booking-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  const el = document.getElementById('booking-panel');
+                  if (el) {
+                    const top = el.getBoundingClientRect().top + window.scrollY - 80;
+                    window.scrollTo({ top, behavior: 'smooth' });
+                  }
                 }
               }}
             >
@@ -1215,7 +1401,11 @@ export function TourDetailPage() {
           if (selectedSlot) {
             navigate(`/booking/${card.id}?date=${selectedSlot.date}&time=${selectedSlot.time}`);
           } else {
-            document.getElementById('booking-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            const el = document.getElementById('booking-panel');
+            if (el) {
+              const top = el.getBoundingClientRect().top + window.scrollY - 80;
+              window.scrollTo({ top, behavior: 'smooth' });
+            }
           }
         }}
       >

@@ -1,0 +1,273 @@
+<style>
+.hero-tour {
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(0,0,0,0.08);
+}
+
+/* ── фото ── */
+.hero-tour__photo {
+  position: relative;
+  height: 260px;
+  overflow: hidden;
+}
+.hero-tour__photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.hero-tour__photo-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(8,16,11,0.22) 0%, rgba(8,16,11,0.76) 100%);
+}
+.hero-tour__badge {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  background: rgba(93,202,165,0.18);
+  border: 1px solid rgba(93,202,165,0.40);
+  color: #5DCAA5;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  padding: 4px 11px;
+  border-radius: 20px;
+}
+.hero-tour__photo-text {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  right: 16px;
+}
+.hero-tour__title {
+  font-size: 26px;
+  font-weight: 500;
+  color: #fff;
+  line-height: 1.2;
+  margin: 0;
+  letter-spacing: -0.3px;
+}
+
+/* ── тело ── */
+.hero-tour__body {
+  background: #fff;
+  padding: 18px 16px 16px;
+}
+
+/* ── выгоды ── */
+.hero-tour__perks {
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0;
+}
+.hero-tour__perk {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(0,0,0,0.07);
+  font-size: 14px;
+  color: #4a4a45;
+}
+.hero-tour__perk:last-child {
+  border-bottom: none;
+}
+.hero-tour__perk svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  stroke: #1D9E75;
+}
+.hero-tour__perk-detail {
+  margin-left: auto;
+  font-size: 12px;
+  color: #999;
+  flex-shrink: 0;
+}
+
+/* ── цена ── */
+.hero-tour__price-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px 0 13px;
+  border-top: 1px solid rgba(0,0,0,0.07);
+  border-bottom: 1px solid rgba(0,0,0,0.07);
+  margin-bottom: 14px;
+}
+.hero-tour__price-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  color: #999;
+  margin-bottom: 3px;
+}
+.hero-tour__price-main {
+  font-size: 30px;
+  font-weight: 500;
+  color: #1a1a18;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.hero-tour__price-sub {
+  font-size: 12px;
+  color: #1D9E75;
+}
+.hero-tour__seats {
+  background: #FAEEDA;
+  color: #633806;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 7px 11px;
+  border-radius: 10px;
+  text-align: center;
+  line-height: 1.4;
+  flex-shrink: 0;
+}
+
+/* ── кнопка ── */
+.hero-tour__cta {
+  display: block;
+  width: 100%;
+  background: #EF9F27;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 15px;
+  font-size: 15px;
+  font-weight: 500;
+  text-align: center;
+  cursor: pointer;
+  text-decoration: none;
+  margin-bottom: 12px;
+  transition: background 0.15s;
+  box-sizing: border-box;
+}
+.hero-tour__cta:hover {
+  background: #d98d1e;
+}
+
+/* ── trust-строка ── */
+.hero-tour__trust {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.hero-tour__trust-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11.5px;
+  color: #888;
+}
+.hero-tour__trust-item svg {
+  width: 14px;
+  height: 14px;
+  stroke: #1D9E75;
+  flex-shrink: 0;
+}
+
+/* ── десктоп: 2 колонки ── */
+@media (min-width: 640px) {
+  .hero-tour {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+  }
+  .hero-tour__photo {
+    height: 100%;
+    min-height: 380px;
+  }
+  .hero-tour__body {
+    padding: 24px 22px 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .hero-tour__title {
+    font-size: 28px;
+  }
+  .hero-tour__price-main {
+    font-size: 32px;
+  }
+}
+</style>
+
+<div class="hero-tour">
+
+  <!-- фото -->
+  <div class="hero-tour__photo">
+    <img
+      src="https://szntravel.ru/photos/f315248b-5d23-4437-b336-3bd7c15c4387.webp"
+      alt="Красная Поляна — вид на горы"
+      loading="eager"
+    >
+    <div class="hero-tour__photo-overlay"></div>
+    <span class="hero-tour__badge">Тур с проживанием</span>
+    <div class="hero-tour__photo-text">
+      <h1 class="hero-tour__title">Три дня в горах<br>под ключ</h1>
+    </div>
+  </div>
+
+  <!-- тело -->
+  <div class="hero-tour__body">
+
+    <!-- выгоды -->
+    <ul class="hero-tour__perks">
+      <li class="hero-tour__perk">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></svg>
+        Поход с гидом МЧС
+        <span class="hero-tour__perk-detail">День 2</span>
+      </li>
+      <li class="hero-tour__perk">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Студия в Красной Поляне
+        <span class="hero-tour__perk-detail">2 ночи</span>
+      </li>
+      <li class="hero-tour__perk">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
+        Маршрут под вашу форму
+        <span class="hero-tour__perk-detail">3–4 часа</span>
+      </li>
+      <li class="hero-tour__perk">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Соло или вдвоём
+        <span class="hero-tour__perk-detail">до 2 чел.</span>
+      </li>
+    </ul>
+
+    <!-- цена -->
+    <div class="hero-tour__price-row">
+      <div>
+        <div class="hero-tour__price-label">Стоимость тура</div>
+        <div class="hero-tour__price-main">12 000 ₽</div>
+        <div class="hero-tour__price-sub">Предоплата 2 400 ₽ · остаток на месте</div>
+      </div>
+      <div class="hero-tour__seats">Осталось<br>2 места<br>на май</div>
+    </div>
+
+    <!-- CTA -->
+    <a href="#booking-panel" class="hero-tour__cta">Забронировать место →</a>
+
+    <!-- доверие -->
+    <div class="hero-tour__trust">
+      <span class="hero-tour__trust-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        5.0 · 6 отзывов
+      </span>
+      <span class="hero-tour__trust-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-.49-5.49"/></svg>
+        Полный возврат
+      </span>
+      <span class="hero-tour__trust-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Гид МЧС
+      </span>
+    </div>
+
+  </div>
+</div>

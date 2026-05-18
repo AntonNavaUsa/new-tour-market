@@ -111,6 +111,12 @@ export interface Partner {
   updatedAt: string;
 }
 
+export interface HeroPerk {
+  icon: string;
+  title: string;
+  detail?: string;
+}
+
 export interface Card {
   id: string;
   userId: string;
@@ -123,6 +129,8 @@ export interface Card {
   headPhotoUrl: string | null;
   headPhotoThumbUrl: string | null;
   noCover: boolean;
+  heroType: string;
+  heroPerks: HeroPerk[] | null;
   tags: string[];
   includedItems: string[] | null;
   notIncludedItems: string[] | null;
@@ -342,6 +350,8 @@ export interface CreateCardRequest {
   notIncludedItems?: string[];
   forWhom?: string[];
   noCover?: boolean;
+  heroType?: string;
+  heroPerks?: HeroPerk[];
   tourProgram?: Array<{ title: string; description: string }>;
   accommodationDescription?: string;
   postPaymentInfo?: string;

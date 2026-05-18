@@ -295,4 +295,61 @@ export class FilesService {
       return url; // Вернуть оригинальный URL в случае ошибки
     }
   }
+
+  async getImageBuffer(url: string): Promise<{ buffer: Buffer; contentType: string }> {
+    if (!url) throw new BadRequestException('URL is required');
+
+    let parsedUrl: URL;
+    try {
+      parsedUrl = new URL(url);
+    } catch {
+      throw new BadRequestException('Invalid image URL');
+    }
+
+    // Validate the URL belongs to MinIO
+    const minioEndpoint = this.configService.get('MINIO_ENDPOINT') || 'localhost';
+    const minioPort = this.configService.get('MINIO_PORT') || '9000';
+    const minioPublicUrl = this.configService.get('MINIO_PUBLIC_URL') || '';
+
+    const isLocalMinioUrl =
+      parsedUrl.hostname === minioEndpoint &&
+      parsedUrl.port === minioPort;
+
+    let isPublicMinioUrl = false;
+    if (minioPublicUrl) {
+      try {
+        const publicBase = new URL(minioPublicUrl);
+        isPublicMinioUrl = parsedUrl.hostname === publicBase.hostname;
+      } catch {}
+    }
+
+    if (!isLocalMinioUrl && !isPublicMinioUrl) {
+      throw new BadRequestException('URL not allowed');
+    }
+
+    // Extract bucket and filename from path (e.g. /cards/uuid.webp)
+    const pathParts = parsedUrl.pathname.split('/').filter(Boolean);
+    if (pathParts.length < 2) throw new BadRequestException('Invalid image URL format');
+
+    const bucket = pathParts[0];
+    const filename = pathParts.slice(1).join('/');
+
+    try {
+      const stat = await this.minioClient.statObject(bucket, filename);
+      const contentType = (stat.metaData?.['content-type'] as string) || 'image/webp';
+
+      const dataStream = await this.minioClient.getObject(bucket, filename);
+      const chunks: Buffer[] = [];
+      await new Promise<void>((resolve, reject) => {
+        dataStream.on('data', (chunk) => chunks.push(Buffer.from(chunk)));
+        dataStream.on('end', resolve);
+        dataStream.on('error', reject);
+      });
+
+      return { buffer: Buffer.concat(chunks), contentType };
+    } catch (error) {
+      this.logger.error('Error fetching image from MinIO:', error);
+      throw new BadRequestException('Failed to fetch image');
+    }
+  }
 }

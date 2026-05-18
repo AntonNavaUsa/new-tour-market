@@ -8,7 +8,23 @@ import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 import { formatPrice, getMinPriceFromTiers } from '../lib/utils';
-import type { CardStatus } from '../types';
+import type { CardStatus, Card as CardType } from '../types';
+
+function groupByType(cards: CardType[]): Map<string, CardType[]> {
+  const groups = new Map<string, CardType[]>();
+  for (const card of cards) {
+    const key = card.cardType?.name ?? 'Без типа';
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key)!.push(card);
+  }
+  return new Map(
+    [...groups.entries()].sort(([, a], [, b]) => {
+      const orderA = a[0]?.cardType?.sortOrder ?? 999;
+      const orderB = b[0]?.cardType?.sortOrder ?? 999;
+      return orderA - orderB;
+    }),
+  );
+}
 
 export function AdminCardsPage() {
   const queryClient = useQueryClient();
@@ -100,8 +116,12 @@ export function AdminCardsPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {cards.map((cardItem) => {
+        <div className="space-y-10">
+          {Array.from(groupByType(cards)).map(([typeName, groupCards]) => (
+            <section key={typeName}>
+              <h2 className="mb-4 border-b pb-2 text-xl font-semibold">{typeName}</h2>
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {groupCards.map((cardItem) => {
             const firstPrice = (() => {
               let min: number | null = null;
               for (const ticket of cardItem.tickets ?? []) {
@@ -186,6 +206,9 @@ export function AdminCardsPage() {
               </Card>
             );
           })}
+              </div>
+            </section>
+          ))}
         </div>
       )}
     </div>

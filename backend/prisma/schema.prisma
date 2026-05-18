@@ -159,6 +159,8 @@ model Card {
   headPhotoUrl      String?     @map("head_photo_url")
   headPhotoThumbUrl String?     @map("head_photo_thumb_url")
   noCover           Boolean     @default(false) @map("no_cover")
+  heroType          String      @default("cover") @map("hero_type") @db.VarChar(20)
+  heroPerks         Json?       @map("hero_perks")
   
   tags            Json?       // Array of tags for filtering
   
