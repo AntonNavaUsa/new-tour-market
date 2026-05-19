@@ -1,0 +1,442 @@
+<style>
+.trust-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0;
+}
+
+/* ── общие ── */
+.trust-card {
+  border: 1px solid rgba(0,0,0,0.09);
+  border-radius: 14px;
+  overflow: hidden;
+  background: #fff;
+}
+.trust-card__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 16px;
+  border-bottom: 1px solid rgba(0,0,0,0.07);
+  background: #f9f8f5;
+}
+.trust-card__header svg {
+  width: 18px;
+  height: 18px;
+  stroke: #1D9E75;
+  flex-shrink: 0;
+}
+.trust-card__header-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: #1a1a18;
+}
+
+/* ── Блок А: Антон ── */
+.ta__top {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  border-bottom: 1px solid rgba(0,0,0,0.07);
+}
+.ta__photo {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 2px solid rgba(0,0,0,0.08);
+}
+.ta__name {
+  font-size: 15px;
+  font-weight: 500;
+  color: #1a1a18;
+  margin-bottom: 3px;
+}
+.ta__role {
+  font-size: 12px;
+  color: #6b6b65;
+  line-height: 1.5;
+}
+.ta__quote {
+  margin: 14px 16px;
+  padding: 12px 14px;
+  background: #f5faf8;
+  border-left: 2px solid #1D9E75;
+  border-radius: 0 8px 8px 0;
+  font-size: 13px;
+  color: #4a4a45;
+  line-height: 1.65;
+}
+.ta__stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-top: 1px solid rgba(0,0,0,0.07);
+}
+.ta__stat {
+  padding: 12px 16px;
+}
+.ta__stat:first-child {
+  border-right: 1px solid rgba(0,0,0,0.07);
+}
+.ta__stat-num {
+  font-size: 20px;
+  font-weight: 500;
+  color: #1a1a18;
+  line-height: 1;
+  margin-bottom: 3px;
+}
+.ta__stat-label {
+  font-size: 11px;
+  color: #6b6b65;
+}
+.ta__cert {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 16px;
+  border-top: 1px solid rgba(0,0,0,0.07);
+  font-size: 12px;
+  color: #6b6b65;
+}
+.ta__cert svg {
+  width: 16px;
+  height: 16px;
+  stroke: #1D9E75;
+  flex-shrink: 0;
+}
+
+/* ── Блок Б: студия ── */
+.ts__body {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.ts__row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13px;
+  color: #4a4a45;
+  line-height: 1.55;
+}
+.ts__row svg {
+  width: 17px;
+  height: 17px;
+  stroke: #1D9E75;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.ts__row strong {
+  color: #1a1a18;
+  font-weight: 500;
+}
+
+/* ── Блок В: что происходит после оплаты ── */
+.steps__body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.step {
+  display: flex;
+  gap: 12px;
+}
+.step__col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.step__num {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #e8f5ef;
+  color: #085041;
+  font-size: 11px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.step__line {
+  width: 1px;
+  flex: 1;
+  background: rgba(0,0,0,0.08);
+  margin: 4px 0;
+  min-height: 14px;
+}
+.step:last-child .step__line {
+  display: none;
+}
+.step__content {
+  padding-bottom: 14px;
+  flex: 1;
+}
+.step:last-child .step__content {
+  padding-bottom: 0;
+}
+.step__title {
+  font-size: 13px;
+  font-weight: 500;
+  color: #1a1a18;
+  margin-bottom: 2px;
+}
+.step__desc {
+  font-size: 12.5px;
+  color: #6b6b65;
+  line-height: 1.6;
+}
+
+/* ── Блок Г: отзывы о гиде ── */
+.reviews__list {
+  display: flex;
+  flex-direction: column;
+}
+.review-item {
+  padding: 13px 16px;
+  border-bottom: 1px solid rgba(0,0,0,0.07);
+}
+.review-item:last-child {
+  border-bottom: none;
+}
+.review-item__top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.review-item__avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #e8f5ef;
+  color: #085041;
+  font-size: 11px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.review-item__name {
+  font-size: 13px;
+  font-weight: 500;
+  color: #1a1a18;
+}
+.review-item__stars {
+  margin-left: auto;
+  color: #EF9F27;
+  font-size: 11px;
+  letter-spacing: 1px;
+}
+.review-item__text {
+  font-size: 12.5px;
+  color: #6b6b65;
+  line-height: 1.65;
+}
+
+/* ── Блок Д: юрлицо и гарантия ── */
+.legal__body {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  background: #f9f8f5;
+}
+.legal__row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 12.5px;
+  color: #6b6b65;
+  line-height: 1.55;
+}
+.legal__row svg {
+  width: 17px;
+  height: 17px;
+  stroke: #1D9E75;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.legal__row strong {
+  color: #1a1a18;
+  font-weight: 500;
+}
+
+/* ── десктоп ── */
+@media (min-width: 640px) {
+  .trust-section {
+    gap: 14px;
+  }
+}
+</style>
+
+<div class="trust-section">
+
+  <!-- А: Кто такой Антон -->
+  <div class="trust-card">
+    <div class="ta__top">
+      <img
+        class="ta__photo"
+        src="https://szntravel.ru/photos/94637b00-99a7-48a8-a1b8-dc062da17c24.webp"
+        alt="Антон Навакус — гид и владелец"
+        loading="lazy"
+      >
+      <div>
+        <div class="ta__name">Антон Навакус</div>
+        <div class="ta__role">
+          Инструктор-проводник МЧС<br>
+          Владелец «Сезона приключений»
+        </div>
+      </div>
+    </div>
+    <div class="ta__quote">
+      «Я живу в Красной Поляне и веду людей в горы уже несколько лет. Это не агентство — это я лично. Вы платите мне напрямую, я провожу вас сам.»
+    </div>
+    <div class="ta__stats">
+      <div class="ta__stat">
+        <div class="ta__stat-num">50+</div>
+        <div class="ta__stat-label">походов проведено</div>
+      </div>
+      <div class="ta__stat">
+        <div class="ta__stat-num">3 года</div>
+        <div class="ta__stat-label">в горном туризме</div>
+      </div>
+    </div>
+    <div class="ta__cert">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+      Удостоверение МЧС · Спасатель · Первая помощь
+    </div>
+  </div>
+
+  <!-- Б: Студия в нашей собственности -->
+  <div class="trust-card">
+    <div class="trust-card__header">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span class="trust-card__header-title">Студия — наша собственность, не субаренда</span>
+    </div>
+    <div class="ts__body">
+      <div class="ts__row">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+        <span>Антон — <strong>владелец студии</strong>. Никаких посредников, субаренды и накруток третьих сторон.</span>
+      </div>
+      <div class="ts__row">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+        <span>Вы получаете <strong>ровно то, что на фото</strong> — студия не меняется от бронирования к бронированию.</span>
+      </div>
+      <div class="ts__row">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+        <span>Если что-то пойдёт не так — <strong>решает Антон лично</strong>, не служба поддержки ОТА.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- В: Что происходит после оплаты -->
+  <div class="trust-card">
+    <div class="trust-card__header">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <span class="trust-card__header-title">Что происходит после бронирования</span>
+    </div>
+    <div class="steps__body">
+      <div class="step">
+        <div class="step__col">
+          <div class="step__num">1</div>
+          <div class="step__line"></div>
+        </div>
+        <div class="step__content">
+          <div class="step__title">Получаете подтверждение</div>
+          <div class="step__desc">Письмо на почту с деталями тура и личным контактом Антона — в течение часа.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step__col">
+          <div class="step__num">2</div>
+          <div class="step__line"></div>
+        </div>
+        <div class="step__content">
+          <div class="step__title">Антон выходит на связь</div>
+          <div class="step__desc">За 2–3 дня до заезда уточняет вашу физическую форму и подбирает маршрут под вас.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step__col">
+          <div class="step__num">3</div>
+          <div class="step__line"></div>
+        </div>
+        <div class="step__content">
+          <div class="step__title">Заезд и встреча</div>
+          <div class="step__desc">Студия и ключи ждут вас. Антон встречает лично или отправляет инструкцию по заселению.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step__col">
+          <div class="step__num">4</div>
+          <div class="step__line"></div>
+        </div>
+        <div class="step__content">
+          <div class="step__title">Поход и остаток оплаты</div>
+          <div class="step__desc">Остаток 80% — наличными или переводом Антону лично перед походом. Не через интернет.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Г: Отзывы о гиде -->
+  <div class="trust-card">
+    <div class="trust-card__header">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      <span class="trust-card__header-title">Что говорят об Антоне как гиде</span>
+    </div>
+    <div class="reviews__list">
+      <div class="review-item">
+        <div class="review-item__top">
+          <div class="review-item__avatar">А</div>
+          <div class="review-item__name">Антон и Лена</div>
+          <div class="review-item__stars">★★★★★</div>
+        </div>
+        <div class="review-item__text">«Первое знакомство с горами — впечатления сильнейшие! Спасибо, что дотащил нас до озера. Пересматриваю фотки — просто не верится, что мы были там!»</div>
+      </div>
+      <div class="review-item">
+        <div class="review-item__top">
+          <div class="review-item__avatar">Ар</div>
+          <div class="review-item__name">Артём</div>
+          <div class="review-item__stars">★★★★★</div>
+        </div>
+        <div class="review-item__text">«Антон — отличный рассказчик, мега лояльный, напоказывал таких красот. Впечатлений надолго теперь!»</div>
+      </div>
+      <div class="review-item">
+        <div class="review-item__top">
+          <div class="review-item__avatar">И</div>
+          <div class="review-item__name">Иван</div>
+          <div class="review-item__stars">★★★★★</div>
+        </div>
+        <div class="review-item__text">«Местами было трудно, но мы справились. Здорово, когда не только шагаешь, но ещё и узнаёшь что-то новое о здешних местах!»</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Д: Юрлицо и гарантия -->
+  <div class="trust-card" style="overflow: hidden;">
+    <div class="legal__body">
+      <div class="legal__row">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+        <span><strong>ИП Навакус Антон Борисович</strong> · ИНН 665908836379 · Оплата через ЮKassa</span>
+      </div>
+      <div class="legal__row">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-.49-5.49"/></svg>
+        <span><strong>Полный возврат предоплаты</strong> при отмене за 48 часов — без звонков и объяснений</span>
+      </div>
+      <div class="legal__row">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <span>Сейчас вы платите только <strong>предоплату 20%</strong> — остаток отдаёте Антону лично на месте</span>
+      </div>
+    </div>
+  </div>
+
+</div>

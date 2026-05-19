@@ -1,8 +1,33 @@
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
+import { Extension } from '@tiptap/core';
 import { Bold, Italic, List, ListOrdered, Heading2, Heading3, Undo, Redo, Minus, Code, CodeSquare, FileCode } from 'lucide-react';
 import { Button } from './ui/button';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+
+// Сохраняет атрибуты style и class на стандартных узлах TipTap
+const PreserveHtmlAttrs = Extension.create({
+  name: 'preserveHtmlAttrs',
+  addGlobalAttributes() {
+    return [
+      {
+        types: ['paragraph', 'heading', 'bulletList', 'orderedList', 'listItem', 'blockquote', 'codeBlock'],
+        attributes: {
+          style: {
+            default: null,
+            parseHTML: (el) => el.getAttribute('style') || null,
+            renderHTML: (attrs) => (attrs.style ? { style: attrs.style } : {}),
+          },
+          class: {
+            default: null,
+            parseHTML: (el) => el.getAttribute('class') || null,
+            renderHTML: (attrs) => (attrs.class ? { class: attrs.class } : {}),
+          },
+        },
+      },
+    ];
+  },
+});
 
 interface RichEditorProps {
   value: string;
@@ -12,12 +37,17 @@ interface RichEditorProps {
 export function RichEditor({ value, onChange }: RichEditorProps) {
   const [showSource, setShowSource] = useState(false);
   const [sourceHtml, setSourceHtml] = useState('');
+  // Флаг программатического обновления — предотвращает вызов onChange когда
+  // setContent вызывается из useEffect (а не пользователем)
+  const isProgrammatic = useRef(false);
 
   const editor = useEditor({
-    extensions: [StarterKit],
+    extensions: [StarterKit, PreserveHtmlAttrs],
     content: value,
     onUpdate({ editor }) {
-      onChange(editor.getHTML());
+      if (!isProgrammatic.current) {
+        onChange(editor.getHTML());
+      }
     },
   });
 
@@ -26,7 +56,10 @@ export function RichEditor({ value, onChange }: RichEditorProps) {
     if (!editor) return;
     const current = editor.getHTML();
     if (value !== current) {
+      isProgrammatic.current = true;
       editor.commands.setContent(value, false);
+      // Сбрасываем флаг в следующем кадре — на случай если onUpdate стрельнёт асинхронно
+      requestAnimationFrame(() => { isProgrammatic.current = false; });
     }
   }, [value]); // eslint-disable-line react-hooks/exhaustive-deps
 

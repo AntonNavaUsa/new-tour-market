@@ -10,6 +10,12 @@ export class GuidesService {
     private filesService: FilesService,
   ) {}
 
+  async getAll() {
+    return this.prisma.guide.findMany({
+      orderBy: [{ userId: 'asc' }, { position: 'asc' }],
+    });
+  }
+
   async getMyGuides(userId: string) {
     return this.prisma.guide.findMany({
       where: { userId },
@@ -35,7 +41,7 @@ export class GuidesService {
     id: string,
     userId: string,
     userRole: UserRole,
-    data: { name?: string; description?: string; position?: number },
+    data: { name?: string; description?: string; certifications?: string; position?: number },
   ) {
     const guide = await this.prisma.guide.findUnique({ where: { id } });
     if (!guide) throw new NotFoundException('Гид не найден');
@@ -47,6 +53,7 @@ export class GuidesService {
       data: {
         ...(data.name !== undefined && { name: data.name.trim() }),
         ...(data.description !== undefined && { description: data.description?.trim() || null }),
+        ...(data.certifications !== undefined && { certifications: data.certifications?.trim() || null }),
         ...(data.position !== undefined && { position: data.position }),
       },
     });

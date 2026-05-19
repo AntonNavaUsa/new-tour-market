@@ -171,6 +171,7 @@ model Card {
   forWhom         Json?       @map("for_whom")           // Array of target audience items
   tourProgram     Json?       @map("tour_program")       // Array of {title, description} per day
   accommodationDescription String? @db.Text @map("accommodation_description") // Description of accommodation for multi-day tours
+  accommodationReviews  Json?   @map("accommodation_reviews")       // Array of {author, text} guest reviews
   postPaymentInfo String?     @db.Text @map("post_payment_info") // Info shown to user after successful payment
   
   status          CardStatus  @default(DRAFT)
@@ -406,17 +407,18 @@ model Expression {
 }
 
 model Guide {
-  id          String   @id @default(uuid())
-  userId      String   @map("user_id")
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id               String   @id @default(uuid())
+  userId           String   @map("user_id")
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   
-  name        String
-  description String?  @db.Text
-  photoUrl    String?  @map("photo_url")
-  position    Int      @default(0)
+  name             String
+  description      String?  @db.Text
+  certifications   String?  @db.Text @map("certifications")
+  photoUrl         String?  @map("photo_url")
+  position         Int      @default(0)
   
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
   
   @@index([userId])
   @@map("guides")

@@ -67,7 +67,7 @@ function toOptionalNumber(value?: string) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// TourProgramSection — program by days (only for cardType slug='tour')
+// TourProgramSection — программа по дням (доступна для всех типов карточек)
 // ─────────────────────────────────────────────────────────────
 interface TourDay {
   title: string;
@@ -97,8 +97,14 @@ function TourProgramSection({
     <Card>
       <CardHeader>
         <CardTitle>Программа по дням</CardTitle>
+        <p className="text-xs text-muted-foreground mt-1">
+          Если не заполнено — раздел не отображается на странице тура.
+        </p>
       </CardHeader>
       <CardContent className="space-y-4">
+        {days.length === 0 && (
+          <p className="text-sm text-muted-foreground py-2">Дни не добавлены. Нажмите «Добавить день» чтобы начать.</p>
+        )}
         {days.map((day, index) => (
           <div key={index} className="rounded-md border border-input bg-background p-4 space-y-3">
             <div className="flex items-center justify-between gap-2">
@@ -106,17 +112,15 @@ function TourProgramSection({
                 <GripVertical className="h-4 w-4" />
                 День {index + 1}
               </div>
-              {days.length > 1 && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 px-2 text-destructive hover:text-destructive"
-                  onClick={() => removeDay(index)}
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </Button>
-              )}
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-destructive hover:text-destructive"
+                onClick={() => removeDay(index)}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
             </div>
             <div className="space-y-1">
               <Label className="text-xs">Заголовок дня</Label>
@@ -1945,10 +1949,9 @@ export function AdminCardFormPage() {
   const [includedItems, setIncludedItems] = useState<string[]>([]);
   const [notIncludedItems, setNotIncludedItems] = useState<string[]>([]);
   const [forWhom, setForWhom] = useState<string[]>([]);
-  const [tourProgram, setTourProgram] = useState<Array<{ title: string; description: string }>>([
-    { title: 'День 1', description: '' },
-  ]);
+  const [tourProgram, setTourProgram] = useState<Array<{ title: string; description: string }>>([]);
   const [accommodationDescription, setAccommodationDescription] = useState('');
+  const [accommodationReviews, setAccommodationReviews] = useState<Array<{ author: string; text: string }>>([]);
 
   const { data: locations = [] } = useQuery({
     queryKey: ['meta-locations'],
@@ -2031,12 +2034,10 @@ export function AdminCardFormPage() {
     setNotIncludedItems((card.notIncludedItems as string[] | null) || []);
     setForWhom((card.forWhom as string[] | null) || []);
     const loadedProgram = card.tourProgram as Array<{ title: string; description: string }> | null;
-    setTourProgram(
-      loadedProgram && loadedProgram.length > 0
-        ? loadedProgram
-        : [{ title: 'День 1', description: '' }]
-    );
+    setTourProgram(loadedProgram && loadedProgram.length > 0 ? loadedProgram : []);
     setAccommodationDescription(card.accommodationDescription || '');
+    const loadedReviews = card.accommodationReviews as Array<{ author: string; text: string }> | null;
+    setAccommodationReviews(loadedReviews && loadedReviews.length > 0 ? loadedReviews : []);
   }, [card, reset]);
 
   const createMutation = useMutation({
@@ -2087,8 +2088,9 @@ export function AdminCardFormPage() {
       noCover: heroType === 'no_cover',
       heroType,
       heroPerks: heroPerks,
-      tourProgram,
+      tourProgram: tourProgram.filter((d) => d.title.trim() || d.description.trim()),
       accommodationDescription: accommodationDescription || undefined,
+      accommodationReviews: accommodationReviews.filter((r) => r.author.trim() || r.text.trim()),
     };
     if (isEditMode && id) {
       await updateMutation.mutateAsync({ cardId: id, payload: { ...payloadBase, status: values.status } });
@@ -2101,7 +2103,7 @@ export function AdminCardFormPage() {
 
   // Determine if selected card type is 'tour'
   const watchedCardTypeId = watch('cardTypeId');
-  const isTourType = cardTypes.some((ct) => ct.id === watchedCardTypeId && ct.slug === 'tour');
+  const isTourType = cardTypes.some((ct) => ct.id === watchedCardTypeId && ct.slug === 'tour-packages');
 
   return (
     <div className="container py-10">
@@ -2342,9 +2344,7 @@ export function AdminCardFormPage() {
                 </CardContent>
               </Card>
 
-              {isTourType && (
-                <TourProgramSection days={tourProgram} onChange={setTourProgram} />
-              )}
+              <TourProgramSection days={tourProgram} onChange={setTourProgram} />
 
               {isTourType && (
                 <Card>
@@ -2352,17 +2352,72 @@ export function AdminCardFormPage() {
                     <CardTitle>🏨 Проживание</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Описание проживания</label>
-                      <textarea
-                        className="w-full min-h-[120px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                        placeholder="Опишите условия проживания: тип отеля, удобства, питание..."
-                        value={accommodationDescription}
-                        onChange={(e) => setAccommodationDescription(e.target.value)}
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Фотографии проживания можно добавить во вкладке «Фотографии».
-                      </p>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Описание проживания</label>
+                        <textarea
+                          className="w-full min-h-[120px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          placeholder="Опишите условия проживания: тип отеля, удобства, питание..."
+                          value={accommodationDescription}
+                          onChange={(e) => setAccommodationDescription(e.target.value)}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Фотографии проживания можно добавить во вкладке «Фотографии».
+                        </p>
+                      </div>
+
+                      {/* Отзывы о проживании */}
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <label className="text-sm font-medium">Отзывы гостей о проживании</label>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setAccommodationReviews([...accommodationReviews, { author: '', text: '' }])}
+                          >
+                            + Добавить отзыв
+                          </Button>
+                        </div>
+                        {accommodationReviews.length === 0 && (
+                          <p className="text-xs text-muted-foreground">Отзывы не добавлены. Если не заполнено — блок не отображается.</p>
+                        )}
+                        {accommodationReviews.map((review, idx) => (
+                          <div key={idx} className="rounded-lg border border-input p-3 space-y-2 bg-muted/30">
+                            <div className="flex items-center gap-2">
+                              <input
+                                className="flex-1 h-8 rounded-md border border-input bg-background px-3 py-1 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                placeholder="Имя автора"
+                                value={review.author}
+                                onChange={(e) => {
+                                  const updated = [...accommodationReviews];
+                                  updated[idx] = { ...updated[idx], author: e.target.value };
+                                  setAccommodationReviews(updated);
+                                }}
+                              />
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="ghost"
+                                className="text-destructive hover:text-destructive shrink-0"
+                                onClick={() => setAccommodationReviews(accommodationReviews.filter((_, i) => i !== idx))}
+                              >
+                                ✕
+                              </Button>
+                            </div>
+                            <textarea
+                              className="w-full min-h-[72px] rounded-md border border-input bg-background px-3 py-1.5 text-sm resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                              placeholder="Текст отзыва..."
+                              value={review.text}
+                              onChange={(e) => {
+                                const updated = [...accommodationReviews];
+                                updated[idx] = { ...updated[idx], text: e.target.value };
+                                setAccommodationReviews(updated);
+                              }}
+                            />
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </CardContent>
                 </Card>

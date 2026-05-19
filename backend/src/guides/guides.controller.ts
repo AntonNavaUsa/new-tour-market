@@ -22,19 +22,28 @@ import { UserRole } from '@prisma/client';
 
 @ApiTags('guides')
 @Controller('guides')
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.ADMIN, UserRole.PARTNER)
-@ApiBearerAuth()
 export class GuidesController {
   constructor(private guidesService: GuidesService) {}
 
+  @Get()
+  @ApiOperation({ summary: 'Get all guides (public)' })
+  async getAll() {
+    return this.guidesService.getAll();
+  }
+
   @Get('my')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.PARTNER)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current user guides' })
   async getMyGuides(@CurrentUser('id') userId: string) {
     return this.guidesService.getMyGuides(userId);
   }
 
   @Post()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.PARTNER)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a guide' })
   async create(
     @CurrentUser('id') userId: string,
@@ -44,17 +53,23 @@ export class GuidesController {
   }
 
   @Patch(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.PARTNER)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Update a guide' })
   async update(
     @Param('id') id: string,
     @CurrentUser('id') userId: string,
     @CurrentUser('role') userRole: UserRole,
-    @Body() data: { name?: string; description?: string; position?: number },
+    @Body() data: { name?: string; description?: string; certifications?: string; position?: number },
   ) {
     return this.guidesService.update(id, userId, userRole, data);
   }
 
   @Post(':id/photo')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.PARTNER)
+  @ApiBearerAuth()
   @UseInterceptors(FileInterceptor('file'))
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Upload guide photo' })
@@ -71,6 +86,9 @@ export class GuidesController {
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.PARTNER)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete a guide' })
   async delete(
     @Param('id') id: string,

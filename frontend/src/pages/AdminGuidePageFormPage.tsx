@@ -42,6 +42,7 @@ export function AdminGuidePageFormPage() {
   const [form, setForm] = useState<Partial<GuidePage>>(EMPTY);
   const [error, setError] = useState('');
   const [slugManual, setSlugManual] = useState(false);
+  const [wysiwygEnabled, setWysiwygEnabled] = useState(true);
 
   const { data: existing, isLoading } = useQuery({
     queryKey: ['admin-guide-page', id],
@@ -53,6 +54,11 @@ export function AdminGuidePageFormPage() {
     if (existing) {
       setForm(existing);
       setSlugManual(true);
+      // Если контент содержит style/class/div/span/table — открываем в textarea-режиме,
+      // чтобы TipTap не обрезал неподдерживаемые атрибуты при редактировании
+      if (existing.content && /style\s*=|class\s*=|<div|<span|<table|<img|<a\s/i.test(existing.content)) {
+        setWysiwygEnabled(false);
+      }
     }
   }, [existing]);
 
@@ -149,11 +155,36 @@ export function AdminGuidePageFormPage() {
 
         {/* Content */}
         <div>
-          <label className="block text-sm font-medium mb-1">Содержимое *</label>
-          <RichEditor
-            value={form.content ?? ''}
-            onChange={(html) => set('content', html)}
-          />
+          <div className="flex items-center justify-between mb-1">
+            <label className="text-sm font-medium">Содержимое *</label>
+            <button
+              type="button"
+              onClick={() => setWysiwygEnabled((v) => !v)}
+              className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border transition-colors select-none ${
+                wysiwygEnabled
+                  ? 'bg-primary text-primary-foreground border-primary'
+                  : 'bg-stone-100 text-stone-600 border-stone-300 hover:bg-stone-200'
+              }`}
+              title="Переключить режим редактора"
+            >
+              <span className={`inline-block w-2 h-2 rounded-full ${wysiwygEnabled ? 'bg-primary-foreground' : 'bg-stone-400'}`} />
+              WYSIWYG {wysiwygEnabled ? 'вкл' : 'выкл'}
+            </button>
+          </div>
+          {wysiwygEnabled ? (
+            <RichEditor
+              value={form.content ?? ''}
+              onChange={(html) => set('content', html)}
+            />
+          ) : (
+            <textarea
+              className="w-full border rounded-lg p-3 font-mono text-sm min-h-[300px] resize-y focus:outline-none focus:ring-2 focus:ring-ring"
+              value={form.content ?? ''}
+              onChange={(e) => set('content', e.target.value)}
+              spellCheck={false}
+              placeholder="<p>Введите HTML-содержимое...</p>"
+            />
+          )}
         </div>
 
         {/* Options row */}

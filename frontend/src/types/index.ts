@@ -90,6 +90,7 @@ export interface Guide {
   userId: string;
   name: string;
   description: string | null;
+  certifications: string | null;
   photoUrl: string | null;
   position: number;
   createdAt: string;
@@ -160,6 +161,7 @@ export interface Card {
   schedules?: Schedule[];
   tourProgram?: Array<{ title: string; description: string }> | null;
   accommodationDescription?: string | null;
+  accommodationReviews?: Array<{ author: string; text: string }> | null;
   postPaymentInfo?: string | null;
   partner?: Partner | null;
 }
@@ -354,6 +356,7 @@ export interface CreateCardRequest {
   heroPerks?: HeroPerk[];
   tourProgram?: Array<{ title: string; description: string }>;
   accommodationDescription?: string;
+  accommodationReviews?: Array<{ author: string; text: string }>;
   postPaymentInfo?: string;
 }
 

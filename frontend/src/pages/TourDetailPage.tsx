@@ -5,6 +5,7 @@ import * as LucideIcons from 'lucide-react';
 import { MapPin, Clock, Users, Calendar, ChevronLeft, ChevronRight, X, Check, Ruler, TrendingUp, Baby, Navigation, Star, Activity, BedDouble, RotateCcw, ShieldCheck } from 'lucide-react';
 import CardTypeIcon from '../components/CardTypeIcon';
 import { cardsApi, reviewsApi } from '../lib/api';
+import { guidesApi } from '../lib/api/guides';
 import { Button } from '../components/ui/button';
 import { formatPrice, formatDate, formatDurationRange, formatDays, getMinPriceFromTiers, formatTierLabel } from '../lib/utils';
 import type { Price, Schedule, Ticket } from '../types';
@@ -249,6 +250,12 @@ export function TourDetailPage() {
     queryKey: ['reviews', id],
     queryFn: () => reviewsApi.getForCard(id!),
     enabled: !!id,
+  });
+
+  const { data: allGuides = [] } = useQuery({
+    queryKey: ['all-guides'],
+    queryFn: () => guidesApi.getAllGuides(),
+    staleTime: 5 * 60 * 1000,
   });
 
   const validUrl = (url?: string | null) => (url && !url.startsWith('blob:') ? url : undefined);
@@ -520,7 +527,7 @@ export function TourDetailPage() {
                     )}
                     <span className="flex items-center gap-1 text-[11.5px] text-muted-foreground">
                       <RotateCcw className="h-3.5 w-3.5 stroke-emerald-600 shrink-0" />
-                      Полный возврат
+                      Гарантия возврата
                     </span>
                     <span className="flex items-center gap-1 text-[11.5px] text-muted-foreground">
                       <ShieldCheck className="h-3.5 w-3.5 stroke-emerald-600 shrink-0" />
@@ -898,7 +905,7 @@ export function TourDetailPage() {
           )}
 
           {/* Accommodation */}
-          {(card.accommodationDescription || (card.accommodationPhotos && card.accommodationPhotos.length > 0)) && (
+          {(card.accommodationDescription || (card.accommodationPhotos && card.accommodationPhotos.length > 0) || (card.accommodationReviews && card.accommodationReviews.length > 0)) && (
             <div className="rounded-2xl border border-border overflow-hidden">
               <div className="flex items-center gap-3 bg-primary/5 border-b border-border px-5 py-4">
                 <BedDouble className="h-5 w-5 text-primary shrink-0" />
@@ -925,6 +932,38 @@ export function TourDetailPage() {
                           loading="lazy"
                           decoding="async"
                         />
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {card.accommodationReviews && card.accommodationReviews.length > 0 && (
+                  <div className="rounded-xl border border-border overflow-hidden">
+                    <div
+                      className="flex items-center gap-2 px-4 py-2.5"
+                      style={{ background: '#f9f8f5', borderBottom: '1px solid rgba(0,0,0,0.07)' }}
+                    >
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1D9E75" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                      </svg>
+                      <span className="text-[12px] font-medium" style={{ color: '#1a1a18' }}>Отзывы гостей о проживании</span>
+                    </div>
+                    {card.accommodationReviews.map((review, idx) => (
+                      <div
+                        key={idx}
+                        className="px-4 py-3"
+                        style={{ borderBottom: idx < card.accommodationReviews!.length - 1 ? '1px solid rgba(0,0,0,0.07)' : 'none' }}
+                      >
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <div
+                            className="flex items-center justify-center rounded-full text-[11px] font-medium shrink-0"
+                            style={{ width: 28, height: 28, background: '#e8f5ef', color: '#085041' }}
+                          >
+                            {review.author ? review.author.charAt(0).toUpperCase() : '?'}
+                          </div>
+                          <span className="text-[13px] font-medium" style={{ color: '#1a1a18' }}>{review.author}</span>
+                          <span className="ml-auto text-[11px]" style={{ color: '#EF9F27', letterSpacing: 1 }}>★★★★★</span>
+                        </div>
+                        <p className="text-[12.5px] leading-relaxed" style={{ color: '#6b6b65' }}>{review.text}</p>
                       </div>
                     ))}
                   </div>
@@ -1026,28 +1065,84 @@ export function TourDetailPage() {
           )}
 
           {/* Guides */}
-          {card.user?.guides && card.user.guides.length > 0 && (
-            <div>
-              <h2 className="text-xl font-semibold mb-4">Гиды программы</h2>
-              <div className="grid gap-4">
-                {card.user.guides.map((guide) => (
-                  <div key={guide.id} className="grid grid-cols-[128px_1fr] gap-4 rounded-xl border bg-card p-4 md:grid-cols-[160px_1fr] md:gap-5 md:p-5">
-                    <div className="h-32 w-32 shrink-0 overflow-hidden rounded-xl border border-muted bg-muted md:h-40 md:w-40 flex items-center justify-center">
+          {allGuides.length > 0 && (
+            <div className="space-y-3">
+              {allGuides.map((guide) => (
+                <div
+                  key={guide.id}
+                  className="rounded-2xl overflow-hidden bg-white"
+                  style={{ border: '1px solid rgba(0,0,0,0.09)' }}
+                >
+                  {/* Заголовок карточки */}
+                  <div
+                    className="flex items-center gap-2.5 px-4 py-3"
+                    style={{ background: '#f9f8f5', borderBottom: '1px solid rgba(0,0,0,0.07)' }}
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1D9E75" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                    </svg>
+                    <span className="text-[13px] font-medium" style={{ color: '#1a1a18' }}>Гид программы</span>
+                  </div>
+
+                  {/* Фото + имя */}
+                  <div
+                    className="flex items-center gap-3.5 px-4 py-4"
+                    style={{ borderBottom: '1px solid rgba(0,0,0,0.07)' }}
+                  >
+                    <div className="shrink-0">
                       {guide.photoUrl ? (
-                        <img src={guide.photoUrl} alt={guide.name} className="h-full w-full object-cover" />
+                        <img
+                          src={guide.photoUrl}
+                          alt={guide.name}
+                          loading="lazy"
+                          className="rounded-full object-cover"
+                          style={{ width: 64, height: 64, border: '2px solid rgba(0,0,0,0.08)' }}
+                        />
                       ) : (
-                        <Users className="h-8 w-8 text-muted-foreground" />
+                        <div
+                          className="rounded-full flex items-center justify-center text-xl font-semibold"
+                          style={{ width: 64, height: 64, background: '#e8f5ef', color: '#085041' }}
+                        >
+                          {guide.name.charAt(0)}
+                        </div>
                       )}
                     </div>
-                    <div className="min-w-0 self-center">
-                      <p className="text-lg font-semibold">{guide.name}</p>
-                      {guide.description && (
-                        <p className="mt-1 text-sm text-muted-foreground line-clamp-4">{guide.description}</p>
-                      )}
+                    <div className="min-w-0">
+                      <div className="text-[15px] font-medium" style={{ color: '#1a1a18' }}>{guide.name}</div>
+                      <div className="text-xs mt-0.5 leading-snug" style={{ color: '#6b6b65' }}>Гид тура</div>
                     </div>
                   </div>
-                ))}
-              </div>
+
+                  {/* Биография / описание */}
+                  {guide.description && (
+                    <div
+                      className="mx-4 my-3.5 px-3.5 py-3 text-[13px]"
+                      style={{
+                        background: '#f5faf8',
+                        borderLeft: '2px solid #1D9E75',
+                        borderRadius: '0 8px 8px 0',
+                        color: '#4a4a45',
+                        lineHeight: 1.65,
+                      }}
+                    >
+                      {guide.description}
+                    </div>
+                  )}
+
+                  {/* Квалификации */}
+                  {guide.certifications && (
+                    <div
+                      className="flex items-center gap-2 px-4 py-3"
+                      style={{ borderTop: '1px solid rgba(0,0,0,0.07)', fontSize: 12, color: '#6b6b65' }}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1D9E75" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0 }}>
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/>
+                      </svg>
+                      {guide.certifications}
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           )}
 
@@ -1369,12 +1464,67 @@ export function TourDetailPage() {
             {/* Payment & refund conditions */}
             <div className="mt-3 rounded-lg bg-muted/40 border border-border/60 px-4 py-3 space-y-2 text-xs text-muted-foreground">
               <div className="flex items-start gap-2">
-                <Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-green-500" />
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1D9E75" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-0.5" aria-hidden="true">
+                  <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
                 <span>Предоплата <strong className="text-foreground">20%</strong> при бронировании, остаток — на месте</span>
               </div>
               <div className="flex items-start gap-2">
-                <Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-green-500" />
-                <span>Полный возврат в любой момент без условий</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1D9E75" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-0.5" aria-hidden="true">
+                  <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-.49-5.49"/>
+                </svg>
+                <span>Гарантия полного возврата предоплаты при отмене за 48 часов — без условий</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1D9E75" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-0.5" aria-hidden="true">
+                  <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                </svg>
+                <span>ИП Навакус Антон Борисович · ИНН 665908836379 · Оплата через ЮKassa</span>
+              </div>
+            </div>
+
+            {/* After booking steps */}
+            <div className="mt-3 rounded-lg border border-border/60 overflow-hidden">
+              <div className="flex items-center gap-2 px-4 py-2.5 bg-muted/40 border-b border-border/60">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1D9E75" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0" aria-hidden="true">
+                  <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                </svg>
+                <span className="text-xs font-medium text-foreground">Что происходит после бронирования</span>
+              </div>
+              <div className="px-4 py-3 flex flex-col gap-0">
+                {[
+                  {
+                    title: 'Получаете подтверждение',
+                    desc: 'Письмо на почту с деталями тура и контактами.',
+                  },
+                  {
+                    title: 'Гид связывается с вами',
+                    desc: 'За 2–3 дня до заезда — подбирает маршрут, отвечает на вопросы.',
+                  },
+                  {
+                    title: 'Заезд',
+                    desc: 'Отправляем инструкцию по самостоятельному заселению. Студия и ключи ждут вас.',
+                  },
+                  {
+                    title: 'Поход и остаток оплаты',
+                    desc: 'Встречаемся на следующий день и идём в поход! Остаток 80% — наличными или переводом после заселения.',
+                  },
+                ].map((step, i, arr) => (
+                  <div key={i} className="flex gap-3">
+                    <div className="flex flex-col items-center">
+                      <div className="w-5 h-5 rounded-full bg-[#e8f5ef] text-[#085041] text-[10px] font-medium flex items-center justify-center shrink-0">
+                        {i + 1}
+                      </div>
+                      {i < arr.length - 1 && (
+                        <div className="w-px flex-1 bg-border/60 my-1 min-h-[10px]" />
+                      )}
+                    </div>
+                    <div className={i < arr.length - 1 ? 'pb-3 flex-1' : 'flex-1'}>
+                      <div className="text-xs font-medium text-foreground leading-snug">{step.title}</div>
+                      <div className="text-[11.5px] text-muted-foreground leading-relaxed mt-0.5">{step.desc}</div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>

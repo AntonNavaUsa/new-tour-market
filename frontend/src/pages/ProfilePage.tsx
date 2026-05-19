@@ -31,12 +31,17 @@ function GuideRow({
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(guide.name);
   const [description, setDescription] = useState(guide.description ?? '');
+  const [certifications, setCertifications] = useState(guide.certifications ?? '');
   const [error, setError] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
   const updateMutation = useMutation({
-    mutationFn: () => guidesApi.updateGuide(guide.id, { name: name.trim(), description: description.trim() || undefined }),
+    mutationFn: () => guidesApi.updateGuide(guide.id, {
+      name: name.trim(),
+      description: description.trim() || undefined,
+      certifications: certifications.trim() || undefined,
+    }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['my-guides'] });
       setEditing(false);
@@ -116,6 +121,12 @@ function GuideRow({
               rows={3}
               className="w-full rounded-md border bg-background px-3 py-1.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
             />
+            <Input
+              value={certifications}
+              onChange={(e) => setCertifications(e.target.value)}
+              placeholder="Квалификации, напр: Удостоверение МЧС · Спасатель · Первая помощь"
+              className="h-8 text-sm"
+            />
             <div className="flex gap-2">
               <Button
                 size="sm"
@@ -132,6 +143,7 @@ function GuideRow({
                   setEditing(false);
                   setName(guide.name);
                   setDescription(guide.description ?? '');
+                  setCertifications(guide.certifications ?? '');
                   setError('');
                 }}
               >
@@ -145,6 +157,12 @@ function GuideRow({
             <div className="font-semibold">{guide.name}</div>
             {guide.description && (
               <p className="text-sm text-muted-foreground mt-0.5 line-clamp-3">{guide.description}</p>
+            )}
+            {guide.certifications && (
+              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+                {guide.certifications}
+              </p>
             )}
           </div>
         )}

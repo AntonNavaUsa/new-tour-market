@@ -157,6 +157,11 @@ export class CreateCardDto {
   @IsString()
   accommodationDescription?: string;
 
+  @ApiProperty({ required: false, type: 'array', description: 'Accommodation guest reviews [{author, text}]' })
+  @IsOptional()
+  @IsArray()
+  accommodationReviews?: Array<{ author: string; text: string }>;
+
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()

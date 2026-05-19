@@ -2,6 +2,11 @@ import api from '../axios';
 import type { Guide } from '../../types';
 
 export const guidesApi = {
+  getAllGuides: async (): Promise<Guide[]> => {
+    const response = await api.get<Guide[]>('/api/guides');
+    return response.data;
+  },
+
   getMyGuides: async (): Promise<Guide[]> => {
     const response = await api.get<Guide[]>('/api/guides/my');
     return response.data;
@@ -12,7 +17,7 @@ export const guidesApi = {
     return response.data;
   },
 
-  updateGuide: async (id: string, data: { name?: string; description?: string; position?: number }): Promise<Guide> => {
+  updateGuide: async (id: string, data: { name?: string; description?: string; certifications?: string; position?: number }): Promise<Guide> => {
     const response = await api.patch<Guide>(`/api/guides/${id}`, data);
     return response.data;
   },
