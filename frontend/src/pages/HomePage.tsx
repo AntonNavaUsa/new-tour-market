@@ -8,7 +8,7 @@ import {
   Star, ChevronRight, MapPin, Compass, Tent, Award, Clock, Calendar
 } from 'lucide-react';
 import { metaApi, cardsApi } from '../lib/api';
-import { formatPrice, formatDuration, formatDays, getMinPriceFromTiers } from '../lib/utils';
+import { formatPrice, calcPrepayment, formatDuration, formatDays, getMinPriceFromTiers } from '../lib/utils';
 import { useAuthStore } from '../store/authStore';
 import { UserRole } from '../types';
 import type { CardFilterParams, Card as TourCard } from '../types';
@@ -169,10 +169,10 @@ export function HomePage() {
 
   const heroButtons = (
     <div className="flex flex-col sm:flex-row gap-4">
-      <Button size="lg" className="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-600 text-white text-base px-8 py-3 h-auto shadow-xl shadow-emerald-900/40 border-0" onClick={() => scrollToId('tours')}>
+      <Button size="lg" className="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-600 text-white text-base px-8 py-3 h-auto shadow-xl shadow-emerald-900/40 border-0" onClick={() => scrollToId('catalog')}>
         <Compass className="h-5 w-5 mr-2" />Выбрать поход
       </Button>
-      <Button size="lg" variant="outline" className="w-full sm:w-auto border-white/50 text-white bg-white/10 hover:bg-white/20 backdrop-blur-sm text-base px-8 py-3 h-auto" onClick={() => scrollToId('tours')}>
+      <Button size="lg" variant="outline" className="w-full sm:w-auto border-white/50 text-white bg-white/10 hover:bg-white/20 backdrop-blur-sm text-base px-8 py-3 h-auto" onClick={() => scrollToId('tour-packages')}>
         <Tent className="h-5 w-5 mr-2" />Туры с проживанием
       </Button>
     </div>
@@ -310,7 +310,7 @@ export function HomePage() {
       </section>*/}
 
       {/* ── CATEGORIES ───────────────────────────────────────────── */}
-      <section className="py-20 bg-stone-50">
+      <section id="catalog" className="py-20 bg-stone-50">
         <div className="container">
           <div className="text-center mb-12">
             <span className="text-emerald-600 text-sm font-semibold uppercase tracking-widest">Каталог</span>
@@ -427,8 +427,7 @@ export function HomePage() {
                               return minPrice !== null ? (
                                 <div>
                                   <p className="text-sm text-muted-foreground">от</p>
-                                  <p className="text-2xl font-bold">{formatPrice(minPrice.toString())}</p>
-                                </div>
+                                  <p className="text-2xl font-bold">{formatPrice(minPrice.toString())}</p>                                  <p className="text-xs text-emerald-600 mt-0.5">предоплата {formatPrice(calcPrepayment(minPrice))}</p>                                </div>
                               ) : (
                                 <div>
                                   <p className="text-sm text-muted-foreground">Цена</p>

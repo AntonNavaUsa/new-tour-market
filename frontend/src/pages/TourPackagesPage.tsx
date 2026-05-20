@@ -5,7 +5,7 @@ import { cardsApi, metaApi } from '../lib/api';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
-import { formatPrice, formatDuration, formatDays, getMinPriceFromTiers } from '../lib/utils';
+import { formatPrice, calcPrepayment, formatDuration, formatDays, getMinPriceFromTiers } from '../lib/utils';
 import { Search, MapPin, Clock, Users, BedDouble, Calendar } from 'lucide-react';
 import type { CardFilterParams, Card as CardType } from '../types';
 
@@ -185,6 +185,7 @@ export function TourPackagesPage() {
                         <div>
                           <p className="text-sm text-muted-foreground">от</p>
                           <p className="text-2xl font-bold">{formatPrice(minPrice.toString())}</p>
+                          <p className="text-xs text-emerald-600 mt-0.5">предоплата {formatPrice(calcPrepayment(minPrice))}</p>
                         </div>
                       ) : (
                         <div>

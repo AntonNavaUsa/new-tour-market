@@ -496,10 +496,10 @@ export function KrasnayaPolyanaSpringPage() {
 
       {/* ── Breadcrumbs ── */}
       <nav aria-label="Хлебные крошки" className="container py-3">
-        <ol className="flex items-center gap-1.5 text-sm text-muted-foreground flex-wrap">
-          <li><Link to="/" className="hover:text-foreground transition-colors">Главная</Link></li>
+        <ol className="flex items-center gap-1.5 text-sm text-foreground/60 flex-wrap">
+          <li><Link to="/" className="text-primary hover:underline transition-colors">Главная</Link></li>
           <li><ChevronRight className="w-3.5 h-3.5" /></li>
-          <li><Link to="/guides" className="hover:text-foreground transition-colors">Путеводители</Link></li>
+          <li><Link to="/guides" className="text-primary hover:underline transition-colors">Путеводители</Link></li>
           <li><ChevronRight className="w-3.5 h-3.5" /></li>
           <li className="text-foreground font-medium">Красная Поляна весной</li>
         </ol>

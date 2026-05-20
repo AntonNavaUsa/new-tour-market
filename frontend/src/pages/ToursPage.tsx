@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { cardsApi } from '../lib/api';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import { formatPrice, formatDuration, getMinPriceFromTiers } from '../lib/utils';
+import { formatPrice, calcPrepayment, formatDuration, getMinPriceFromTiers } from '../lib/utils';
 import { MapPin, Clock, Users } from 'lucide-react';
 import type { CardFilterParams, Card as TourCard } from '../types';
 
@@ -157,6 +157,7 @@ export function ToursPage() {
                               <p className="text-2xl font-bold">
                                 {formatPrice(minPrice.toString())}
                               </p>
+                              <p className="text-xs text-emerald-600 mt-0.5">предоплата {formatPrice(calcPrepayment(minPrice))}</p>
                             </div>
                           ) : (
                             <div>

@@ -15,6 +15,11 @@ export function formatPrice(price: string | number): string {
   }).format(numPrice);
 }
 
+/** Предоплата 20%, округление вверх до 100 ₽ */
+export function calcPrepayment(price: number): number {
+  return Math.ceil((price * 0.2) / 100) * 100;
+}
+
 export function formatDate(date: string | Date): string {
   const d = typeof date === 'string' ? new Date(date) : date;
   return new Intl.DateTimeFormat('ru-RU', {

@@ -7,7 +7,7 @@ import CardTypeIcon from '../components/CardTypeIcon';
 import { cardsApi, reviewsApi } from '../lib/api';
 import { guidesApi } from '../lib/api/guides';
 import { Button } from '../components/ui/button';
-import { formatPrice, formatDate, formatDurationRange, formatDays, getMinPriceFromTiers, formatTierLabel } from '../lib/utils';
+import { formatPrice, calcPrepayment, formatDate, formatDurationRange, formatDays, getMinPriceFromTiers, formatTierLabel } from '../lib/utils';
 import type { Price, Schedule, Ticket } from '../types';
 
 type TimeSlot = {
@@ -233,8 +233,9 @@ export function TourDetailPage() {
   const navigate = useNavigate();
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [showCalendar, setShowCalendar] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(true);
   const [calendarMonthIndex, setCalendarMonthIndex] = useState(0);
+  const [showDateError, setShowDateError] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [accomLightboxIndex, setAccomLightboxIndex] = useState<number | null>(null);
@@ -385,6 +386,14 @@ export function TourDetailPage() {
         return (
           <div className="bg-background py-6 md:py-10">
             <div className="container">
+              {/* Breadcrumbs */}
+              <nav className="flex items-center gap-1.5 text-sm mb-4 max-w-6xl mx-auto">
+                <Link to="/" className="text-primary hover:underline transition">Главная</Link>
+                <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                <Link to="/tours" className="text-primary hover:underline transition">Туры</Link>
+                <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                <span className="text-foreground truncate">{stripEmoji(card.title)}</span>
+              </nav>
               <div className="max-w-6xl mx-auto overflow-hidden rounded-2xl shadow-lg border border-border md:grid md:grid-cols-[1fr_300px]">
                 {/* ── Photo side ── */}
                 <div className="relative min-h-[260px] md:min-h-[400px]">
@@ -404,20 +413,6 @@ export function TourDetailPage() {
                       {card.cardType.name}
                     </span>
                   )}
-                  {/* Breadcrumbs top-right on desktop */}
-                  <nav className="hidden md:flex absolute top-3.5 right-3.5 items-center gap-1 text-[11px] text-white/70">
-                    <Link to="/" className="hover:text-white transition">Главная</Link>
-                    <ChevronRight className="h-2.5 w-2.5 shrink-0" />
-                    <Link to="/tours" className="hover:text-white transition">Туры</Link>
-                  </nav>
-                  {/* Breadcrumbs on mobile */}
-                  <nav className="md:hidden absolute top-[2.75rem] left-3.5 right-3.5 flex items-center gap-1 text-[11px] text-white/70">
-                    <Link to="/" className="hover:text-white transition">Главная</Link>
-                    <ChevronRight className="h-2.5 w-2.5 shrink-0" />
-                    <Link to="/tours" className="hover:text-white transition">Туры</Link>
-                    <ChevronRight className="h-2.5 w-2.5 shrink-0" />
-                    <span className="text-white/60 truncate">{stripEmoji(card.title)}</span>
-                  </nav>
                   {/* Title + subtitle + badges */}
                   <div className="absolute inset-0 flex flex-col justify-end md:justify-center px-4 pb-4 md:pb-0 md:px-6">
                     <h1 className="text-[26px] md:text-[38px] font-bold text-white leading-tight drop-shadow-lg mb-2">
@@ -495,6 +490,9 @@ export function TourDetailPage() {
                         <div className="text-[30px] md:text-[32px] font-medium text-foreground leading-none mb-1">
                           {formatPrice(minPrice)}
                         </div>
+                        <div className="text-xs text-emerald-600 mb-1">
+                          Предоплата {formatPrice(calcPrepayment(minPrice))} · остаток на месте
+                        </div>
                         {(card as any).postPaymentInfo && (
                           <div className="text-xs text-emerald-600 leading-tight">
                             {(card as any).postPaymentInfo}
@@ -557,10 +555,10 @@ export function TourDetailPage() {
         )}
 
         {/* Breadcrumbs */}
-        <nav className="absolute top-0 left-0 right-0 flex items-center gap-1.5 text-xs text-white/90 px-4 pt-4">
-          <Link to="/" className="hover:text-white transition shrink-0">Главная</Link>
+        <nav className="absolute top-0 left-0 right-0 z-10 flex items-center gap-1.5 text-xs text-white px-4 pt-4 drop-shadow-[0_1px_3px_rgba(0,0,0,0.7)]">
+          <Link to="/" className="hover:underline transition shrink-0">Главная</Link>
           <ChevronRight className="h-3 w-3 shrink-0" />
-          <Link to="/tours" className="hover:text-white transition shrink-0">Туры</Link>
+          <Link to="/tours" className="hover:underline transition shrink-0">Туры</Link>
           <ChevronRight className="h-3 w-3 shrink-0" />
           <span className="text-white/80 truncate">{stripEmoji(card.title)}</span>
         </nav>
@@ -634,12 +632,12 @@ export function TourDetailPage() {
       )}
 
       {/* Breadcrumbs */}
-      <div className="absolute top-0 left-0 right-0 z-10 px-6 lg:px-8 pt-6">
+      <div className="absolute top-0 left-0 right-0 z-20 px-6 lg:px-8 pt-6">
         <div className="max-w-6xl mx-auto">
-          <nav className="flex items-center gap-2 text-sm text-white/90">
-            <Link to="/" className="hover:text-white transition">Главная</Link>
+          <nav className="flex items-center gap-2 text-sm text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.7)]">
+            <Link to="/" className="hover:underline transition">Главная</Link>
             <ChevronRight className="h-4 w-4 flex-shrink-0" />
-            <Link to="/tours" className="hover:text-white transition">Туры</Link>
+            <Link to="/tours" className="hover:underline transition">Туры</Link>
             <ChevronRight className="h-4 w-4 flex-shrink-0" />
             <span className="text-white/80 font-medium truncate">{stripEmoji(card.title)}</span>
           </nav>
@@ -1262,12 +1260,17 @@ export function TourDetailPage() {
               ) : (
                 <p className="text-muted-foreground text-sm">за человека</p>
               )}
+              {minPrice > 0 && (
+                <p className="text-xs text-emerald-600 mt-1">
+                  Предоплата {formatPrice(calcPrepayment(minPrice))} · остаток на месте
+                </p>
+              )}
             </div>
 
             {/* Schedules */}
             {availableDates.length > 0 && (
-              <div>
-                <h2 className="text-base font-semibold mb-3 flex items-center gap-2">
+              <div id="date-section">
+                <h2 className={`text-base font-semibold mb-3 flex items-center gap-2 ${showDateError ? 'text-destructive' : ''}`}>
                   <Calendar className="h-4 w-4" />
                   Выберите дату
                   {hasEarlyBookingOnly && (
@@ -1281,6 +1284,12 @@ export function TourDetailPage() {
                     Ближайшие даты временно недоступны. Вы можете забронировать тур заранее на будущие даты.
                   </p>
                 )}
+                {showDateError && (
+                  <p className="text-sm text-destructive mb-3 flex items-center gap-1.5">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    Пожалуйста, выберите дату для бронирования
+                  </p>
+                )}
 
                 {/* Quick date selection */}
                 <div className="grid grid-cols-3 gap-2 mb-3">
@@ -1291,7 +1300,7 @@ export function TourDetailPage() {
                     return (
                       <button
                         key={date}
-                        onClick={() => { setSelectedDate(date); setSelectedSlot(null); }}
+                        onClick={() => { setSelectedDate(date); setSelectedSlot(null); setShowDateError(false); }}
                         className={`p-2 rounded-lg border-2 transition text-center ${
                           isSelected
                             ? 'border-primary bg-primary/5 font-semibold'
@@ -1386,7 +1395,7 @@ export function TourDetailPage() {
                             return (
                               <button
                                 key={dateStr}
-                                onClick={() => { setSelectedDate(dateStr); setSelectedSlot(null); setShowCalendar(false); }}
+                                onClick={() => { setSelectedDate(dateStr); setSelectedSlot(null); setShowDateError(false); }}
                                 className={`py-1.5 rounded-md border text-xs font-medium transition ${
                                   isSelected
                                     ? 'border-primary bg-primary text-primary-foreground'
@@ -1449,8 +1458,14 @@ export function TourDetailPage() {
               onClick={() => {
                 if (selectedSlot) {
                   navigate(`/booking/${card.id}?date=${selectedSlot.date}&time=${selectedSlot.time}`);
+                } else if (selectedDate && timesForSelectedDate.length === 0) {
+                  navigate(`/booking/${card.id}?date=${selectedDate}`);
                 } else {
-                  const el = document.getElementById('booking-panel');
+                  if (!selectedDate) {
+                    setShowDateError(true);
+                    setShowCalendar(true);
+                  }
+                  const el = document.getElementById('date-section');
                   if (el) {
                     const top = el.getBoundingClientRect().top + window.scrollY - 80;
                     window.scrollTo({ top, behavior: 'smooth' });
@@ -1458,7 +1473,7 @@ export function TourDetailPage() {
                 }
               }}
             >
-              {selectedSlot ? 'Забронировать' : 'Выбрать дату'}
+              {selectedSlot || (selectedDate && timesForSelectedDate.length === 0) ? 'Забронировать' : 'Забронировать место'}
             </Button>
 
             {/* Payment & refund conditions */}
@@ -1538,7 +1553,10 @@ export function TourDetailPage() {
     <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur border-t px-4 py-3 flex items-center gap-3 shadow-[0_-4px_16px_rgba(0,0,0,0.08)]">
       <div className="flex-1 min-w-0">
         {minPrice > 0 && (
-          <div className="font-bold text-lg text-primary leading-none">от {formatPrice(minPrice)}</div>
+          <>
+            <div className="font-bold text-lg text-primary leading-none">от {formatPrice(minPrice)}</div>
+            <div className="text-[10px] text-emerald-600 leading-none mt-0.5">предоплата {formatPrice(calcPrepayment(minPrice))}</div>
+          </>
         )}
         <div className="text-xs text-muted-foreground mt-0.5 truncate">
           {selectedSlot ? `${formatDate(selectedSlot.date)}, ${selectedSlot.time}` : 'Выберите дату и время'}
@@ -1559,7 +1577,7 @@ export function TourDetailPage() {
           }
         }}
       >
-        {selectedSlot ? 'Забронировать' : 'Выбрать дату'}
+        {selectedSlot ? 'Забронировать' : 'Забронировать место'}
       </Button>
     </div>
 

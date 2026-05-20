@@ -81,6 +81,19 @@ export function BookingPage() {
     }
   }, [user, setValue]);
 
+  useEffect(() => {
+    if (!card || !selectedDate) return;
+    const tickets = (card.tickets ?? [])
+      .filter((ticket) => getTicketPriceForDate(ticket, selectedDate))
+      .map((ticket) => ticket.id);
+    if (tickets.length === 0) return;
+    setTicketQuantities((prev) => {
+      const hasAny = Object.values(prev).some((v) => v > 0);
+      if (hasAny) return prev;
+      return Object.fromEntries(tickets.map((ticketId) => [ticketId, ticketId === tickets[0] ? 1 : 0]));
+    });
+  }, [card, selectedDate]);
+
   if (isLoading) {
     return (
       <div className="container py-12">
