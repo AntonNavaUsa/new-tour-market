@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import * as LucideIcons from 'lucide-react';
-import { MapPin, Clock, Users, Calendar, ChevronLeft, ChevronRight, X, Check, Ruler, TrendingUp, Baby, Navigation, Star, Activity, BedDouble, RotateCcw, ShieldCheck } from 'lucide-react';
+import { MapPin, Clock, Calendar, ChevronLeft, ChevronRight, X, Check, Ruler, TrendingUp, Baby, Navigation, Star, Activity, BedDouble, RotateCcw, ShieldCheck } from 'lucide-react';
 import CardTypeIcon from '../components/CardTypeIcon';
 import { cardsApi, reviewsApi } from '../lib/api';
+import { schedulesApi } from '../lib/api/accommodationsApi';
 import { guidesApi } from '../lib/api/guides';
 import { Button } from '../components/ui/button';
 import { formatPrice, calcPrepayment, formatDate, formatDurationRange, formatDays, getMinPriceFromTiers, formatTierLabel } from '../lib/utils';
@@ -259,6 +260,31 @@ export function TourDetailPage() {
     staleTime: 5 * 60 * 1000,
   });
 
+  // Load blocked dates from guide/accommodation calendars for current and next months
+  const now = new Date();
+  const { data: availableDatesCurrentMonth } = useQuery({
+    queryKey: ['available-dates', id, now.getFullYear(), now.getMonth() + 1],
+    queryFn: () => schedulesApi.getAvailableDates(id!, now.getFullYear(), now.getMonth() + 1),
+    enabled: !!id,
+    staleTime: 5 * 60 * 1000,
+  });
+  const nextMonthDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  const { data: availableDatesNextMonth } = useQuery({
+    queryKey: ['available-dates', id, nextMonthDate.getFullYear(), nextMonthDate.getMonth() + 1],
+    queryFn: () => schedulesApi.getAvailableDates(id!, nextMonthDate.getFullYear(), nextMonthDate.getMonth() + 1),
+    enabled: !!id,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const blockedDateSet = new Set<string>();
+  for (const monthData of [availableDatesCurrentMonth, availableDatesNextMonth]) {
+    if (monthData) {
+      for (const day of monthData.days) {
+        if (!day.available) blockedDateSet.add(day.date);
+      }
+    }
+  }
+
   const validUrl = (url?: string | null) => (url && !url.startsWith('blob:') ? url : undefined);
 
   const allImages = [
@@ -323,7 +349,7 @@ export function TourDetailPage() {
   const lightboxPrev = () => setLightboxIndex((i) => (i - 1 + allImages.length) % allImages.length);
 
   const schedule = card.schedules?.[0];
-  const availableDates = getAvailableDates(schedule);
+  const availableDates = getAvailableDates(schedule).filter((d) => !blockedDateSet.has(d));
   const quickDateOptions = availableDates.slice(0, 3);
   const hasEarlyBookingOnly = availableDates.length > 0 && isEarlyBooking(availableDates[0]);
   const minPrice = card.tickets && card.tickets.length > 0
@@ -903,69 +929,107 @@ export function TourDetailPage() {
           )}
 
           {/* Accommodation */}
-          {(card.accommodationDescription || (card.accommodationPhotos && card.accommodationPhotos.length > 0) || (card.accommodationReviews && card.accommodationReviews.length > 0)) && (
+          {card.cardAccommodations && card.cardAccommodations.length > 0 && (
             <div className="rounded-2xl border border-border overflow-hidden">
               <div className="flex items-center gap-3 bg-primary/5 border-b border-border px-5 py-4">
                 <BedDouble className="h-5 w-5 text-primary shrink-0" />
                 <h2 className="text-lg font-semibold">Проживание</h2>
               </div>
-              <div className="px-5 py-5 space-y-5">
-                {card.accommodationDescription && (
-                  <p className="text-sm leading-relaxed text-foreground whitespace-pre-line">
-                    {card.accommodationDescription}
-                  </p>
-                )}
-                {card.accommodationPhotos && card.accommodationPhotos.length > 0 && (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {card.accommodationPhotos.map((photo, index) => (
-                      <div
-                        key={photo.id}
-                        className="aspect-video rounded-xl overflow-hidden bg-muted cursor-pointer"
-                        onClick={() => setAccomLightboxIndex(index)}
-                      >
-                        <img
-                          src={photo.thumbUrl || photo.url}
-                          alt={photo.caption ?? `Проживание ${index + 1}`}
-                          className="h-full w-full object-cover hover:scale-105 transition duration-300"
-                          loading="lazy"
-                          decoding="async"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                )}
-                {card.accommodationReviews && card.accommodationReviews.length > 0 && (
-                  <div className="rounded-xl border border-border overflow-hidden">
-                    <div
-                      className="flex items-center gap-2 px-4 py-2.5"
-                      style={{ background: '#f9f8f5', borderBottom: '1px solid rgba(0,0,0,0.07)' }}
-                    >
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1D9E75" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-                      </svg>
-                      <span className="text-[12px] font-medium" style={{ color: '#1a1a18' }}>Отзывы гостей о проживании</span>
-                    </div>
-                    {card.accommodationReviews.map((review, idx) => (
-                      <div
-                        key={idx}
-                        className="px-4 py-3"
-                        style={{ borderBottom: idx < card.accommodationReviews!.length - 1 ? '1px solid rgba(0,0,0,0.07)' : 'none' }}
-                      >
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <div
-                            className="flex items-center justify-center rounded-full text-[11px] font-medium shrink-0"
-                            style={{ width: 28, height: 28, background: '#e8f5ef', color: '#085041' }}
-                          >
-                            {review.author ? review.author.charAt(0).toUpperCase() : '?'}
+              <div className="px-5 py-5 space-y-8">
+                {card.cardAccommodations.map((ca, accIdx) => {
+                  const acc = ca.accommodation;
+                  if (!acc) return null;
+                  const photoOffset = card.cardAccommodations!.slice(0, accIdx).reduce(
+                    (sum, c) => sum + (c.accommodation?.photos?.length ?? 0), 0
+                  );
+                  const typeLabels: Record<string, string> = {
+                    HOTEL: 'Гостиница', HOSTEL: 'Хостел', GUESTHOUSE: 'Гостевой дом',
+                    APARTMENT: 'Апартаменты', CAMPING: 'Кемпинг', OTHER: 'Другое',
+                  };
+                  const avgRating = acc.reviews?.length
+                    ? acc.reviews.reduce((s, r) => s + r.rating, 0) / acc.reviews.length
+                    : null;
+                  return (
+                    <div key={ca.accommodationId} className="space-y-4">
+                      {/* Header */}
+                      <div className="flex flex-wrap items-start gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-wrap items-center gap-2 mb-1">
+                            <h3 className="font-semibold text-base">{acc.name}</h3>
+                            <span className="text-xs bg-primary/10 text-primary rounded-full px-2 py-0.5 shrink-0">
+                              {typeLabels[acc.type] ?? acc.type}
+                            </span>
+                            {avgRating !== null && (
+                              <span className="flex items-center gap-1 text-xs text-amber-600 font-medium">
+                                <Star className="h-3 w-3 fill-amber-500 text-amber-500" />
+                                {avgRating.toFixed(1)}
+                              </span>
+                            )}
                           </div>
-                          <span className="text-[13px] font-medium" style={{ color: '#1a1a18' }}>{review.author}</span>
-                          <span className="ml-auto text-[11px]" style={{ color: '#EF9F27', letterSpacing: 1 }}>★★★★★</span>
+                          {acc.address && (
+                            <p className="text-xs text-muted-foreground flex items-center gap-1">
+                              <MapPin className="h-3 w-3 shrink-0" />
+                              {acc.address}
+                            </p>
+                          )}
                         </div>
-                        <p className="text-[12.5px] leading-relaxed" style={{ color: '#6b6b65' }}>{review.text}</p>
                       </div>
-                    ))}
-                  </div>
-                )}
+
+                      {/* Description */}
+                      {acc.description && (
+                        <p className="text-sm leading-relaxed text-foreground whitespace-pre-line">{acc.description}</p>
+                      )}
+
+                      {/* Photos */}
+                      {acc.photos && acc.photos.length > 0 && (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                          {acc.photos.map((photo, index) => (
+                            <div
+                              key={photo.id}
+                              className="aspect-video rounded-xl overflow-hidden bg-muted cursor-pointer"
+                              onClick={() => setAccomLightboxIndex(photoOffset + index)}
+                            >
+                              <img
+                                src={photo.thumbUrl || photo.url}
+                                alt={`${acc.name} ${index + 1}`}
+                                className="h-full w-full object-cover hover:scale-105 transition duration-300"
+                                loading="lazy"
+                                decoding="async"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Reviews */}
+                      {acc.reviews && acc.reviews.length > 0 && (
+                        <div className="space-y-3">
+                          <p className="text-sm font-medium text-muted-foreground">Отзывы об объекте</p>
+                          {acc.reviews.slice(0, 3).map((review) => (
+                            <div key={review.id} className="bg-muted/40 rounded-xl px-4 py-3 space-y-1">
+                              <div className="flex items-center gap-2">
+                                <div className="flex gap-0.5">
+                                  {Array.from({ length: 5 }).map((_, i) => (
+                                    <Star
+                                      key={i}
+                                      className={`h-3.5 w-3.5 ${i < review.rating ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground/30'}`}
+                                    />
+                                  ))}
+                                </div>
+                                <span className="text-xs font-medium">{review.authorName}</span>
+                                <span className="text-xs text-muted-foreground ml-auto">
+                                  {new Date(review.createdAt).toLocaleDateString('ru-RU', { year: 'numeric', month: 'short' })}
+                                </span>
+                              </div>
+                              {review.title && <p className="text-xs font-medium">{review.title}</p>}
+                              <p className="text-sm text-foreground/80 leading-relaxed">{review.text}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -1582,58 +1646,62 @@ export function TourDetailPage() {
     </div>
 
     {/* Accommodation Lightbox */}
-      {accomLightboxIndex !== null && card.accommodationPhotos && card.accommodationPhotos.length > 0 && (
-        <div
-          className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center"
-          onClick={() => setAccomLightboxIndex(null)}
-        >
-          <button
+      {(() => {
+        const accomPhotos = card.cardAccommodations?.flatMap((ca) => ca.accommodation?.photos ?? []) ?? [];
+        if (accomLightboxIndex === null || accomPhotos.length === 0) return null;
+        return (
+          <div
+            className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center"
             onClick={() => setAccomLightboxIndex(null)}
-            className="absolute top-4 right-4 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 rounded-full p-2 transition z-10"
           >
-            <X className="h-6 w-6" />
-          </button>
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 text-white/70 text-sm">
-            {accomLightboxIndex + 1} / {card.accommodationPhotos.length}
-          </div>
-          {accomLightboxIndex > 0 && (
             <button
-              onClick={(e) => { e.stopPropagation(); setAccomLightboxIndex(accomLightboxIndex - 1); }}
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 rounded-full p-3 transition"
+              onClick={() => setAccomLightboxIndex(null)}
+              className="absolute top-4 right-4 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 rounded-full p-2 transition z-10"
             >
-              <ChevronLeft className="h-7 w-7" />
+              <X className="h-6 w-6" />
             </button>
-          )}
-          <img
-            src={card.accommodationPhotos[accomLightboxIndex].url}
-            alt={card.accommodationPhotos[accomLightboxIndex].caption ?? `Проживание ${accomLightboxIndex + 1}`}
-            className="max-h-[90vh] max-w-[90vw] object-contain select-none"
-            draggable={false}
-            onClick={(e) => e.stopPropagation()}
-          />
-          {accomLightboxIndex < card.accommodationPhotos.length - 1 && (
-            <button
-              onClick={(e) => { e.stopPropagation(); setAccomLightboxIndex(accomLightboxIndex + 1); }}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 rounded-full p-3 transition"
-            >
-              <ChevronRight className="h-7 w-7" />
-            </button>
-          )}
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 max-w-[90vw] overflow-x-auto pb-1">
-            {card.accommodationPhotos.map((p, i) => (
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 text-white/70 text-sm">
+              {accomLightboxIndex + 1} / {accomPhotos.length}
+            </div>
+            {accomLightboxIndex > 0 && (
               <button
-                key={p.id}
-                onClick={(e) => { e.stopPropagation(); setAccomLightboxIndex(i); }}
-                className={`flex-shrink-0 w-14 h-10 rounded overflow-hidden transition ${
-                  i === accomLightboxIndex ? 'ring-2 ring-white opacity-100' : 'opacity-50 hover:opacity-80'
-                }`}
+                onClick={(e) => { e.stopPropagation(); setAccomLightboxIndex(accomLightboxIndex - 1); }}
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 rounded-full p-3 transition"
               >
-                <img src={p.url} alt="" className="w-full h-full object-cover" />
+                <ChevronLeft className="h-7 w-7" />
               </button>
-            ))}
-          </div>
+            )}
+            <img
+              src={accomPhotos[accomLightboxIndex].url}
+              alt={`Проживание ${accomLightboxIndex + 1}`}
+              className="max-h-[90vh] max-w-[90vw] object-contain select-none"
+              draggable={false}
+              onClick={(e) => e.stopPropagation()}
+            />
+            {accomLightboxIndex < accomPhotos.length - 1 && (
+              <button
+                onClick={(e) => { e.stopPropagation(); setAccomLightboxIndex(accomLightboxIndex + 1); }}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 rounded-full p-3 transition"
+              >
+                <ChevronRight className="h-7 w-7" />
+              </button>
+            )}
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 max-w-[90vw] overflow-x-auto pb-1">
+              {accomPhotos.map((p, i) => (
+                <button
+                  key={p.id}
+                  onClick={(e) => { e.stopPropagation(); setAccomLightboxIndex(i); }}
+                  className={`flex-shrink-0 w-14 h-10 rounded overflow-hidden transition ${
+                    i === accomLightboxIndex ? 'ring-2 ring-white opacity-100' : 'opacity-50 hover:opacity-80'
+                  }`}
+                >
+                  <img src={p.url} alt="" className="w-full h-full object-cover" />
+                </button>
+              ))}
+            </div>
         </div>
-      )}
+        );
+      })()}
 
     {/* Lightbox */}
       {lightboxOpen && (

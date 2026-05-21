@@ -157,13 +157,12 @@ export interface Card {
   tickets?: Ticket[];
   slideshowPhotos?: SlideshowPhoto[];
   expressions?: Expression[];
-  accommodationPhotos?: AccommodationPhoto[];
   schedules?: Schedule[];
   tourProgram?: Array<{ title: string; description: string }> | null;
-  accommodationDescription?: string | null;
-  accommodationReviews?: Array<{ author: string; text: string }> | null;
   postPaymentInfo?: string | null;
   partner?: Partner | null;
+  cardAccommodations?: CardAccommodation[];
+  cardGuides?: CardGuide[];
 }
 
 export interface Ticket {
@@ -236,12 +235,96 @@ export interface Expression {
 
 export interface AccommodationPhoto {
   id: string;
-  cardId: string;
+  accommodationId: string;
   url: string;
   thumbUrl: string | null;
   caption: string | null;
   sortOrder: number;
   createdAt: string;
+}
+
+export enum AccommodationType {
+  HOTEL = 'HOTEL',
+  HOSTEL = 'HOSTEL',
+  GUESTHOUSE = 'GUESTHOUSE',
+  APARTMENT = 'APARTMENT',
+  CAMPING = 'CAMPING',
+  OTHER = 'OTHER',
+}
+
+export interface Accommodation {
+  id: string;
+  name: string;
+  description: string | null;
+  address: string | null;
+  type: AccommodationType;
+  createdByUserId: string | null;
+  partnerId: string | null;
+  createdAt: string;
+  updatedAt: string;
+  photos?: AccommodationPhoto[];
+  reviews?: Review[];
+  _count?: { reviews: number };
+}
+
+export interface CardAccommodation {
+  cardId: string;
+  accommodationId: string;
+  accommodation: Accommodation;
+}
+
+export interface CardGuide {
+  cardId: string;
+  guideId: string;
+  guide: Guide;
+}
+
+export interface GuideBlock {
+  id: string;
+  guideId: string;
+  dateFrom: string;
+  dateTo: string;
+  reason: string | null;
+  createdAt: string;
+}
+
+export interface AccommodationBlock {
+  id: string;
+  accommodationId: string;
+  dateFrom: string;
+  dateTo: string;
+  reason: string | null;
+  createdAt: string;
+}
+
+export interface Review {
+  id: string;
+  cardId: string | null;
+  accommodationId: string | null;
+  authorName: string;
+  authorPhoto: string | null;
+  title: string | null;
+  text: string;
+  rating: number;
+  isVisible: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+  card?: { id: string; title: string } | null;
+  accommodation?: { id: string; name: string } | null;
+}
+
+export interface AvailableDateDay {
+  date: string;
+  available: boolean;
+  times: string[];
+  reason?: string;
+}
+
+export interface AvailableDatesResponse {
+  year: number;
+  month: number;
+  days: AvailableDateDay[];
 }
 
 export interface Order {
@@ -355,9 +438,9 @@ export interface CreateCardRequest {
   heroType?: string;
   heroPerks?: HeroPerk[];
   tourProgram?: Array<{ title: string; description: string }>;
-  accommodationDescription?: string;
-  accommodationReviews?: Array<{ author: string; text: string }>;
   postPaymentInfo?: string;
+  accommodationIds?: string[];
+  guideIds?: string[];
 }
 
 export interface UpdateCardRequest extends Partial<CreateCardRequest> {

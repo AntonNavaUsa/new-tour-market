@@ -23,14 +23,20 @@ export class ReviewsController {
     return this.reviewsService.getForCard(cardId);
   }
 
+  @Get('accommodation/:accommodationId')
+  @ApiOperation({ summary: 'Get visible reviews for an accommodation' })
+  getForAccommodation(@Param('accommodationId') accommodationId: string) {
+    return this.reviewsService.getForAccommodation(accommodationId);
+  }
+
   // ── Admin ────────────────────────────────────────────────────────────
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Admin: list all reviews' })
-  findAll(@Query('cardId') cardId?: string) {
-    return this.reviewsService.findAll(cardId);
+  findAll(@Query('cardId') cardId?: string, @Query('accommodationId') accommodationId?: string) {
+    return this.reviewsService.findAll(cardId, accommodationId);
   }
 
   @Get(':id')
@@ -49,6 +55,7 @@ export class ReviewsController {
   create(
     @Body() data: {
       cardId?: string | null;
+      accommodationId?: string | null;
       authorName: string;
       authorPhoto?: string;
       title?: string;

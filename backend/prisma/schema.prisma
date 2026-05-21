@@ -44,6 +44,15 @@ enum PricingType {
   PER_PERSON       // За человека (по тарифам)
 }
 
+enum AccommodationType {
+  HOTEL
+  HOSTEL
+  GUESTHOUSE
+  APARTMENT
+  CAMPING
+  OTHER
+}
+
 model User {
   id            String    @id @default(uuid())
   name          String
@@ -170,8 +179,6 @@ model Card {
   notIncludedItems Json?      @map("not_included_items") // Array of not included items
   forWhom         Json?       @map("for_whom")           // Array of target audience items
   tourProgram     Json?       @map("tour_program")       // Array of {title, description} per day
-  accommodationDescription String? @db.Text @map("accommodation_description") // Description of accommodation for multi-day tours
-  accommodationReviews  Json?   @map("accommodation_reviews")       // Array of {author, text} guest reviews
   postPaymentInfo String?     @db.Text @map("post_payment_info") // Info shown to user after successful payment
   
   status          CardStatus  @default(DRAFT)
@@ -197,9 +204,10 @@ model Card {
   schedules       Schedule[]
   slideshowPhotos SlideshowPhoto[]
   expressions     Expression[]
-  accommodationPhotos AccommodationPhoto[]
   orders          Order[]
   reviews         Review[]
+  cardGuides      CardGuide[]
+  cardAccommodations CardAccommodation[]
   
   @@index([locationId])
   @@index([userId])
@@ -419,6 +427,10 @@ model Guide {
   
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  cardGuides       CardGuide[]
+  blocks           GuideBlock[]
   
   @@index([userId])
   @@map("guides")
@@ -429,6 +441,9 @@ model Review {
   
   cardId      String?  @map("card_id")
   card        Card?    @relation(fields: [cardId], references: [id], onDelete: SetNull)
+
+  accommodationId String? @map("accommodation_id")
+  accommodation   Accommodation? @relation(fields: [accommodationId], references: [id], onDelete: SetNull)
   
   authorName  String   @map("author_name")
   authorPhoto String?  @map("author_photo")
@@ -442,14 +457,15 @@ model Review {
   updatedAt   DateTime @updatedAt @map("updated_at")
   
   @@index([cardId])
+  @@index([accommodationId])
   @@index([isVisible])
   @@map("reviews")
 }
 
 model AccommodationPhoto {
-  id        String   @id @default(uuid())
-  cardId    String   @map("card_id")
-  card      Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  id                String        @id @default(uuid())
+  accommodationId   String        @map("accommodation_id")
+  accommodation     Accommodation @relation(fields: [accommodationId], references: [id], onDelete: Cascade)
 
   url       String
   thumbUrl  String?  @map("thumb_url")
@@ -458,7 +474,7 @@ model AccommodationPhoto {
 
   createdAt DateTime @default(now()) @map("created_at")
 
-  @@index([cardId, sortOrder])
+  @@index([accommodationId, sortOrder])
   @@map("accommodation_photos")
 }
 
@@ -505,4 +521,82 @@ model GuidePage {
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   @@map("guide_pages")
+}
+
+// ── Объекты размещения ──────────────────────────────────────────────────────
+
+model Accommodation {
+  id          String            @id @default(uuid())
+  name        String
+  description String?           @db.Text
+  address     String?
+  type        AccommodationType @default(OTHER)
+
+  createdByUserId String?  @map("created_by_user_id")
+  partnerId       String?  @map("partner_id")
+
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  photos      AccommodationPhoto[]
+  reviews     Review[]
+  cardAccommodations CardAccommodation[]
+  blocks      AccommodationBlock[]
+
+  @@map("accommodations")
+}
+
+model CardAccommodation {
+  cardId          String        @map("card_id")
+  card            Card          @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  accommodationId String        @map("accommodation_id")
+  accommodation   Accommodation @relation(fields: [accommodationId], references: [id], onDelete: Cascade)
+
+  @@id([cardId, accommodationId])
+  @@map("card_accommodations")
+}
+
+model AccommodationBlock {
+  id              String        @id @default(uuid())
+  accommodationId String        @map("accommodation_id")
+  accommodation   Accommodation @relation(fields: [accommodationId], references: [id], onDelete: Cascade)
+
+  dateFrom  DateTime @map("date_from") @db.Date
+  dateTo    DateTime @map("date_to")   @db.Date
+  reason    String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([accommodationId])
+  @@index([dateFrom, dateTo])
+  @@map("accommodation_blocks")
+}
+
+// ── Гиды: привязка к карточкам и блокировки занятости ───────────────────────
+
+model CardGuide {
+  cardId  String @map("card_id")
+  card    Card   @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  guideId String @map("guide_id")
+  guide   Guide  @relation(fields: [guideId], references: [id], onDelete: Cascade)
+
+  @@id([cardId, guideId])
+  @@map("card_guides")
+}
+
+model GuideBlock {
+  id       String @id @default(uuid())
+  guideId  String @map("guide_id")
+  guide    Guide  @relation(fields: [guideId], references: [id], onDelete: Cascade)
+
+  dateFrom DateTime @map("date_from") @db.Date
+  dateTo   DateTime @map("date_to")   @db.Date
+  reason   String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([guideId])
+  @@index([dateFrom, dateTo])
+  @@map("guide_blocks")
 }

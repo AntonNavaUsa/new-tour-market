@@ -24,9 +24,14 @@ import { AdminOrdersPage } from './pages/AdminOrdersPage';
 import { AdminGuidePagesPage } from './pages/AdminGuidePagesPage';
 import { AdminGuidePageFormPage } from './pages/AdminGuidePageFormPage';
 import { AdminSiteSettingsPage } from './pages/AdminSiteSettingsPage';
+import { AdminAccommodationsPage } from './pages/AdminAccommodationsPage';
+import { AdminAccommodationFormPage } from './pages/AdminAccommodationFormPage';
+import { AdminGuideCalendarPage } from './pages/AdminGuideCalendarPage';
+import { AdminGuidesPage } from './pages/AdminGuidesPage';
 import { GuidePagePage } from './pages/GuidePagePage';
 import { KrasnayaPolyanaSpringPage } from './pages/KrasnayaPolyanaSpringPage';
 import { TourPackagesPage } from './pages/TourPackagesPage';
+import AccommodationPage from './pages/AccommodationPage';
 import { UserRole } from './types';
 
 function App() {
@@ -56,6 +61,7 @@ function App() {
         <Route path="/tours" element={<ToursPage />} />
         <Route path="/tour-packages" element={<TourPackagesPage />} />
         <Route path="/tours/:id" element={<TourDetailPage />} />
+        <Route path="/accommodations/:id" element={<AccommodationPage />} />
         <Route path="/booking/:id" element={<BookingPage />} />
         {/* SEO Guides / Landings */}
         <Route path="/guides/krasnaya-polyana-spring" element={<KrasnayaPolyanaSpringPage />} />
@@ -215,6 +221,38 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
               <AdminSiteSettingsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/accommodations"
+          element={
+            <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
+              <AdminAccommodationsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/accommodations/:id"
+          element={
+            <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
+              <AdminAccommodationFormPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/guides"
+          element={
+            <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
+              <AdminGuidesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/guides/:id/calendar"
+          element={
+            <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
+              <AdminGuideCalendarPage />
             </ProtectedRoute>
           }
         />

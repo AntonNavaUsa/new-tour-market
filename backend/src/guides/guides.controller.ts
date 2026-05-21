@@ -6,6 +6,7 @@ import {
   Delete,
   Body,
   Param,
+  Query,
   UseGuards,
   UseInterceptors,
   UploadedFile,
@@ -97,5 +98,45 @@ export class GuidesController {
   ) {
     await this.guidesService.delete(id, userId, userRole);
     return { success: true };
+  }
+
+  // ── Calendar ─────────────────────────────────────────────────────────────
+
+  @Get(':id/calendar')
+  @ApiOperation({ summary: 'Get guide occupancy calendar' })
+  async getCalendar(
+    @Param('id') id: string,
+    @Query('year') year: string,
+    @Query('month') month: string,
+  ) {
+    return this.guidesService.getCalendar(id, parseInt(year), parseInt(month));
+  }
+
+  @Post(':id/blocks')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.PARTNER)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Block guide dates' })
+  async createBlock(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('role') userRole: UserRole,
+    @Body() dto: { dateFrom: string; dateTo: string; reason?: string },
+  ) {
+    return this.guidesService.createBlock(id, userId, userRole, dto);
+  }
+
+  @Delete(':id/blocks/:blockId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.PARTNER)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Remove guide date block' })
+  async deleteBlock(
+    @Param('id') id: string,
+    @Param('blockId') blockId: string,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('role') userRole: UserRole,
+  ) {
+    return this.guidesService.deleteBlock(id, blockId, userId, userRole);
   }
 }

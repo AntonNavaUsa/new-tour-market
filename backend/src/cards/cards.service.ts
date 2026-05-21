@@ -77,8 +77,17 @@ export class CardsService {
         heroType: dto.heroType ?? 'cover',
         heroPerks: dto.heroPerks ?? [],
         tourProgram: dto.tourProgram ?? [],
-        accommodationDescription: dto.accommodationDescription,
         postPaymentInfo: dto.postPaymentInfo,
+        ...(dto.accommodationIds?.length && {
+          cardAccommodations: {
+            create: dto.accommodationIds.map((accommodationId) => ({ accommodationId })),
+          },
+        }),
+        ...(dto.guideIds?.length && {
+          cardGuides: {
+            create: dto.guideIds.map((guideId) => ({ guideId })),
+          },
+        }),
       },
       include: {
         location: true,
@@ -91,6 +100,8 @@ export class CardsService {
             email: true,
           },
         },
+        cardAccommodations: { include: { accommodation: { include: { photos: { orderBy: { sortOrder: 'asc' }, take: 1 } } } } },
+        cardGuides: { include: { guide: true } },
       },
     });
 
@@ -210,9 +221,21 @@ export class CardsService {
         expressions: {
           orderBy: { sortOrder: 'asc' },
         },
-        accommodationPhotos: {
-          orderBy: { sortOrder: 'asc' },
+        cardAccommodations: {
+          include: {
+            accommodation: {
+              include: {
+                photos: { orderBy: { sortOrder: 'asc' } },
+                reviews: {
+                  where: { isVisible: true },
+                  orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
+                  take: 20,
+                },
+              },
+            },
+          },
         },
+        cardGuides: { include: { guide: true } },
       },
     });
 
@@ -237,22 +260,50 @@ export class CardsService {
       throw new ForbiddenException('You do not have permission to update this card');
     }
 
+    const { accommodationIds, guideIds, ...cardData } = dto as any;
+
     const updatedCard = await this.prisma.card.update({
       where: { id },
-      data: {
-        ...dto,
-      },
+      data: cardData,
       include: {
         location: true,
         cardType: true,
         partner: true,
         tickets: true,
         schedules: true,
-        slideshowPhotos: {
-          orderBy: { sortOrder: 'asc' },
+        slideshowPhotos: { orderBy: { sortOrder: 'asc' } },
+        cardAccommodations: {
+          include: {
+            accommodation: {
+              include: { photos: { orderBy: { sortOrder: 'asc' }, take: 1 } },
+            },
+          },
         },
+        cardGuides: { include: { guide: true } },
       },
     });
+
+    // Sync accommodations if provided
+    if (accommodationIds !== undefined) {
+      await this.prisma.cardAccommodation.deleteMany({ where: { cardId: id } });
+      if (accommodationIds.length > 0) {
+        await this.prisma.cardAccommodation.createMany({
+          data: accommodationIds.map((accommodationId: string) => ({ cardId: id, accommodationId })),
+          skipDuplicates: true,
+        });
+      }
+    }
+
+    // Sync guides if provided
+    if (guideIds !== undefined) {
+      await this.prisma.cardGuide.deleteMany({ where: { cardId: id } });
+      if (guideIds.length > 0) {
+        await this.prisma.cardGuide.createMany({
+          data: guideIds.map((guideId: string) => ({ cardId: id, guideId })),
+          skipDuplicates: true,
+        });
+      }
+    }
 
     return updatedCard;
   }
@@ -590,67 +641,17 @@ export class CardsService {
     };
   }
 
-  async uploadAccommodationPhotos(
-    cardId: string,
-    userId: string,
-    userRole: UserRole,
-    files: Express.Multer.File[],
-  ) {
-    const card = await this.prisma.card.findUnique({
-      where: { id: cardId },
-    });
-
-    if (!card) {
-      throw new NotFoundException('Card not found');
-    }
-
-    if (userRole !== UserRole.ADMIN && card.userId !== userId) {
-      throw new ForbiddenException('You do not have permission to update this card');
-    }
-
-    const maxOrder = await this.prisma.accommodationPhoto.findFirst({
-      where: { cardId },
-      orderBy: { sortOrder: 'desc' },
-    });
-
-    let currentOrder = (maxOrder?.sortOrder || 0) + 1;
-
-    const uploadResults = await this.filesService.uploadMultipleImagesWithThumb(files, 'accommodation', {
-      maxWidth: 1920,
-      maxHeight: 1080,
-      quality: 85,
-    });
-
-    const photos = await this.prisma.$transaction(
-      uploadResults.map(({ url, thumbUrl }) =>
-        this.prisma.accommodationPhoto.create({
-          data: {
-            cardId,
-            url,
-            thumbUrl,
-            sortOrder: currentOrder++,
-          },
-        }),
-      ),
-    );
-
-    return {
-      message: `${photos.length} accommodation photos uploaded successfully`,
-      photos,
-    };
-  }
-
   async deleteAccommodationPhoto(photoId: string, userId: string, userRole: UserRole) {
     const photo = await this.prisma.accommodationPhoto.findUnique({
       where: { id: photoId },
-      include: { card: true },
+      include: { accommodation: { select: { createdByUserId: true } } },
     });
 
     if (!photo) {
       throw new NotFoundException('Photo not found');
     }
 
-    if (userRole !== UserRole.ADMIN && photo.card.userId !== userId) {
+    if (userRole !== UserRole.ADMIN && photo.accommodation.createdByUserId !== userId) {
       throw new ForbiddenException('You do not have permission to delete this photo');
     }
 
@@ -707,11 +708,11 @@ export class CardsService {
   ) {
     const photo = await this.prisma.accommodationPhoto.findUnique({
       where: { id: photoId },
-      include: { card: true },
+      include: { accommodation: { select: { createdByUserId: true } } },
     });
 
     if (!photo) throw new NotFoundException('Photo not found');
-    if (userRole !== UserRole.ADMIN && photo.card.userId !== userId) {
+    if (userRole !== UserRole.ADMIN && photo.accommodation.createdByUserId !== userId) {
       throw new ForbiddenException('You do not have permission to update this photo');
     }
 
@@ -734,33 +735,4 @@ export class CardsService {
     return { message: 'Accommodation photo replaced successfully', photo: updated };
   }
 
-  async reorderAccommodationPhotos(
-    cardId: string,
-    userId: string,
-    userRole: UserRole,
-    photoOrders: Array<{ id: string; sortOrder: number }>,
-  ) {
-    const card = await this.prisma.card.findUnique({
-      where: { id: cardId },
-    });
-
-    if (!card) {
-      throw new NotFoundException('Card not found');
-    }
-
-    if (userRole !== UserRole.ADMIN && card.userId !== userId) {
-      throw new ForbiddenException('You do not have permission to update this card');
-    }
-
-    await this.prisma.$transaction(
-      photoOrders.map((photo) =>
-        this.prisma.accommodationPhoto.update({
-          where: { id: photo.id },
-          data: { sortOrder: photo.sortOrder },
-        }),
-      ),
-    );
-
-    return { message: 'Accommodation photos reordered successfully' };
-  }
 }

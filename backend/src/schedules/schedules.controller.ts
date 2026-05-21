@@ -87,4 +87,14 @@ export class SchedulesController {
   ) {
     return this.schedulesService.getMonthAvailability(cardId, year, month);
   }
+
+  @Get('cards/:cardId/available-dates/:year/:month')
+  @ApiOperation({ summary: 'Get available dates with guide & accommodation constraints' })
+  async getAvailableDates(
+    @Param('cardId') cardId: string,
+    @Param('year', ParseIntPipe) year: number,
+    @Param('month', ParseIntPipe) month: number,
+  ) {
+    return this.schedulesService.getAvailableDates(cardId, year, month);
+  }
 }

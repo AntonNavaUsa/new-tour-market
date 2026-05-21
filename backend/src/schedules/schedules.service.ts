@@ -316,4 +316,116 @@ export class SchedulesService {
       days,
     };
   }
+
+  async getAvailableDates(cardId: string, year: number, month: number) {
+    const startDate = new Date(year, month - 1, 1);
+    const endDate = new Date(year, month, 0);
+
+    // Load card with guides, accommodations and duration
+    const card = await this.prisma.card.findUnique({
+      where: { id: cardId },
+      include: {
+        cardGuides: { select: { guideId: true } },
+        cardAccommodations: { select: { accommodationId: true } },
+      },
+    });
+
+    if (!card) {
+      throw new NotFoundException('Card not found');
+    }
+
+    // N = number of tour days (1 = single-day tour, no duration adjustment needed)
+    const N = (card as any).durationDays ?? 1;
+
+    const guideIds = card.cardGuides.map((cg) => cg.guideId);
+    const accommodationIds = card.cardAccommodations.map((ca) => ca.accommodationId);
+
+    // Extend block query window: a tour starting on the last day of month may span N-1 more days.
+    // Since check-out day coinciding with block start is allowed, we extend by N-2.
+    const blockWindowEnd = new Date(endDate);
+    blockWindowEnd.setDate(blockWindowEnd.getDate() + Math.max(N - 2, 0));
+
+    // Load all blocks that could affect dates in this month
+    const [guideBlocks, accommodationBlocks] = await Promise.all([
+      guideIds.length
+        ? this.prisma.guideBlock.findMany({
+            where: {
+              guideId: { in: guideIds },
+              dateFrom: { lte: blockWindowEnd },
+              dateTo: { gte: startDate },
+            },
+          })
+        : [],
+      accommodationIds.length
+        ? this.prisma.accommodationBlock.findMany({
+            where: {
+              accommodationId: { in: accommodationIds },
+              dateFrom: { lte: blockWindowEnd },
+              dateTo: { gte: startDate },
+            },
+          })
+        : [],
+    ]);
+
+    /**
+     * Returns true if starting a tour of N days on `startDay` conflicts with `block`.
+     * Conflict condition: startDay < blockTo  AND  startDay + N - 1 > blockFrom
+     * (strict comparisons — checkout==checkin coincidence is allowed on both ends)
+     */
+    const conflictsWithBlock = (
+      startDay: Date,
+      block: { dateFrom: Date; dateTo: Date },
+    ): boolean => {
+      const tourLastDay = new Date(startDay);
+      tourLastDay.setDate(tourLastDay.getDate() + N - 1);
+      const blockFrom = new Date(block.dateFrom);
+      const blockTo = new Date(block.dateTo);
+      return startDay < blockTo && tourLastDay > blockFrom;
+    };
+
+    const daysInMonth = endDate.getDate();
+    const days = [];
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(year, month - 1, day);
+      const dateStr = date.toISOString().split('T')[0];
+
+      // 1. Check schedule
+      const scheduleResult = await this.getAvailableTimes(cardId, { date });
+      if (!scheduleResult.available) {
+        days.push({ date: dateStr, available: false, reason: scheduleResult.reason, times: [] });
+        continue;
+      }
+
+      // 2. Check guide blocks (taking tour duration into account)
+      const guideBlocked = (guideBlocks as any[]).find((b) => conflictsWithBlock(date, b));
+      if (guideBlocked) {
+        days.push({
+          date: dateStr,
+          available: false,
+          reason: `Гид недоступен: ${guideBlocked.reason || 'заблокировано'}`,
+          times: [],
+        });
+        continue;
+      }
+
+      // 3. Check accommodation blocks (taking tour duration into account)
+      const accommodationBlocked = (accommodationBlocks as any[]).find((b) =>
+        conflictsWithBlock(date, b),
+      );
+      if (accommodationBlocked) {
+        days.push({
+          date: dateStr,
+          available: false,
+          reason: `Объект размещения недоступен: ${accommodationBlocked.reason || 'заблокировано'}`,
+          times: [],
+        });
+        continue;
+      }
+
+      days.push({ date: dateStr, available: true, times: scheduleResult.times || [] });
+    }
+
+    return { year, month, days };
+  }
 }

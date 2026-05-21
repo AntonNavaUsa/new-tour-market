@@ -50,6 +50,8 @@ export function Header() {
     { to: '/admin/card-types', label: 'Типы карточек' },
     { to: '/admin/tariff-types', label: 'Тарифы' },
     { to: '/admin/reviews', label: 'Отзывы' },
+    { to: '/admin/accommodations', label: 'Объекты размещения' },
+    { to: '/admin/guides', label: 'Гиды' },
     { to: '/admin/guide-pages', label: 'Путеводитель' },
     { to: '/admin/settings', label: 'Настройки сайта' },
   ];

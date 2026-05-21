@@ -13,6 +13,7 @@ export class FilesService {
     photos: 'photos',
     expressions: 'expressions',
     accommodation: 'accommodation',
+    accommodations: 'accommodations',
   };
 
   constructor(private configService: ConfigService) {

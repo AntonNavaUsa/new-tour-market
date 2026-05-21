@@ -20,11 +20,25 @@ export class ReviewsService {
     });
   }
 
-  // Admin: get all reviews
-  async findAll(cardId?: string) {
+  // Public: get visible reviews for an accommodation
+  async getForAccommodation(accommodationId: string) {
     return this.prisma.review.findMany({
-      where: cardId ? { cardId } : undefined,
-      include: { card: { select: { id: true, title: true } } },
+      where: { isVisible: true, accommodationId },
+      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
+    });
+  }
+
+  // Admin: get all reviews
+  async findAll(cardId?: string, accommodationId?: string) {
+    const where: any = {};
+    if (cardId) where.cardId = cardId;
+    if (accommodationId) where.accommodationId = accommodationId;
+    return this.prisma.review.findMany({
+      where: Object.keys(where).length ? where : undefined,
+      include: {
+        card: { select: { id: true, title: true } },
+        accommodation: { select: { id: true, name: true } },
+      },
       orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
     });
   }
@@ -40,6 +54,7 @@ export class ReviewsService {
 
   async create(data: {
     cardId?: string | null;
+    accommodationId?: string | null;
     authorName: string;
     authorPhoto?: string;
     title?: string;
@@ -50,6 +65,7 @@ export class ReviewsService {
   }) {
     return this.prisma.review.create({ data: {
       cardId: data.cardId ?? null,
+      accommodationId: data.accommodationId ?? null,
       authorName: data.authorName,
       authorPhoto: data.authorPhoto,
       title: data.title,
@@ -64,6 +80,7 @@ export class ReviewsService {
     id: string,
     data: {
       cardId?: string | null;
+      accommodationId?: string | null;
       authorName?: string;
       authorPhoto?: string | null;
       title?: string | null;

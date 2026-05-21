@@ -155,17 +155,19 @@ export class CreateCardDto {
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
-  accommodationDescription?: string;
+  postPaymentInfo?: string;
 
-  @ApiProperty({ required: false, type: 'array', description: 'Accommodation guest reviews [{author, text}]' })
+  @ApiProperty({ required: false, type: [String], description: 'Linked accommodation IDs' })
   @IsOptional()
   @IsArray()
-  accommodationReviews?: Array<{ author: string; text: string }>;
+  @IsUUID(undefined, { each: true })
+  accommodationIds?: string[];
 
-  @ApiProperty({ required: false })
+  @ApiProperty({ required: false, type: [String], description: 'Linked guide IDs' })
   @IsOptional()
-  @IsString()
-  postPaymentInfo?: string;
+  @IsArray()
+  @IsUUID(undefined, { each: true })
+  guideIds?: string[];
 }
 
 export class UpdateCardDto extends PartialType(CreateCardDto) {
