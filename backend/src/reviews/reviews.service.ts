@@ -14,6 +14,7 @@ export class ReviewsService {
     return this.prisma.review.findMany({
       where: {
         isVisible: true,
+        accommodationId: null,
         OR: [{ cardId }, { cardId: null }],
       },
       orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
