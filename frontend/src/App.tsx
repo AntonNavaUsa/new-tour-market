@@ -26,6 +26,7 @@ import { AdminGuidePageFormPage } from './pages/AdminGuidePageFormPage';
 import { AdminSiteSettingsPage } from './pages/AdminSiteSettingsPage';
 import { AdminAccommodationsPage } from './pages/AdminAccommodationsPage';
 import { AdminAccommodationFormPage } from './pages/AdminAccommodationFormPage';
+import { AdminAccommodationCalendarPage } from './pages/AdminAccommodationCalendarPage';
 import { AdminGuideCalendarPage } from './pages/AdminGuideCalendarPage';
 import { AdminGuidesPage } from './pages/AdminGuidesPage';
 import { GuidePagePage } from './pages/GuidePagePage';
@@ -237,6 +238,14 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
               <AdminAccommodationFormPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/accommodations/:id/calendar"
+          element={
+            <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
+              <AdminAccommodationCalendarPage />
             </ProtectedRoute>
           }
         />
