@@ -17,7 +17,7 @@ export const guidesApi = {
     return response.data;
   },
 
-  updateGuide: async (id: string, data: { name?: string; description?: string; certifications?: string; position?: number }): Promise<Guide> => {
+  updateGuide: async (id: string, data: { name?: string; description?: string; certifications?: string; registryUrl?: string; registryLabel?: string; position?: number }): Promise<Guide> => {
     const response = await api.patch<Guide>(`/api/guides/${id}`, data);
     return response.data;
   },

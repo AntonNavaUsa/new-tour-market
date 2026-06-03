@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueries } from '@tanstack/react-query';
 import * as LucideIcons from 'lucide-react';
 import { MapPin, Clock, Calendar, ChevronLeft, ChevronRight, X, Check, Ruler, TrendingUp, Baby, Navigation, Star, Activity, BedDouble, RotateCcw, ShieldCheck } from 'lucide-react';
 import CardTypeIcon from '../components/CardTypeIcon';
@@ -260,26 +260,34 @@ export function TourDetailPage() {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Load blocked dates from guide/accommodation calendars for current and next months
-  const now = new Date();
-  const { data: availableDatesCurrentMonth } = useQuery({
-    queryKey: ['available-dates', id, now.getFullYear(), now.getMonth() + 1],
-    queryFn: () => schedulesApi.getAvailableDates(id!, now.getFullYear(), now.getMonth() + 1),
-    enabled: !!id,
-    staleTime: 5 * 60 * 1000,
-  });
-  const nextMonthDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-  const { data: availableDatesNextMonth } = useQuery({
-    queryKey: ['available-dates', id, nextMonthDate.getFullYear(), nextMonthDate.getMonth() + 1],
-    queryFn: () => schedulesApi.getAvailableDates(id!, nextMonthDate.getFullYear(), nextMonthDate.getMonth() + 1),
-    enabled: !!id,
-    staleTime: 5 * 60 * 1000,
+  // Determine which calendar months the local schedule covers (up to ~90 days)
+  const scheduleForLoad = card?.schedules?.[0];
+  const allLocalDates = getAvailableDates(scheduleForLoad);
+  const monthsToLoad = (() => {
+    const monthSet = new Set<string>();
+    for (const d of allLocalDates) {
+      monthSet.add(d.slice(0, 7)); // "YYYY-MM"
+    }
+    return Array.from(monthSet).map((m) => {
+      const [y, mo] = m.split('-').map(Number);
+      return { year: y, month: mo };
+    });
+  })();
+
+  // Load available dates (with guide/accommodation block checks) for every month covered by the schedule
+  const availableDatesQueries = useQueries({
+    queries: monthsToLoad.map(({ year, month }) => ({
+      queryKey: ['available-dates', id, year, month],
+      queryFn: () => schedulesApi.getAvailableDates(id!, year, month),
+      enabled: !!id,
+      staleTime: 5 * 60 * 1000,
+    })),
   });
 
   const blockedDateSet = new Set<string>();
-  for (const monthData of [availableDatesCurrentMonth, availableDatesNextMonth]) {
-    if (monthData) {
-      for (const day of monthData.days) {
+  for (const q of availableDatesQueries) {
+    if (q.data) {
+      for (const day of q.data.days) {
         if (!day.available) blockedDateSet.add(day.date);
       }
     }

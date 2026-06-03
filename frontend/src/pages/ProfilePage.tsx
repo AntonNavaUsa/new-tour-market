@@ -32,6 +32,8 @@ function GuideRow({
   const [name, setName] = useState(guide.name);
   const [description, setDescription] = useState(guide.description ?? '');
   const [certifications, setCertifications] = useState(guide.certifications ?? '');
+  const [registryUrl, setRegistryUrl] = useState(guide.registryUrl ?? '');
+  const [registryLabel, setRegistryLabel] = useState(guide.registryLabel ?? '');
   const [error, setError] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
@@ -41,6 +43,8 @@ function GuideRow({
       name: name.trim(),
       description: description.trim() || undefined,
       certifications: certifications.trim() || undefined,
+      registryUrl: registryUrl.trim() || undefined,
+      registryLabel: registryLabel.trim() || undefined,
     }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['my-guides'] });
@@ -127,6 +131,19 @@ function GuideRow({
               placeholder="Квалификации, напр: Удостоверение МЧС · Спасатель · Первая помощь"
               className="h-8 text-sm"
             />
+            <Input
+              value={registryUrl}
+              onChange={(e) => setRegistryUrl(e.target.value)}
+              placeholder="Ссылка на реестр аттестованных гидов (https://...)"
+              className="h-8 text-sm"
+              type="url"
+            />
+            <Input
+              value={registryLabel}
+              onChange={(e) => setRegistryLabel(e.target.value)}
+              placeholder="Текст ссылки (необязательно, по умолчанию: Государственный реестр...)"
+              className="h-8 text-sm"
+            />
             <div className="flex gap-2">
               <Button
                 size="sm"
@@ -144,6 +161,8 @@ function GuideRow({
                   setName(guide.name);
                   setDescription(guide.description ?? '');
                   setCertifications(guide.certifications ?? '');
+                  setRegistryUrl(guide.registryUrl ?? '');
+                  setRegistryLabel(guide.registryLabel ?? '');
                   setError('');
                 }}
               >
@@ -162,6 +181,19 @@ function GuideRow({
               <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
                 {guide.certifications}
+              </p>
+            )}
+            {guide.registryUrl && (
+              <p className="text-xs mt-1">
+                <a
+                  href={guide.registryUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary underline hover:no-underline flex items-center gap-1"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                  {guide.registryLabel || 'Государственный реестр аттестованных гидов'}
+                </a>
               </p>
             )}
           </div>

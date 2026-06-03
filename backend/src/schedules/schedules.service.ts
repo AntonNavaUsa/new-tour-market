@@ -268,7 +268,7 @@ export class SchedulesService {
 
   private getDayName(date: Date): string {
     const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-    return days[date.getDay()];
+    return days[date.getUTCDay()];
   }
 
   private getDefaultWeeklySchedule() {
@@ -296,15 +296,15 @@ export class SchedulesService {
       };
     }
 
-    const daysInMonth = new Date(year, month, 0).getDate();
+    const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
     const days = [];
 
     for (let day = 1; day <= daysInMonth; day++) {
-      const date = new Date(year, month - 1, day);
+      const date = new Date(Date.UTC(year, month - 1, day));
       const availableTimes = await this.getAvailableTimes(cardId, { date });
 
       days.push({
-        date: date.toISOString().split('T')[0],
+        date: `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
         available: availableTimes.available,
         timesCount: availableTimes.times?.length || 0,
       });
@@ -318,8 +318,9 @@ export class SchedulesService {
   }
 
   async getAvailableDates(cardId: string, year: number, month: number) {
-    const startDate = new Date(year, month - 1, 1);
-    const endDate = new Date(year, month, 0);
+    // Use UTC dates to avoid timezone mismatch with Prisma (which stores dates as UTC midnight)
+    const startDate = new Date(Date.UTC(year, month - 1, 1));
+    const endDate = new Date(Date.UTC(year, month, 0));
 
     // Load card with guides, accommodations and duration
     const card = await this.prisma.card.findUnique({
@@ -327,6 +328,7 @@ export class SchedulesService {
       include: {
         cardGuides: { select: { guideId: true } },
         cardAccommodations: { select: { accommodationId: true } },
+        cardType: { select: { slug: true } },
       },
     });
 
@@ -336,14 +338,19 @@ export class SchedulesService {
 
     // N = number of tour days (1 = single-day tour, no duration adjustment needed)
     const N = (card as any).durationDays ?? 1;
+    // Tour-packages use multi-day check-in/check-out overlap logic.
+    // All other card types use a simple inclusive date range check.
+    const isTourPackage = (card as any).cardType?.slug === 'tour-packages';
 
     const guideIds = card.cardGuides.map((cg) => cg.guideId);
     const accommodationIds = card.cardAccommodations.map((ca) => ca.accommodationId);
 
-    // Extend block query window: a tour starting on the last day of month may span N-1 more days.
-    // Since check-out day coinciding with block start is allowed, we extend by N-2.
+    // Extend block query window for tour-packages: a tour starting on the last day of month
+    // may span N-1 more days. For single-day tours no extension is needed.
     const blockWindowEnd = new Date(endDate);
-    blockWindowEnd.setDate(blockWindowEnd.getDate() + Math.max(N - 2, 0));
+    if (isTourPackage && N > 1) {
+      blockWindowEnd.setUTCDate(blockWindowEnd.getUTCDate() + Math.max(N - 2, 0));
+    }
 
     // Load all blocks that could affect dates in this month
     const [guideBlocks, accommodationBlocks] = await Promise.all([
@@ -368,27 +375,34 @@ export class SchedulesService {
     ]);
 
     /**
-     * Returns true if starting a tour of N days on `startDay` conflicts with `block`.
-     * Conflict condition: startDay < blockTo  AND  startDay + N - 1 > blockFrom
-     * (strict comparisons — checkout==checkin coincidence is allowed on both ends)
+     * For tour-packages: returns true if starting a tour of N days on `startDay` conflicts with
+     * `block` using check-in/check-out overlap logic (strict comparisons — checkout==checkin is allowed).
+     * For all other card types: returns true if `startDay` falls within [blockFrom, blockTo] (inclusive).
+     * All dates must be UTC midnight to avoid timezone issues.
      */
     const conflictsWithBlock = (
       startDay: Date,
       block: { dateFrom: Date; dateTo: Date },
     ): boolean => {
-      const tourLastDay = new Date(startDay);
-      tourLastDay.setDate(tourLastDay.getDate() + N - 1);
       const blockFrom = new Date(block.dateFrom);
       const blockTo = new Date(block.dateTo);
-      return startDay < blockTo && tourLastDay > blockFrom;
+      if (isTourPackage) {
+        // Multi-day tour: block is hit if any of the tour days overlap with the block range
+        const tourLastDay = new Date(startDay);
+        tourLastDay.setUTCDate(tourLastDay.getUTCDate() + N - 1);
+        return startDay < blockTo && tourLastDay > blockFrom;
+      }
+      // Single-day / non-package tour: date must not fall inside the block (inclusive)
+      return startDay >= blockFrom && startDay <= blockTo;
     };
 
-    const daysInMonth = endDate.getDate();
+    const daysInMonth = endDate.getUTCDate();
     const days = [];
 
     for (let day = 1; day <= daysInMonth; day++) {
-      const date = new Date(year, month - 1, day);
-      const dateStr = date.toISOString().split('T')[0];
+      // Use UTC to match Prisma date fields (stored as UTC midnight)
+      const date = new Date(Date.UTC(year, month - 1, day));
+      const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
       // 1. Check schedule
       const scheduleResult = await this.getAvailableTimes(cardId, { date });

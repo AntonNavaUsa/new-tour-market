@@ -43,7 +43,7 @@ export class GuidesService {
     id: string,
     userId: string,
     userRole: UserRole,
-    data: { name?: string; description?: string; certifications?: string; position?: number },
+    data: { name?: string; description?: string; certifications?: string; registryUrl?: string; registryLabel?: string; position?: number },
   ) {
     const guide = await this.prisma.guide.findUnique({ where: { id } });
     if (!guide) throw new NotFoundException('Гид не найден');
@@ -56,6 +56,8 @@ export class GuidesService {
         ...(data.name !== undefined && { name: data.name.trim() }),
         ...(data.description !== undefined && { description: data.description?.trim() || null }),
         ...(data.certifications !== undefined && { certifications: data.certifications?.trim() || null }),
+        ...(data.registryUrl !== undefined && { registryUrl: data.registryUrl?.trim() || null }),
+        ...(data.registryLabel !== undefined && { registryLabel: data.registryLabel?.trim() || null }),
         ...(data.position !== undefined && { position: data.position }),
       },
     });

@@ -91,6 +91,8 @@ export interface Guide {
   name: string;
   description: string | null;
   certifications: string | null;
+  registryUrl: string | null;
+  registryLabel: string | null;
   photoUrl: string | null;
   position: number;
   createdAt: string;

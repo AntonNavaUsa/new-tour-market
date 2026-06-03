@@ -62,7 +62,7 @@ export class GuidesController {
     @Param('id') id: string,
     @CurrentUser('id') userId: string,
     @CurrentUser('role') userRole: UserRole,
-    @Body() data: { name?: string; description?: string; certifications?: string; position?: number },
+    @Body() data: { name?: string; description?: string; certifications?: string; registryUrl?: string; registryLabel?: string; position?: number },
   ) {
     return this.guidesService.update(id, userId, userRole, data);
   }
