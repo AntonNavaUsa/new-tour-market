@@ -14,12 +14,15 @@ jobs:
     steps:
       - name: Deploy to server
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          ENV_PROD_CONTENT: ${{ secrets.ENV_PROD }}
         with:
           host: 80.87.102.197
           username: root
           port: 22
           key: ${{ secrets.MYSECRET }}
           command_timeout: 12m
+          envs: ENV_PROD_CONTENT
           script: |
             set -e
 
@@ -39,9 +42,12 @@ jobs:
             git fetch origin main
             git reset --hard origin/main
 
-            # Проверить .env.prod
-            if [ ! -f "$APP_DIR/.env.prod" ]; then
-              echo "ERROR: $APP_DIR/.env.prod not found!"
+            # Записать .env.prod из секрета (если секрет задан)
+            if [ -n "$ENV_PROD_CONTENT" ]; then
+              echo "$ENV_PROD_CONTENT" > "$APP_DIR/.env.prod"
+              echo ".env.prod updated from secret"
+            elif [ ! -f "$APP_DIR/.env.prod" ]; then
+              echo "ERROR: $APP_DIR/.env.prod not found and ENV_PROD secret is empty!"
               exit 1
             fi
 
