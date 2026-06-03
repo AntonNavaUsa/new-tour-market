@@ -1,0 +1,56 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Deploy via SSH
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          command_timeout: 12m
+          script: |
+            set -e
+
+            APP_DIR="/opt/travelio"
+            REPO="https://github.com/AntonNavaUsa/new-tour-market.git"
+
+            # Клонировать если папки нет
+            if [ ! -d "$APP_DIR/.git" ]; then
+              echo "Cloning repo..."
+              git clone "$REPO" "$APP_DIR"
+            fi
+
+            cd "$APP_DIR"
+
+            # Подтянуть последний код
+            echo "Pulling latest code..."
+            git fetch origin main
+            git reset --hard origin/main
+
+            # Проверить .env.prod
+            if [ ! -f "$APP_DIR/.env.prod" ]; then
+              echo "ERROR: $APP_DIR/.env.prod not found!"
+              exit 1
+            fi
+
+            # Поднять контейнеры
+            echo "Building and starting containers..."
+            docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build --remove-orphans
+
+            # Убрать старые образы
+            docker image prune -f
+
+            echo "Deploy complete!"
+            echo "Frontend: http://80.87.102.197:8090"
