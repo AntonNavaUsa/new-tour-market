@@ -1211,6 +1211,29 @@ export function TourDetailPage() {
                       {guide.certifications}
                     </div>
                   )}
+
+                  {/* Реестр аттестованных гидов */}
+                  {guide.registryUrl && (
+                    <div
+                      className="flex items-center gap-2 px-4 py-3"
+                      style={{ borderTop: '1px solid rgba(0,0,0,0.07)', fontSize: 12 }}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1D9E75" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0 }}>
+                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                      </svg>
+                      <a
+                        href={guide.registryUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ color: '#1D9E75', textDecoration: 'underline' }}
+                        onMouseEnter={e => (e.currentTarget.style.textDecoration = 'none')}
+                        onMouseLeave={e => (e.currentTarget.style.textDecoration = 'underline')}
+                      >
+                        {guide.registryLabel || 'Государственный реестр аттестованных гидов'}
+                      </a>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
