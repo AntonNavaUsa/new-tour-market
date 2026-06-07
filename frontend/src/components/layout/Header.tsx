@@ -61,7 +61,10 @@ export function Header() {
       <div className="container flex h-12 items-center justify-between">
         <div className="flex items-center gap-3 md:gap-6 min-w-0">
           <Link to="/" className="flex items-center gap-2 shrink-0">
-            <img src="/logo.png" alt="Сезон приключений" className="h-9 w-9 rounded-full object-contain" />
+            <picture>
+                <source srcSet="/logo-thumb.webp" type="image/webp" />
+                <img src="/logo.png" alt="Сезон приключений" className="h-9 w-9 rounded-full object-contain" />
+              </picture>
             {!isAuthenticated && (
               <span className="text-base sm:text-xl md:text-2xl font-bold text-primary whitespace-nowrap">Сезон приключений!</span>
             )}
