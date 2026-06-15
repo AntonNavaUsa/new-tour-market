@@ -14,6 +14,7 @@ import { FilesModule } from './files/files.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { GuidePagesModule } from './guide-pages/guide-pages.module';
 import { AccommodationsModule } from './accommodations/accommodations.module';
+import { FaqsModule } from './faqs/faqs.module';
 import { AppController } from './app.controller';
 
 @Module({
@@ -48,6 +49,7 @@ import { AppController } from './app.controller';
     NotificationsModule,
     GuidePagesModule,
     AccommodationsModule,
+    FaqsModule,
   ],
   controllers: [AppController],
 })

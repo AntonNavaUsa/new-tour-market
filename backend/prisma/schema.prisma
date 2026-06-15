@@ -206,6 +206,7 @@ model Card {
   expressions     Expression[]
   orders          Order[]
   reviews         Review[]
+  faqs            Faq[]
   cardGuides      CardGuide[]
   cardAccommodations CardAccommodation[]
   
@@ -601,4 +602,23 @@ model GuideBlock {
   @@index([guideId])
   @@index([dateFrom, dateTo])
   @@map("guide_blocks")
+}
+
+// ── Частые вопросы (FAQ) ─────────────────────────────────────────────────────
+
+model Faq {
+  id        String   @id @default(uuid())
+  cardId    String   @map("card_id")
+  card      Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  question  String   @db.Text
+  answer    String   @db.Text
+  sortOrder Int      @default(0) @map("sort_order")
+  isVisible Boolean  @default(true) @map("is_visible")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([cardId, sortOrder])
+  @@map("faqs")
 }

@@ -29,6 +29,7 @@ import { AdminAccommodationFormPage } from './pages/AdminAccommodationFormPage';
 import { AdminAccommodationCalendarPage } from './pages/AdminAccommodationCalendarPage';
 import { AdminGuideCalendarPage } from './pages/AdminGuideCalendarPage';
 import { AdminGuidesPage } from './pages/AdminGuidesPage';
+import { AdminFaqsPage } from './pages/AdminFaqsPage';
 import { GuidePagePage } from './pages/GuidePagePage';
 import { KrasnayaPolyanaSpringPage } from './pages/KrasnayaPolyanaSpringPage';
 import { TourPackagesPage } from './pages/TourPackagesPage';
@@ -262,6 +263,14 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
               <AdminGuideCalendarPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/faqs"
+          element={
+            <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
+              <AdminFaqsPage />
             </ProtectedRoute>
           }
         />

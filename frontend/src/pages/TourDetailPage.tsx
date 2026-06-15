@@ -4,7 +4,7 @@ import { useQuery, useQueries } from '@tanstack/react-query';
 import * as LucideIcons from 'lucide-react';
 import { MapPin, Clock, Calendar, ChevronLeft, ChevronRight, X, Check, Ruler, TrendingUp, Baby, Navigation, Star, Activity, BedDouble, RotateCcw, ShieldCheck } from 'lucide-react';
 import CardTypeIcon from '../components/CardTypeIcon';
-import { cardsApi, reviewsApi } from '../lib/api';
+import { cardsApi, reviewsApi, faqsApi } from '../lib/api';
 import { schedulesApi } from '../lib/api/accommodationsApi';
 import { guidesApi } from '../lib/api/guides';
 import { Button } from '../components/ui/button';
@@ -251,6 +251,12 @@ export function TourDetailPage() {
   const { data: reviews = [] } = useQuery({
     queryKey: ['reviews', id],
     queryFn: () => reviewsApi.getForCard(id!),
+    enabled: !!id,
+  });
+
+  const { data: faqs = [] } = useQuery({
+    queryKey: ['faqs', id],
+    queryFn: () => faqsApi.getForCard(id!),
     enabled: !!id,
   });
 
@@ -1240,58 +1246,34 @@ export function TourDetailPage() {
           )}
 
           {/* FAQ */}
-          {(() => {
-            const faqs = [
-              {
-                q: 'Нужна ли специальная физическая подготовка?',
-                a: 'Базовый уровень физической активности достаточен для большинства наших туров. Сложность конкретного маршрута указана в описании (уровень подготовки и набор высоты). Если у вас есть сомнения — уточните у гида перед бронированием.',
-              },
-              {
-                q: 'Что нужно взять с собой из снаряжения?',
-                a: 'Список необходимого снаряжения зависит от тура. Как правило, достаточно удобной одежды по погоде, трекинговой обуви и воды. Специализированное снаряжение (каски, страховки и пр.) предоставляется гидом — это указано в блоке «Включено».',
-              },
-              {
-                q: 'Что будет, если погода испортится?',
-                a: 'Мы следим за прогнозом и уведомляем вас заранее. При опасных погодных условиях тур переносится на ближайшую доступную дату или предоставляется полный возврат средств — по вашему выбору.',
-              },
-              {
-                q: 'Можно ли ехать с детьми?',
-                a: 'Возможность участия с детьми указана в параметрах тура. Если тур помечен как «Можно с детьми» — минимальный возраст и ограничения уточняются у гида. Для детей действуют специальные цены.',
-              },
-              {
-                q: 'Как отменить или перенести бронирование?',
-                a: 'Вы можете отменить бронирование в любое время до начала тура и получить полный возврат без каких-либо условий. Перенос на другую дату также возможен — просто свяжитесь с нами через форму обратной связи или по телефону.',
-              },
-            ];
-            return (
-              <div>
-                <h2 className="text-xl font-semibold mb-4">Частые вопросы</h2>
-                <div className="divide-y divide-border rounded-xl border border-border overflow-hidden">
-                  {faqs.map((item, idx) => (
-                    <div key={idx}>
-                      <button
-                        onClick={() => setFaqOpen(faqOpen === idx ? null : idx)}
-                        className="w-full flex items-center justify-between gap-4 px-5 py-4 text-left hover:bg-muted/40 transition-colors"
-                        aria-expanded={faqOpen === idx}
-                      >
-                        <span className="font-medium text-sm md:text-base">{item.q}</span>
-                        <ChevronRight
-                          className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 ${
-                            faqOpen === idx ? 'rotate-90' : ''
-                          }`}
-                        />
-                      </button>
-                      {faqOpen === idx && (
-                        <div className="px-5 pb-4 text-sm text-foreground leading-relaxed">
-                          {item.a}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
+          {faqs.length > 0 && (
+            <div>
+              <h2 className="text-xl font-semibold mb-4">Частые вопросы</h2>
+              <div className="divide-y divide-border rounded-xl border border-border overflow-hidden">
+                {faqs.map((item, idx) => (
+                  <div key={item.id}>
+                    <button
+                      onClick={() => setFaqOpen(faqOpen === idx ? null : idx)}
+                      className="w-full flex items-center justify-between gap-4 px-5 py-4 text-left hover:bg-muted/40 transition-colors"
+                      aria-expanded={faqOpen === idx}
+                    >
+                      <span className="font-medium text-sm md:text-base">{item.question}</span>
+                      <ChevronRight
+                        className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 ${
+                          faqOpen === idx ? 'rotate-90' : ''
+                        }`}
+                      />
+                    </button>
+                    {faqOpen === idx && (
+                      <div className="px-5 pb-4 text-sm text-foreground leading-relaxed">
+                        {item.answer}
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
-            );
-          })()}
+            </div>
+          )}
 
           {/* Reviews */}
           {reviews.length > 0 && (
