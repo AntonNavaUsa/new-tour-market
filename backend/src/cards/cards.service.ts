@@ -77,6 +77,7 @@ export class CardsService {
         heroType: dto.heroType ?? 'cover',
         heroPerks: dto.heroPerks ?? [],
         tourProgram: dto.tourProgram ?? [],
+        bookingSteps: dto.bookingSteps ?? [],
         postPaymentInfo: dto.postPaymentInfo,
         ...(dto.accommodationIds?.length && {
           cardAccommodations: {

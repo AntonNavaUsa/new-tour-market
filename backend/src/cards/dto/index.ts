@@ -152,6 +152,11 @@ export class CreateCardDto {
   @IsArray()
   tourProgram?: Array<{ title: string; description: string }>;
 
+  @ApiProperty({ required: false, type: 'array', description: 'After-booking steps [{title, description}]' })
+  @IsOptional()
+  @IsArray()
+  bookingSteps?: Array<{ title: string; description: string }>;
+
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()

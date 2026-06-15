@@ -1,6 +1,7 @@
 export * from './auth';
 export * from './cards';
 export * from './faqs';
+export { faqTemplatesApi, bookingStepsTemplatesApi } from './faqs';
 export * from './guides';
 export * from './guide-pages';
 export * from './messages';

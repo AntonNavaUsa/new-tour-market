@@ -74,4 +74,38 @@ export class FaqsService {
     );
     return this.getForCard(cardId);
   }
+
+  // ── Templates ────────────────────────────────────────────────────────
+  async findAllTemplates() {
+    return this.prisma.faqTemplate.findMany({
+      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+    });
+  }
+
+  async findOneTemplate(id: string) {
+    const t = await this.prisma.faqTemplate.findUnique({ where: { id } });
+    if (!t) throw new NotFoundException('Шаблон FAQ не найден');
+    return t;
+  }
+
+  async createTemplate(data: { question: string; answer: string; sortOrder?: number }) {
+    return this.prisma.faqTemplate.create({
+      data: {
+        question: data.question,
+        answer: data.answer,
+        sortOrder: data.sortOrder ?? 0,
+      },
+    });
+  }
+
+  async updateTemplate(id: string, data: { question?: string; answer?: string; sortOrder?: number }) {
+    await this.findOneTemplate(id);
+    return this.prisma.faqTemplate.update({ where: { id }, data });
+  }
+
+  async removeTemplate(id: string) {
+    await this.findOneTemplate(id);
+    await this.prisma.faqTemplate.delete({ where: { id } });
+    return { message: 'Deleted' };
+  }
 }

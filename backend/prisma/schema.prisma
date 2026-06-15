@@ -179,6 +179,7 @@ model Card {
   notIncludedItems Json?      @map("not_included_items") // Array of not included items
   forWhom         Json?       @map("for_whom")           // Array of target audience items
   tourProgram     Json?       @map("tour_program")       // Array of {title, description} per day
+  bookingSteps    Json?       @map("booking_steps")      // Array of {title, description} shown after booking
   postPaymentInfo String?     @db.Text @map("post_payment_info") // Info shown to user after successful payment
   
   status          CardStatus  @default(DRAFT)
@@ -605,6 +606,30 @@ model GuideBlock {
 }
 
 // ── Частые вопросы (FAQ) ─────────────────────────────────────────────────────
+
+model FaqTemplate {
+  id        String   @id @default(uuid())
+  question  String   @db.Text
+  answer    String   @db.Text
+  sortOrder Int      @default(0) @map("sort_order")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([sortOrder])
+  @@map("faq_templates")
+}
+
+model BookingStepsTemplate {
+  id        String   @id @default(uuid())
+  name      String                    // Template display name
+  steps     Json                      // Array of {title, description}
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("booking_steps_templates")
+}
 
 model Faq {
   id        String   @id @default(uuid())

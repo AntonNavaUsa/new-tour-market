@@ -161,6 +161,7 @@ export interface Card {
   expressions?: Expression[];
   schedules?: Schedule[];
   tourProgram?: Array<{ title: string; description: string }> | null;
+  bookingSteps?: Array<{ title: string; description: string }> | null;
   postPaymentInfo?: string | null;
   partner?: Partner | null;
   cardAccommodations?: CardAccommodation[];
@@ -440,6 +441,7 @@ export interface CreateCardRequest {
   heroType?: string;
   heroPerks?: HeroPerk[];
   tourProgram?: Array<{ title: string; description: string }>;
+  bookingSteps?: Array<{ title: string; description: string }>;
   postPaymentInfo?: string;
   accommodationIds?: string[];
   guideIds?: string[];

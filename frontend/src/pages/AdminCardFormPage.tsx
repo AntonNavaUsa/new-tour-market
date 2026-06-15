@@ -21,6 +21,7 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import { cardsApi, metaApi, ticketsApi, schedulesApi } from '../lib/api';
+import { bookingStepsTemplatesApi } from '../lib/api/faqs';
 import { handleApiError } from '../lib/axios';
 import { CoverCropModal } from '../components/CoverCropModal';
 import { PhotoEditModal } from '../components/PhotoEditModal';
@@ -32,6 +33,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs'
 import { RichTextEditor } from '../components/RichTextEditor';
 import { AccommodationPicker } from '../components/AccommodationPicker';
 import { GuidePicker } from '../components/GuidePicker';
+import { CardFaqSection } from '../components/CardFaqSection';
 import type { CreateCardRequest, UpdateCardRequest, SlideshowPhoto, AccommodationPhoto, Ticket, Price, GroupTier, HeroPerk } from '../types';
 import { CardStatus, PricingType } from '../types';
 import { formatTierLabel } from '../lib/utils';
@@ -147,6 +149,115 @@ function TourProgramSection({
         <Button type="button" variant="outline" size="sm" onClick={addDay}>
           <Plus className="mr-2 h-3.5 w-3.5" />
           Добавить день
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// BookingStepsSection — «Что происходит после бронирования»
+// ─────────────────────────────────────────────────────────────
+function BookingStepsSection({
+  steps,
+  onChange,
+}: {
+  steps: Array<{ title: string; description: string }>;
+  onChange: (steps: Array<{ title: string; description: string }>) => void;
+}) {
+  const { data: templates = [] } = useQuery({
+    queryKey: ['booking-steps-templates'],
+    queryFn: () => bookingStepsTemplatesApi.findAll(),
+  });
+
+  const updateStep = (index: number, field: 'title' | 'description', value: string) => {
+    onChange(steps.map((s, i) => (i === index ? { ...s, [field]: value } : s)));
+  };
+
+  const removeStep = (index: number) => {
+    onChange(steps.filter((_, i) => i !== index));
+  };
+
+  const addStep = () => {
+    onChange([...steps, { title: '', description: '' }]);
+  };
+
+  const applyTemplate = (tplId: string) => {
+    const tpl = templates.find((t) => t.id === tplId);
+    if (tpl) onChange([...tpl.steps]);
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <CardTitle>Что происходит после бронирования</CardTitle>
+            <p className="text-xs text-muted-foreground mt-1">
+              Пошаговая инструкция, которая отображается в блоке бронирования на странице тура.
+              Если не заполнено — блок не отображается.
+            </p>
+          </div>
+          {templates.length > 0 && (
+            <select
+              className="h-9 rounded-md border border-input bg-background px-3 text-sm shrink-0 max-w-[220px]"
+              defaultValue=""
+              onChange={(e) => { if (e.target.value) applyTemplate(e.target.value); }}
+            >
+              <option value="">Выбрать шаблон</option>
+              {templates.map((t) => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))}
+            </select>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {steps.length === 0 && (
+          <p className="text-sm text-muted-foreground py-2">
+            Шаги не добавлены. Нажмите «Добавить шаг» или выберите шаблон.
+          </p>
+        )}
+        {steps.map((step, index) => (
+          <div key={index} className="rounded-md border border-input bg-background p-4 space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+                <GripVertical className="h-4 w-4" />
+                Шаг {index + 1}
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-destructive hover:text-destructive"
+                onClick={() => removeStep(index)}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Заголовок шага</Label>
+              <Input
+                value={step.title}
+                onChange={(e) => updateStep(index, 'title', e.target.value)}
+                placeholder="Например: Получаете подтверждение"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Описание</Label>
+              <textarea
+                rows={2}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-y"
+                value={step.description}
+                onChange={(e) => updateStep(index, 'description', e.target.value)}
+                placeholder="Письмо на почту с деталями тура и контактами."
+              />
+            </div>
+          </div>
+        ))}
+        <Button type="button" variant="outline" size="sm" onClick={addStep}>
+          <Plus className="mr-2 h-3.5 w-3.5" />
+          Добавить шаг
         </Button>
       </CardContent>
     </Card>
@@ -1952,6 +2063,7 @@ export function AdminCardFormPage() {
   const [notIncludedItems, setNotIncludedItems] = useState<string[]>([]);
   const [forWhom, setForWhom] = useState<string[]>([]);
   const [tourProgram, setTourProgram] = useState<Array<{ title: string; description: string }>>([]);
+  const [bookingSteps, setBookingSteps] = useState<Array<{ title: string; description: string }>>([]);
   const [accommodationIds, setAccommodationIds] = useState<string[]>([]);
   const [guideIds, setGuideIds] = useState<string[]>([]);
 
@@ -2037,6 +2149,8 @@ export function AdminCardFormPage() {
     setForWhom((card.forWhom as string[] | null) || []);
     const loadedProgram = card.tourProgram as Array<{ title: string; description: string }> | null;
     setTourProgram(loadedProgram && loadedProgram.length > 0 ? loadedProgram : []);
+    const loadedSteps = card.bookingSteps as Array<{ title: string; description: string }> | null;
+    setBookingSteps(loadedSteps && loadedSteps.length > 0 ? loadedSteps : []);
     setAccommodationIds((card.cardAccommodations ?? []).map((ca: any) => ca.accommodationId ?? ca.accommodation?.id).filter(Boolean));
     setGuideIds((card.cardGuides ?? []).map((cg: any) => cg.guideId ?? cg.guide?.id).filter(Boolean));
   }, [card, reset]);
@@ -2090,6 +2204,7 @@ export function AdminCardFormPage() {
       heroType,
       heroPerks: heroPerks,
       tourProgram: tourProgram.filter((d) => d.title.trim() || d.description.trim()),
+      bookingSteps: bookingSteps.filter((s) => s.title.trim() || s.description.trim()),
       accommodationIds,
       guideIds,
     };
@@ -2145,6 +2260,9 @@ export function AdminCardFormPage() {
             </TabsTrigger>
             <TabsTrigger value="schedule" disabled={!isEditMode}>
               Расписание{!isEditMode ? ' (после сохранения)' : ''}
+            </TabsTrigger>
+            <TabsTrigger value="faq" disabled={!isEditMode}>
+              FAQ{!isEditMode ? ' (после сохранения)' : ''}
             </TabsTrigger>
           </TabsList>
 
@@ -2347,6 +2465,8 @@ export function AdminCardFormPage() {
 
               <TourProgramSection days={tourProgram} onChange={setTourProgram} />
 
+              <BookingStepsSection steps={bookingSteps} onChange={setBookingSteps} />
+
               {isTourType && (
                 <Card>
                   <CardHeader>
@@ -2403,6 +2523,17 @@ export function AdminCardFormPage() {
           <TabsContent value="schedule">
             {isEditMode && id ? (
               <ScheduleTab cardId={id} />
+            ) : null}
+          </TabsContent>
+
+          <TabsContent value="faq">
+            {isEditMode && id ? (
+              <Card>
+                <CardHeader><CardTitle>Частые вопросы</CardTitle></CardHeader>
+                <CardContent>
+                  <CardFaqSection cardId={id} />
+                </CardContent>
+              </Card>
             ) : null}
           </TabsContent>
         </Tabs>

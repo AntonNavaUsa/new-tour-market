@@ -1584,24 +1584,12 @@ export function TourDetailPage() {
                 <span className="text-xs font-medium text-foreground">Что происходит после бронирования</span>
               </div>
               <div className="px-4 py-3 flex flex-col gap-0">
-                {[
-                  {
-                    title: 'Получаете подтверждение',
-                    desc: 'Письмо на почту с деталями тура и контактами.',
-                  },
-                  {
-                    title: 'Гид связывается с вами',
-                    desc: 'За 2–3 дня до заезда — подбирает маршрут, отвечает на вопросы.',
-                  },
-                  {
-                    title: 'Заезд',
-                    desc: 'Отправляем инструкцию по самостоятельному заселению. Студия и ключи ждут вас.',
-                  },
-                  {
-                    title: 'Поход и остаток оплаты',
-                    desc: 'Встречаемся на следующий день и идём в поход! Остаток 80% — наличными или переводом после заселения.',
-                  },
-                ].map((step, i, arr) => (
+                {((card.bookingSteps as Array<{ title: string; description: string }> | null)?.filter(s => s.title) ?? [
+                  { title: 'Получаете подтверждение', desc: 'Письмо на почту с деталями тура и контактами.' },
+                  { title: 'Гид связывается с вами', desc: 'За 2–3 дня до заезда — подбирает маршрут, отвечает на вопросы.' },
+                  { title: 'Заезд', desc: 'Отправляем инструкцию по самостоятельному заселению. Студия и ключи ждут вас.' },
+                  { title: 'Поход и остаток оплаты', desc: 'Встречаемся на следующий день и идём в поход! Остаток 80% — наличными или переводом после заселения.' },
+                ].map(s => ({ title: (s as any).title, description: (s as any).desc ?? '' }))).map((step, i, arr) => (
                   <div key={i} className="flex gap-3">
                     <div className="flex flex-col items-center">
                       <div className="w-5 h-5 rounded-full bg-[#e8f5ef] text-[#085041] text-[10px] font-medium flex items-center justify-center shrink-0">
@@ -1613,7 +1601,7 @@ export function TourDetailPage() {
                     </div>
                     <div className={i < arr.length - 1 ? 'pb-3 flex-1' : 'flex-1'}>
                       <div className="text-xs font-medium text-foreground leading-snug">{step.title}</div>
-                      <div className="text-[11.5px] text-muted-foreground leading-relaxed mt-0.5">{step.desc}</div>
+                      <div className="text-[11.5px] text-muted-foreground leading-relaxed mt-0.5">{step.description}</div>
                     </div>
                   </div>
                 ))}
