@@ -26,7 +26,7 @@ const FEATURES = [
   {
     icon: Award,
     title: 'Сертифицированные гиды',
-    desc: 'Все маршруты ведут гиды с официальными допусками и знанием горной медицины.',
+    desc: 'Все маршруты ведут гиды с официальными допусками и знанием и специальной подготовкой.',
     color: 'bg-amber-100 text-amber-700',
   },
   {
@@ -59,11 +59,11 @@ const CATEGORIES = [
     slug: 'pohod',
   },
   {
-    title: 'Туры с проживанием',
-    subtitle: 'Отель + маршруты, от 12 000 ₽',
+    title: 'Туры без гида',
+    subtitle: 'Пакеты для самостоятельных путешествий',
     image: '/img/photo_2_2026-05-16_11-46-11.jpg',
     badge: 'Комфорт',
-    slug: 'tour-packages',
+    slug: 'self-guided',
   },
 ];
 
@@ -172,8 +172,8 @@ export function HomePage() {
       <Button size="lg" className="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-600 text-white text-base px-8 py-3 h-auto shadow-xl shadow-emerald-900/40 border-0" onClick={() => scrollToId('catalog')}>
         <Compass className="h-5 w-5 mr-2" />Выбрать поход
       </Button>
-      <Button size="lg" variant="outline" className="w-full sm:w-auto border-white/50 text-white bg-white/10 hover:bg-white/20 backdrop-blur-sm text-base px-8 py-3 h-auto" onClick={() => scrollToId('tour-packages')}>
-        <Tent className="h-5 w-5 mr-2" />Туры с проживанием
+      <Button size="lg" variant="outline" className="w-full sm:w-auto border-white/50 text-white bg-white/10 hover:bg-white/20 backdrop-blur-sm text-base px-8 py-3 h-auto" onClick={() => scrollToId('self-guided')}>
+        <Tent className="h-5 w-5 mr-2" />Туры без гида
       </Button>
     </div>
   );
@@ -545,7 +545,7 @@ export function HomePage() {
                 className="border-white/40 text-white bg-white/10 hover:bg-white/20 text-base px-8 py-3 h-auto"
                 onClick={() => scrollToId('tours')}
               >
-                Туры с проживанием
+                Туры без гида
               </Button>
             </div>
           </div>
