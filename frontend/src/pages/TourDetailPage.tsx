@@ -6,7 +6,6 @@ import { MapPin, Clock, Calendar, ChevronLeft, ChevronRight, X, Check, Ruler, Tr
 import CardTypeIcon from '../components/CardTypeIcon';
 import { cardsApi, reviewsApi, faqsApi } from '../lib/api';
 import { schedulesApi } from '../lib/api/accommodationsApi';
-import { guidesApi } from '../lib/api/guides';
 import { Button } from '../components/ui/button';
 import { formatPrice, calcPrepayment, formatDate, formatDurationRange, formatDays, getMinPriceFromTiers, formatTierLabel } from '../lib/utils';
 import type { Price, Schedule, Ticket } from '../types';
@@ -260,11 +259,7 @@ export function TourDetailPage() {
     enabled: !!id,
   });
 
-  const { data: allGuides = [] } = useQuery({
-    queryKey: ['all-guides'],
-    queryFn: () => guidesApi.getAllGuides(),
-    staleTime: 5 * 60 * 1000,
-  });
+  const cardGuides = (card?.cardGuides ?? []).map((cg) => cg.guide);
 
   // Determine which calendar months the local schedule covers (up to ~90 days)
   const scheduleForLoad = card?.schedules?.[0];
@@ -942,111 +937,6 @@ export function TourDetailPage() {
             </div>
           )}
 
-          {/* Accommodation */}
-          {card.cardAccommodations && card.cardAccommodations.length > 0 && (
-            <div className="rounded-2xl border border-border overflow-hidden">
-              <div className="flex items-center gap-3 bg-primary/5 border-b border-border px-5 py-4">
-                <BedDouble className="h-5 w-5 text-primary shrink-0" />
-                <h2 className="text-lg font-semibold">Проживание</h2>
-              </div>
-              <div className="px-5 py-5 space-y-8">
-                {card.cardAccommodations.map((ca, accIdx) => {
-                  const acc = ca.accommodation;
-                  if (!acc) return null;
-                  const photoOffset = card.cardAccommodations!.slice(0, accIdx).reduce(
-                    (sum, c) => sum + (c.accommodation?.photos?.length ?? 0), 0
-                  );
-                  const typeLabels: Record<string, string> = {
-                    HOTEL: 'Гостиница', HOSTEL: 'Хостел', GUESTHOUSE: 'Гостевой дом',
-                    APARTMENT: 'Апартаменты', CAMPING: 'Кемпинг', OTHER: 'Другое',
-                  };
-                  const avgRating = acc.reviews?.length
-                    ? acc.reviews.reduce((s, r) => s + r.rating, 0) / acc.reviews.length
-                    : null;
-                  return (
-                    <div key={ca.accommodationId} className="space-y-4">
-                      {/* Header */}
-                      <div className="flex flex-wrap items-start gap-3">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex flex-wrap items-center gap-2 mb-1">
-                            <h3 className="font-semibold text-base">{acc.name}</h3>
-                            <span className="text-xs bg-primary/10 text-primary rounded-full px-2 py-0.5 shrink-0">
-                              {typeLabels[acc.type] ?? acc.type}
-                            </span>
-                            {avgRating !== null && (
-                              <span className="flex items-center gap-1 text-xs text-amber-600 font-medium">
-                                <Star className="h-3 w-3 fill-amber-500 text-amber-500" />
-                                {avgRating.toFixed(1)}
-                              </span>
-                            )}
-                          </div>
-                          {acc.address && (
-                            <p className="text-xs text-muted-foreground flex items-center gap-1">
-                              <MapPin className="h-3 w-3 shrink-0" />
-                              {acc.address}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Description */}
-                      {acc.description && (
-                        <p className="text-sm leading-relaxed text-foreground whitespace-pre-line">{acc.description}</p>
-                      )}
-
-                      {/* Photos */}
-                      {acc.photos && acc.photos.length > 0 && (
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                          {acc.photos.map((photo, index) => (
-                            <div
-                              key={photo.id}
-                              className="aspect-video rounded-xl overflow-hidden bg-muted cursor-pointer"
-                              onClick={() => setAccomLightboxIndex(photoOffset + index)}
-                            >
-                              <img
-                                src={photo.thumbUrl || photo.url}
-                                alt={`${acc.name} ${index + 1}`}
-                                className="h-full w-full object-cover hover:scale-105 transition duration-300"
-                                loading="lazy"
-                                decoding="async"
-                              />
-                            </div>
-                          ))}
-                        </div>
-                      )}
-
-                      {/* Reviews */}
-                      {acc.reviews && acc.reviews.length > 0 && (
-                        <div className="space-y-3">
-                          <p className="text-sm font-medium text-muted-foreground">Отзывы об объекте</p>
-                          {acc.reviews.slice(0, 3).map((review) => (
-                            <div key={review.id} className="bg-muted/40 rounded-xl px-4 py-3 space-y-1">
-                              <div className="flex items-center gap-2">
-                                <div className="flex gap-0.5">
-                                  {Array.from({ length: 5 }).map((_, i) => (
-                                    <Star
-                                      key={i}
-                                      className={`h-3.5 w-3.5 ${i < review.rating ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground/30'}`}
-                                    />
-                                  ))}
-                                </div>
-                                <span className="text-xs font-medium">{review.authorName}</span>
-                                <span className="text-xs text-muted-foreground ml-auto">
-                                  {new Date(review.createdAt).toLocaleDateString('ru-RU', { year: 'numeric', month: 'short' })}
-                                </span>
-                              </div>
-                              {review.title && <p className="text-xs font-medium">{review.title}</p>}
-                              <p className="text-sm text-foreground/80 leading-relaxed">{review.text}</p>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
 
           {/* Included / Not Included */}
           {((card.includedItems && card.includedItems.length > 0) || (card.notIncludedItems && card.notIncludedItems.length > 0)) && (
@@ -1141,9 +1031,9 @@ export function TourDetailPage() {
           )}
 
           {/* Guides */}
-          {allGuides.length > 0 && (
+          {cardGuides.length > 0 && (
             <div className="space-y-3">
-              {allGuides.map((guide) => (
+              {cardGuides.map((guide) => (
                 <div
                   key={guide.id}
                   className="rounded-2xl overflow-hidden bg-white"
@@ -1271,6 +1161,106 @@ export function TourDetailPage() {
                     )}
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {/* Accommodation */}
+          {card.cardAccommodations && card.cardAccommodations.length > 0 && (
+            <div className="rounded-2xl border border-border overflow-hidden">
+              <div className="flex items-center gap-3 bg-primary/5 border-b border-border px-5 py-4">
+                <BedDouble className="h-5 w-5 text-primary shrink-0" />
+                <h2 className="text-lg font-semibold">Проживание</h2>
+              </div>
+              <div className="px-5 py-5 space-y-8">
+                {card.cardAccommodations.map((ca, accIdx) => {
+                  const acc = ca.accommodation;
+                  if (!acc) return null;
+                  const photoOffset = card.cardAccommodations!.slice(0, accIdx).reduce(
+                    (sum, c) => sum + (c.accommodation?.photos?.length ?? 0), 0
+                  );
+                  const typeLabels: Record<string, string> = {
+                    HOTEL: 'Гостиница', HOSTEL: 'Хостел', GUESTHOUSE: 'Гостевой дом',
+                    APARTMENT: 'Апартаменты', CAMPING: 'Кемпинг', OTHER: 'Другое',
+                  };
+                  const avgRating = acc.reviews?.length
+                    ? acc.reviews.reduce((s, r) => s + r.rating, 0) / acc.reviews.length
+                    : null;
+                  return (
+                    <div key={ca.accommodationId} className="space-y-4">
+                      {/* Header */}
+                      <div className="flex flex-wrap items-start gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-wrap items-center gap-2 mb-1">
+                            <h3 className="font-semibold text-base">{acc.name}</h3>
+                            <span className="text-xs bg-primary/10 text-primary rounded-full px-2 py-0.5 shrink-0">
+                              {typeLabels[acc.type] ?? acc.type}
+                            </span>
+                            {avgRating !== null && (
+                              <span className="flex items-center gap-1 text-xs text-amber-600 font-medium">
+                                <Star className="h-3 w-3 fill-amber-500 text-amber-500" />
+                                {avgRating.toFixed(1)}
+                              </span>
+                            )}
+                          </div>
+                          {acc.address && (
+                            <p className="text-xs text-muted-foreground flex items-center gap-1">
+                              <MapPin className="h-3 w-3 shrink-0" />
+                              {acc.address}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      {acc.description && (
+                        <p className="text-sm leading-relaxed text-foreground whitespace-pre-line">{acc.description}</p>
+                      )}
+                      {acc.photos && acc.photos.length > 0 && (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                          {acc.photos.map((photo, index) => (
+                            <div
+                              key={photo.id}
+                              className="aspect-video rounded-xl overflow-hidden bg-muted cursor-pointer"
+                              onClick={() => setAccomLightboxIndex(photoOffset + index)}
+                            >
+                              <img
+                                src={photo.thumbUrl || photo.url}
+                                alt={`${acc.name} ${index + 1}`}
+                                className="h-full w-full object-cover hover:scale-105 transition duration-300"
+                                loading="lazy"
+                                decoding="async"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {acc.reviews && acc.reviews.length > 0 && (
+                        <div className="space-y-3">
+                          <p className="text-sm font-medium text-muted-foreground">Отзывы об объекте</p>
+                          {acc.reviews.slice(0, 3).map((review) => (
+                            <div key={review.id} className="bg-muted/40 rounded-xl px-4 py-3 space-y-1">
+                              <div className="flex items-center gap-2">
+                                <div className="flex gap-0.5">
+                                  {Array.from({ length: 5 }).map((_, i) => (
+                                    <Star
+                                      key={i}
+                                      className={`h-3.5 w-3.5 ${i < review.rating ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground/30'}`}
+                                    />
+                                  ))}
+                                </div>
+                                <span className="text-xs font-medium">{review.authorName}</span>
+                                <span className="text-xs text-muted-foreground ml-auto">
+                                  {new Date(review.createdAt).toLocaleDateString('ru-RU', { year: 'numeric', month: 'short' })}
+                                </span>
+                              </div>
+                              {review.title && <p className="text-xs font-medium">{review.title}</p>}
+                              <p className="text-sm text-foreground/80 leading-relaxed">{review.text}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
