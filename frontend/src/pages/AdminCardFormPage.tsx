@@ -2048,91 +2048,41 @@ function ScheduleTab({ cardId }: { cardId: string }) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// ExtrasTab — дополнительные опции (завтраки, гид и т.д.)
+// ExtraFormState type
 // ─────────────────────────────────────────────────────────────
-function ExtrasTab({ cardId }: { cardId: string }) {
-  const queryClient = useQueryClient();
-  const [error, setError] = useState('');
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [showForm, setShowForm] = useState(false);
+interface ExtraFormState {
+  title: string;
+  description: string;
+  price: string;
+  pricingType: PricingType;
+  isOptional: boolean;
+  isActive: boolean;
+}
 
-  const emptyForm = () => ({
-    title: '',
-    description: '',
-    price: '',
-    pricingType: PricingType.PER_PERSON as PricingType,
-    isOptional: true,
-    isActive: true,
-  });
+const emptyExtraForm = (): ExtraFormState => ({
+  title: '',
+  description: '',
+  price: '',
+  pricingType: PricingType.PER_PERSON,
+  isOptional: true,
+  isActive: true,
+});
 
-  const [form, setForm] = useState(emptyForm());
-
-  const { data: extras = [], isLoading } = useQuery({
-    queryKey: ['card-extras-admin', cardId],
-    queryFn: () => extrasApi.getForCardAdmin(cardId),
-  });
-
-  const invalidate = () =>
-    queryClient.invalidateQueries({ queryKey: ['card-extras-admin', cardId] });
-
-  const createMutation = useMutation({
-    mutationFn: () =>
-      extrasApi.create({
-        cardId,
-        title: form.title,
-        description: form.description || undefined,
-        price: parseFloat(form.price),
-        pricingType: form.pricingType,
-        isOptional: form.isOptional,
-        isActive: form.isActive,
-      }),
-    onSuccess: () => { invalidate(); setShowForm(false); setForm(emptyForm()); setError(''); },
-    onError: (e) => setError(handleApiError(e)),
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: (id: string) =>
-      extrasApi.update(id, {
-        title: form.title,
-        description: form.description || undefined,
-        price: parseFloat(form.price),
-        pricingType: form.pricingType,
-        isOptional: form.isOptional,
-        isActive: form.isActive,
-      }),
-    onSuccess: () => { invalidate(); setEditingId(null); setForm(emptyForm()); setError(''); },
-    onError: (e) => setError(handleApiError(e)),
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: extrasApi.remove,
-    onSuccess: () => { invalidate(); setError(''); },
-    onError: (e) => setError(handleApiError(e)),
-  });
-
-  const toggleActiveMutation = useMutation({
-    mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
-      extrasApi.update(id, { isActive }),
-    onSuccess: () => invalidate(),
-    onError: (e) => setError(handleApiError(e)),
-  });
-
-  const startEdit = (extra: CardExtra) => {
-    setEditingId(extra.id);
-    setShowForm(false);
-    setForm({
-      title: extra.title,
-      description: extra.description ?? '',
-      price: parseFloat(extra.price).toString(),
-      pricingType: extra.pricingType,
-      isOptional: extra.isOptional,
-      isActive: extra.isActive,
-    });
-  };
-
+function ExtraForm({
+  form,
+  setForm,
+  onSave,
+  onCancel,
+  saving,
+}: {
+  form: ExtraFormState;
+  setForm: React.Dispatch<React.SetStateAction<ExtraFormState>>;
+  onSave: () => void;
+  onCancel: () => void;
+  saving: boolean;
+}) {
   const isFormValid = form.title.trim() && form.price && !isNaN(parseFloat(form.price)) && parseFloat(form.price) >= 0;
-
-  const ExtraForm = ({ onSave, onCancel, saving }: { onSave: () => void; onCancel: () => void; saving: boolean }) => (
+  return (
     <div className="rounded-md border border-primary/30 bg-muted/30 p-4 space-y-3">
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-1 sm:col-span-2">
@@ -2202,6 +2152,81 @@ function ExtrasTab({ cardId }: { cardId: string }) {
       </div>
     </div>
   );
+}
+
+// ─────────────────────────────────────────────────────────────
+// ExtrasTab — дополнительные опции (завтраки, гид и т.д.)
+// ─────────────────────────────────────────────────────────────
+function ExtrasTab({ cardId }: { cardId: string }) {
+  const queryClient = useQueryClient();
+  const [error, setError] = useState('');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
+
+  const [form, setForm] = useState<ExtraFormState>(emptyExtraForm());
+
+  const { data: extras = [], isLoading } = useQuery({
+    queryKey: ['card-extras-admin', cardId],
+    queryFn: () => extrasApi.getForCardAdmin(cardId),
+  });
+
+  const invalidate = () =>
+    queryClient.invalidateQueries({ queryKey: ['card-extras-admin', cardId] });
+
+  const createMutation = useMutation({
+    mutationFn: () =>
+      extrasApi.create({
+        cardId,
+        title: form.title,
+        description: form.description || undefined,
+        price: parseFloat(form.price),
+        pricingType: form.pricingType,
+        isOptional: form.isOptional,
+        isActive: form.isActive,
+      }),
+    onSuccess: () => { invalidate(); setShowForm(false); setForm(emptyExtraForm()); setError(''); },
+    onError: (e) => setError(handleApiError(e)),
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: (id: string) =>
+      extrasApi.update(id, {
+        title: form.title,
+        description: form.description || undefined,
+        price: parseFloat(form.price),
+        pricingType: form.pricingType,
+        isOptional: form.isOptional,
+        isActive: form.isActive,
+      }),
+    onSuccess: () => { invalidate(); setEditingId(null); setForm(emptyExtraForm()); setError(''); },
+    onError: (e) => setError(handleApiError(e)),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: extrasApi.remove,
+    onSuccess: () => { invalidate(); setError(''); },
+    onError: (e) => setError(handleApiError(e)),
+  });
+
+  const toggleActiveMutation = useMutation({
+    mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
+      extrasApi.update(id, { isActive }),
+    onSuccess: () => invalidate(),
+    onError: (e) => setError(handleApiError(e)),
+  });
+
+  const startEdit = (extra: CardExtra) => {
+    setEditingId(extra.id);
+    setShowForm(false);
+    setForm({
+      title: extra.title,
+      description: extra.description ?? '',
+      price: parseFloat(extra.price).toString(),
+      pricingType: extra.pricingType,
+      isOptional: extra.isOptional,
+      isActive: extra.isActive,
+    });
+  };
 
   if (isLoading) return <div className="h-32 animate-pulse rounded-lg bg-muted" />;
 
@@ -2218,8 +2243,10 @@ function ExtrasTab({ cardId }: { cardId: string }) {
           editingId === extra.id ? (
             <ExtraForm
               key={extra.id}
+              form={form}
+              setForm={setForm}
               onSave={() => updateMutation.mutate(extra.id)}
-              onCancel={() => { setEditingId(null); setForm(emptyForm()); }}
+              onCancel={() => { setEditingId(null); setForm(emptyExtraForm()); }}
               saving={updateMutation.isPending}
             />
           ) : (
@@ -2277,8 +2304,10 @@ function ExtrasTab({ cardId }: { cardId: string }) {
 
       {showForm && (
         <ExtraForm
+          form={form}
+          setForm={setForm}
           onSave={() => createMutation.mutate()}
-          onCancel={() => { setShowForm(false); setForm(emptyForm()); }}
+          onCancel={() => { setShowForm(false); setForm(emptyExtraForm()); }}
           saving={createMutation.isPending}
         />
       )}
