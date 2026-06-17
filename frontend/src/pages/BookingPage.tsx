@@ -47,8 +47,8 @@ export function BookingPage() {
   const selectedDate = searchParams.get('date');
   const selectedTime = searchParams.get('time');
   const [ticketQuantities, setTicketQuantities] = useState<Record<string, number>>({});
-  // extraId -> quantity (0 = не выбрано)
-  const [extraQuantities, setExtraQuantities] = useState<Record<string, number>>({});
+  // extraId -> выбрано ли
+  const [selectedExtras, setSelectedExtras] = useState<Record<string, boolean>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -179,23 +179,19 @@ export function BookingPage() {
     0
   );
 
-  const totalExtrasAmount = Object.entries(extraQuantities).reduce(
-    (sum, [extraId, qty]) => {
-      if (qty === 0) return sum;
-      const extra = cardExtras.find((e) => e.id === extraId);
-      if (!extra) return sum;
-      const price = parseFloat(extra.price);
-      return sum + (extra.pricingType === PricingType.PER_GROUP ? price : price * qty);
-    },
-    0
-  );
-
-  const totalAmount = totalTicketsAmount + totalExtrasAmount;
-
   const totalTickets = Object.values(ticketQuantities).reduce(
     (sum, qty) => sum + qty,
     0
   );
+
+  const totalExtrasAmount = cardExtras
+    .filter((e) => selectedExtras[e.id])
+    .reduce((sum, extra) => {
+      const price = parseFloat(extra.price);
+      return sum + (extra.pricingType === PricingType.PER_GROUP ? price : price * Math.max(totalTickets, 1));
+    }, 0);
+
+  const totalAmount = totalTicketsAmount + totalExtrasAmount;
 
   const onSubmit = async (data: BookingFormData) => {
     if (totalTickets === 0) {
@@ -231,9 +227,12 @@ export function BookingPage() {
           quantity,
         }));
 
-      const extras = Object.entries(extraQuantities)
-        .filter(([_, qty]) => qty > 0)
-        .map(([extraId, quantity]) => ({ extraId, quantity }));
+      const extras = cardExtras
+        .filter((e) => selectedExtras[e.id])
+        .map((e) => ({
+          extraId: e.id,
+          quantity: e.pricingType === PricingType.PER_GROUP ? 1 : totalTickets,
+        }));
 
       await ordersApi.createOrder({
         cardId: card.id,
@@ -365,74 +364,38 @@ export function BookingPage() {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   {cardExtras.map((extra) => {
-                    const qty = extraQuantities[extra.id] ?? 0;
+                    const isSelected = selectedExtras[extra.id] ?? false;
                     const price = parseFloat(extra.price);
-                    const lineTotal = extra.pricingType === PricingType.PER_GROUP ? price : price * (qty || 1);
                     const isPerGroup = extra.pricingType === PricingType.PER_GROUP;
+                    const effectiveQty = isPerGroup ? 1 : Math.max(totalTickets, 1);
+                    const lineTotal = price * effectiveQty;
 
                     return (
-                      <div key={extra.id} className="p-4 border rounded-lg space-y-2">
-                        <div className="flex items-start justify-between gap-4">
+                      <div key={extra.id} className="p-4 border rounded-lg">
+                        <label className="flex items-start gap-3 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={(e) =>
+                              setSelectedExtras((prev) => ({
+                                ...prev,
+                                [extra.id]: e.target.checked,
+                              }))
+                            }
+                            className="h-5 w-5 mt-0.5 rounded border-input accent-primary shrink-0"
+                          />
                           <div className="flex-1">
                             <div className="font-semibold">{extra.title}</div>
                             {extra.description && (
                               <div className="text-sm text-muted-foreground">{extra.description}</div>
                             )}
                             <div className="text-sm text-muted-foreground mt-0.5">
-                              {formatPrice(price)}{isPerGroup ? ' / за группу' : ' / чел.'}
+                              {isPerGroup
+                                ? `${formatPrice(price)} / за группу`
+                                : `${formatPrice(price)} / чел. × ${Math.max(totalTickets, 1)} чел. = ${formatPrice(lineTotal)}`}
                             </div>
                           </div>
-                          {isPerGroup ? (
-                            /* За группу — просто чекбокс */
-                            <label className="flex items-center gap-2 cursor-pointer shrink-0">
-                              <input
-                                type="checkbox"
-                                checked={qty > 0}
-                                onChange={(e) =>
-                                  setExtraQuantities((prev) => ({
-                                    ...prev,
-                                    [extra.id]: e.target.checked ? 1 : 0,
-                                  }))
-                                }
-                                className="h-5 w-5 rounded border-input accent-primary"
-                              />
-                              <span className="text-sm">Добавить</span>
-                            </label>
-                          ) : (
-                            /* За чел — счётчик */
-                            <div className="flex items-center gap-3 shrink-0">
-                              <Button
-                                type="button" variant="outline" size="sm"
-                                onClick={() =>
-                                  setExtraQuantities((prev) => ({
-                                    ...prev,
-                                    [extra.id]: Math.max(0, (prev[extra.id] ?? 0) - 1),
-                                  }))
-                                }
-                                disabled={qty === 0}
-                              >
-                                <Minus className="h-4 w-4" />
-                              </Button>
-                              <span className="w-8 text-center font-semibold">{qty}</span>
-                              <Button
-                                type="button" variant="outline" size="sm"
-                                onClick={() =>
-                                  setExtraQuantities((prev) => ({
-                                    ...prev,
-                                    [extra.id]: (prev[extra.id] ?? 0) + 1,
-                                  }))
-                                }
-                              >
-                                <Plus className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          )}
-                        </div>
-                        {qty > 0 && (
-                          <div className="text-sm font-medium text-primary">
-                            Итого: {formatPrice(isPerGroup ? price : price * qty)}
-                          </div>
-                        )}
+                        </label>
                       </div>
                     );
                   })}
@@ -520,16 +483,16 @@ export function BookingPage() {
                   })}
 
                 {/* Extras lines in summary */}
-                {Object.entries(extraQuantities)
-                  .filter(([_, qty]) => qty > 0)
-                  .map(([extraId, qty]) => {
-                    const extra = cardExtras.find((e) => e.id === extraId);
-                    if (!extra) return null;
+                {cardExtras
+                  .filter((e) => selectedExtras[e.id])
+                  .map((extra) => {
                     const price = parseFloat(extra.price);
-                    const lineTotal = extra.pricingType === PricingType.PER_GROUP ? price : price * qty;
+                    const isPerGroup = extra.pricingType === PricingType.PER_GROUP;
+                    const qty = isPerGroup ? 1 : Math.max(totalTickets, 1);
+                    const lineTotal = price * qty;
                     return (
-                      <div key={extraId} className="flex justify-between text-sm text-muted-foreground">
-                        <span>{extra.title}{extra.pricingType === PricingType.PER_PERSON ? ` x${qty}` : ''}</span>
+                      <div key={extra.id} className="flex justify-between text-sm text-muted-foreground">
+                        <span>{extra.title}{!isPerGroup ? ` ×${qty}` : ''}</span>
                         <span>{formatPrice(lineTotal)}</span>
                       </div>
                     );
