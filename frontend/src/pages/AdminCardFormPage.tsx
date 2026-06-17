@@ -1477,21 +1477,17 @@ function TicketPricesBlock({ ticket, cardId }: { ticket: Ticket; cardId: string 
 function PricingTab({ cardId }: { cardId: string }) {
   const queryClient = useQueryClient();
   const [error, setError] = useState('');
+  // id тарифа, название которого сейчас редактируется
+  const [editingTitleId, setEditingTitleId] = useState<string | null>(null);
+  const [editingTitleValue, setEditingTitleValue] = useState('');
 
   const { data: tickets = [], isLoading } = useQuery({
     queryKey: ['card-tickets', cardId],
     queryFn: () => ticketsApi.getCardTickets(cardId),
   });
 
-  const { data: tariffTypes = [] } = useQuery({
-    queryKey: ['tariff-types'],
-    queryFn: () => metaApi.getTariffTypes(),
-  });
-
   const groupTicket = tickets.find((t) => t.pricingType === PricingType.PER_GROUP);
   const personTickets = tickets.filter((t) => t.pricingType === PricingType.PER_PERSON);
-  const usedTariffIds = new Set(personTickets.map((t) => t.tariffTypeId).filter(Boolean));
-  const availableTariffs = tariffTypes.filter((tt) => !usedTariffIds.has(tt.id));
 
   const createTicketMutation = useMutation({
     mutationFn: (payload: Parameters<typeof ticketsApi.createTicket>[1]) =>
@@ -1499,6 +1495,16 @@ function PricingTab({ cardId }: { cardId: string }) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['card-tickets', cardId] });
       setError('');
+    },
+    onError: (err) => setError(handleApiError(err)),
+  });
+
+  const updateTicketTitleMutation = useMutation({
+    mutationFn: ({ id, title }: { id: string; title: string }) =>
+      ticketsApi.updateTicket(id, { title }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['card-tickets', cardId] });
+      setEditingTitleId(null);
     },
     onError: (err) => setError(handleApiError(err)),
   });
@@ -1516,10 +1522,18 @@ function PricingTab({ cardId }: { cardId: string }) {
     createTicketMutation.mutate({ title: 'Группа', pricingType: PricingType.PER_GROUP, isMain: true });
   };
 
-  const handleAddPersonTicket = (tariffTypeId: string) => {
-    const tariff = tariffTypes.find((t) => t.id === tariffTypeId);
-    if (!tariff) return;
-    createTicketMutation.mutate({ title: tariff.name, pricingType: PricingType.PER_PERSON, tariffTypeId });
+  const handleAddPersonTicket = () => {
+    createTicketMutation.mutate({ title: 'Новый тариф', pricingType: PricingType.PER_PERSON });
+  };
+
+  const startEditTitle = (ticket: Ticket) => {
+    setEditingTitleId(ticket.id);
+    setEditingTitleValue(ticket.title);
+  };
+
+  const saveTitle = (id: string) => {
+    const trimmed = editingTitleValue.trim();
+    if (trimmed) updateTicketTitleMutation.mutate({ id, title: trimmed });
   };
 
   if (isLoading) {
@@ -1585,78 +1599,83 @@ function PricingTab({ cardId }: { cardId: string }) {
         {/* ── За человека ── */}
         <TabsContent value="per-person" className="mt-4 space-y-4">
           {personTickets.length === 0 && (
-            <p className="text-sm text-muted-foreground">Тарифные типы не добавлены.</p>
+            <p className="text-sm text-muted-foreground">Тарифы не добавлены. Нажмите «Добавить тариф».</p>
           )}
 
           {personTickets.map((ticket) => (
             <Card key={ticket.id}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-base">{ticket.title}</CardTitle>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 text-destructive hover:text-destructive"
-                  disabled={deleteTicketMutation.isPending}
-                  onClick={() => {
-                    if (confirm(`Удалить тариф «${ticket.title}» и все его периоды?`))
-                      deleteTicketMutation.mutate(ticket.id);
-                  }}
-                >
-                  <Trash2 className="mr-1 h-3.5 w-3.5" />
-                  Удалить тариф
-                </Button>
+                {editingTitleId === ticket.id ? (
+                  <div className="flex items-center gap-2 flex-1 mr-2">
+                    <Input
+                      autoFocus
+                      value={editingTitleValue}
+                      onChange={(e) => setEditingTitleValue(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') saveTitle(ticket.id);
+                        if (e.key === 'Escape') setEditingTitleId(null);
+                      }}
+                      className="h-8 text-sm font-semibold"
+                    />
+                    <Button
+                      type="button" size="sm" className="h-8 px-3"
+                      disabled={updateTicketTitleMutation.isPending || !editingTitleValue.trim()}
+                      onClick={() => saveTitle(ticket.id)}
+                    >
+                      Сохранить
+                    </Button>
+                    <Button
+                      type="button" variant="ghost" size="sm" className="h-8 px-2"
+                      onClick={() => setEditingTitleId(null)}
+                    >
+                      Отмена
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 flex-1">
+                    <CardTitle className="text-base">{ticket.title}</CardTitle>
+                    <Button
+                      type="button" variant="ghost" size="sm" className="h-7 px-2 text-muted-foreground"
+                      title="Переименовать тариф"
+                      onClick={() => startEditTitle(ticket)}
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                )}
+                {editingTitleId !== ticket.id && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-destructive hover:text-destructive shrink-0"
+                    disabled={deleteTicketMutation.isPending}
+                    onClick={() => {
+                      if (confirm(`Удалить тариф «${ticket.title}» и все его периоды?`))
+                        deleteTicketMutation.mutate(ticket.id);
+                    }}
+                  >
+                    <Trash2 className="mr-1 h-3.5 w-3.5" />
+                    Удалить
+                  </Button>
+                )}
               </CardHeader>
               <CardContent>
-                {ticket.tariffType && (ticket.tariffType.ageFrom != null || ticket.tariffType.ageTo != null) && (
-                  <p className="mb-3 text-xs text-muted-foreground">
-                    Возраст:{' '}
-                    {ticket.tariffType.ageFrom != null && ticket.tariffType.ageTo != null
-                      ? `${ticket.tariffType.ageFrom}–${ticket.tariffType.ageTo} лет`
-                      : ticket.tariffType.ageFrom != null
-                      ? `от ${ticket.tariffType.ageFrom} лет`
-                      : `до ${ticket.tariffType.ageTo} лет`}
-                  </p>
-                )}
                 <TicketPricesBlock ticket={ticket} cardId={cardId} />
               </CardContent>
             </Card>
           ))}
 
-          {availableTariffs.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {availableTariffs.map((tt) => (
-                <Button
-                  key={tt.id}
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={createTicketMutation.isPending}
-                  onClick={() => handleAddPersonTicket(tt.id)}
-                >
-                  <Plus className="mr-1.5 h-3.5 w-3.5" />
-                  {tt.name}
-                </Button>
-              ))}
-            </div>
-          )}
-
-          {availableTariffs.length === 0 && personTickets.length > 0 && (
-            <p className="text-xs text-muted-foreground">
-              Все доступные тарифы добавлены.{' '}
-              <Link to="/admin/tariff-types" className="underline">Управление тарифами</Link>
-            </p>
-          )}
-
-          {tariffTypes.length === 0 && (
-            <div className="rounded-md border border-dashed border-input p-4 text-center text-sm text-muted-foreground">
-              Тарифы не настроены.{' '}
-              <Link to="/admin/tariff-types/new" className="underline">
-                Создайте тарифы
-              </Link>{' '}
-              (Взрослый, Детский и т.д.)
-            </div>
-          )}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={createTicketMutation.isPending}
+            onClick={handleAddPersonTicket}
+          >
+            <Plus className="mr-1.5 h-3.5 w-3.5" />
+            Добавить тариф
+          </Button>
         </TabsContent>
       </Tabs>
     </div>
