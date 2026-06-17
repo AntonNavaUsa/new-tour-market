@@ -20,7 +20,8 @@ import {
   Search,
   ChevronDown,
 } from 'lucide-react';
-import { cardsApi, metaApi, ticketsApi, schedulesApi } from '../lib/api';
+import { cardsApi, metaApi, ticketsApi, schedulesApi, extrasApi } from '../lib/api';
+import type { CardExtra } from '../lib/api/extras';
 import { bookingStepsTemplatesApi } from '../lib/api/faqs';
 import { handleApiError } from '../lib/axios';
 import { CoverCropModal } from '../components/CoverCropModal';
@@ -2047,6 +2048,252 @@ function ScheduleTab({ cardId }: { cardId: string }) {
 }
 
 // ─────────────────────────────────────────────────────────────
+// ExtrasTab — дополнительные опции (завтраки, гид и т.д.)
+// ─────────────────────────────────────────────────────────────
+function ExtrasTab({ cardId }: { cardId: string }) {
+  const queryClient = useQueryClient();
+  const [error, setError] = useState('');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
+
+  const emptyForm = () => ({
+    title: '',
+    description: '',
+    price: '',
+    pricingType: PricingType.PER_PERSON as PricingType,
+    isOptional: true,
+    isActive: true,
+  });
+
+  const [form, setForm] = useState(emptyForm());
+
+  const { data: extras = [], isLoading } = useQuery({
+    queryKey: ['card-extras-admin', cardId],
+    queryFn: () => extrasApi.getForCardAdmin(cardId),
+  });
+
+  const invalidate = () =>
+    queryClient.invalidateQueries({ queryKey: ['card-extras-admin', cardId] });
+
+  const createMutation = useMutation({
+    mutationFn: () =>
+      extrasApi.create({
+        cardId,
+        title: form.title,
+        description: form.description || undefined,
+        price: parseFloat(form.price),
+        pricingType: form.pricingType,
+        isOptional: form.isOptional,
+        isActive: form.isActive,
+      }),
+    onSuccess: () => { invalidate(); setShowForm(false); setForm(emptyForm()); setError(''); },
+    onError: (e) => setError(handleApiError(e)),
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: (id: string) =>
+      extrasApi.update(id, {
+        title: form.title,
+        description: form.description || undefined,
+        price: parseFloat(form.price),
+        pricingType: form.pricingType,
+        isOptional: form.isOptional,
+        isActive: form.isActive,
+      }),
+    onSuccess: () => { invalidate(); setEditingId(null); setForm(emptyForm()); setError(''); },
+    onError: (e) => setError(handleApiError(e)),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: extrasApi.remove,
+    onSuccess: () => { invalidate(); setError(''); },
+    onError: (e) => setError(handleApiError(e)),
+  });
+
+  const toggleActiveMutation = useMutation({
+    mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
+      extrasApi.update(id, { isActive }),
+    onSuccess: () => invalidate(),
+    onError: (e) => setError(handleApiError(e)),
+  });
+
+  const startEdit = (extra: CardExtra) => {
+    setEditingId(extra.id);
+    setShowForm(false);
+    setForm({
+      title: extra.title,
+      description: extra.description ?? '',
+      price: parseFloat(extra.price).toString(),
+      pricingType: extra.pricingType,
+      isOptional: extra.isOptional,
+      isActive: extra.isActive,
+    });
+  };
+
+  const isFormValid = form.title.trim() && form.price && !isNaN(parseFloat(form.price)) && parseFloat(form.price) >= 0;
+
+  const ExtraForm = ({ onSave, onCancel, saving }: { onSave: () => void; onCancel: () => void; saving: boolean }) => (
+    <div className="rounded-md border border-primary/30 bg-muted/30 p-4 space-y-3">
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="space-y-1 sm:col-span-2">
+          <Label className="text-xs">Название *</Label>
+          <Input
+            value={form.title}
+            onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+            placeholder="Например: Завтраки, Услуги гида"
+          />
+        </div>
+        <div className="space-y-1 sm:col-span-2">
+          <Label className="text-xs">Описание</Label>
+          <Input
+            value={form.description}
+            onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+            placeholder="Уточнение (необязательно)"
+          />
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs">Цена (₽) *</Label>
+          <Input
+            type="number"
+            min="0"
+            step="0.01"
+            value={form.price}
+            onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
+            placeholder="1500"
+          />
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs">Тип расчёта *</Label>
+          <select
+            value={form.pricingType}
+            onChange={(e) => setForm((f) => ({ ...f, pricingType: e.target.value as PricingType }))}
+            className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+          >
+            <option value={PricingType.PER_PERSON}>За человека (× кол-во)</option>
+            <option value={PricingType.PER_GROUP}>За группу (фиксированно)</option>
+          </select>
+        </div>
+      </div>
+      <div className="flex flex-wrap gap-4">
+        <label className="flex items-center gap-2 cursor-pointer text-sm">
+          <input
+            type="checkbox"
+            checked={form.isOptional}
+            onChange={(e) => setForm((f) => ({ ...f, isOptional: e.target.checked }))}
+            className="h-4 w-4 rounded border-input"
+          />
+          Необязательная (клиент выбирает)
+        </label>
+        <label className="flex items-center gap-2 cursor-pointer text-sm">
+          <input
+            type="checkbox"
+            checked={form.isActive}
+            onChange={(e) => setForm((f) => ({ ...f, isActive: e.target.checked }))}
+            className="h-4 w-4 rounded border-input"
+          />
+          Активна
+        </label>
+      </div>
+      <div className="flex gap-2">
+        <Button type="button" size="sm" disabled={saving || !isFormValid} onClick={onSave}>
+          {saving ? 'Сохранение...' : 'Сохранить'}
+        </Button>
+        <Button type="button" size="sm" variant="ghost" onClick={onCancel}>Отмена</Button>
+      </div>
+    </div>
+  );
+
+  if (isLoading) return <div className="h-32 animate-pulse rounded-lg bg-muted" />;
+
+  return (
+    <div className="space-y-4">
+      {error && <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
+
+      {extras.length === 0 && !showForm && (
+        <p className="text-sm text-muted-foreground">Доп. опции не добавлены.</p>
+      )}
+
+      <div className="space-y-2">
+        {extras.map((extra) =>
+          editingId === extra.id ? (
+            <ExtraForm
+              key={extra.id}
+              onSave={() => updateMutation.mutate(extra.id)}
+              onCancel={() => { setEditingId(null); setForm(emptyForm()); }}
+              saving={updateMutation.isPending}
+            />
+          ) : (
+            <div
+              key={extra.id}
+              className={`flex items-start justify-between gap-3 rounded-md border border-input bg-background px-4 py-3 ${!extra.isActive ? 'opacity-50' : ''}`}
+            >
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-medium text-sm">{extra.title}</span>
+                  <span className="text-xs px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
+                    {parseFloat(extra.price).toLocaleString('ru-RU')} ₽
+                    {extra.pricingType === PricingType.PER_PERSON ? ' / чел.' : ' / группа'}
+                  </span>
+                  {!extra.isOptional && (
+                    <span className="text-xs px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700">обязательная</span>
+                  )}
+                  {!extra.isActive && (
+                    <span className="text-xs px-1.5 py-0.5 rounded-full bg-stone-100 text-stone-500">неактивна</span>
+                  )}
+                </div>
+                {extra.description && (
+                  <p className="text-xs text-muted-foreground mt-0.5">{extra.description}</p>
+                )}
+              </div>
+              <div className="flex shrink-0 gap-1">
+                <Button
+                  type="button" variant="ghost" size="sm" className="h-7 px-2"
+                  title={extra.isActive ? 'Деактивировать' : 'Активировать'}
+                  onClick={() => toggleActiveMutation.mutate({ id: extra.id, isActive: !extra.isActive })}
+                >
+                  {extra.isActive ? '⏸' : '▶'}
+                </Button>
+                <Button
+                  type="button" variant="ghost" size="sm" className="h-7 px-2"
+                  onClick={() => startEdit(extra)}
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  type="button" variant="ghost" size="sm"
+                  className="h-7 px-2 text-destructive hover:text-destructive"
+                  disabled={deleteMutation.isPending}
+                  onClick={() => {
+                    if (confirm('Удалить доп. опцию?')) deleteMutation.mutate(extra.id);
+                  }}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            </div>
+          )
+        )}
+      </div>
+
+      {showForm && (
+        <ExtraForm
+          onSave={() => createMutation.mutate()}
+          onCancel={() => { setShowForm(false); setForm(emptyForm()); }}
+          saving={createMutation.isPending}
+        />
+      )}
+
+      {!showForm && !editingId && (
+        <Button type="button" variant="outline" size="sm" onClick={() => setShowForm(true)}>
+          <Plus className="mr-1.5 h-3.5 w-3.5" />
+          Добавить опцию
+        </Button>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
 // Main page component
 // ─────────────────────────────────────────────────────────────
 export function AdminCardFormPage() {
@@ -2263,6 +2510,9 @@ export function AdminCardFormPage() {
             </TabsTrigger>
             <TabsTrigger value="faq" disabled={!isEditMode}>
               FAQ{!isEditMode ? ' (после сохранения)' : ''}
+            </TabsTrigger>
+            <TabsTrigger value="extras" disabled={!isEditMode}>
+              Доп. опции{!isEditMode ? ' (после сохранения)' : ''}
             </TabsTrigger>
           </TabsList>
 
@@ -2532,6 +2782,22 @@ export function AdminCardFormPage() {
                 <CardHeader><CardTitle>Частые вопросы</CardTitle></CardHeader>
                 <CardContent>
                   <CardFaqSection cardId={id} />
+                </CardContent>
+              </Card>
+            ) : null}
+          </TabsContent>
+
+          <TabsContent value="extras">
+            {isEditMode && id ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Дополнительные опции</CardTitle>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Услуги и товары, которые клиент может выбрать при бронировании: завтраки, услуги гида, дополнительные ночи и т.д.
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <ExtrasTab cardId={id} />
                 </CardContent>
               </Card>
             ) : null}

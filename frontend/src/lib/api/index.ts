@@ -1,5 +1,6 @@
 export * from './auth';
 export * from './cards';
+export * from './extras';
 export * from './faqs';
 export { faqTemplatesApi, bookingStepsTemplatesApi } from './faqs';
 export * from './guides';

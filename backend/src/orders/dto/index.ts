@@ -27,6 +27,17 @@ export class OrderTicketDto {
   quantity: number;
 }
 
+export class OrderExtraDto {
+  @ApiProperty({ description: 'CardExtra id' })
+  @IsUUID()
+  extraId: string;
+
+  @ApiProperty({ example: 2 })
+  @IsInt()
+  @Min(1)
+  quantity: number;
+}
+
 export class CreateOrderDto {
   @ApiProperty()
   @IsUUID()
@@ -46,6 +57,13 @@ export class CreateOrderDto {
   @ValidateNested({ each: true })
   @Type(() => OrderTicketDto)
   tickets: OrderTicketDto[];
+
+  @ApiProperty({ type: [OrderExtraDto], required: false })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => OrderExtraDto)
+  extras?: OrderExtraDto[];
 
   @ApiProperty({ example: 'John Doe', required: false })
   @IsOptional()

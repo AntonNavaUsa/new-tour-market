@@ -210,6 +210,7 @@ model Card {
   faqs            Faq[]
   cardGuides      CardGuide[]
   cardAccommodations CardAccommodation[]
+  cardExtras      CardExtra[]
   
   @@index([locationId])
   @@index([userId])
@@ -326,6 +327,7 @@ model Order {
   
   // Relations
   orderTickets  OrderTicket[]
+  orderExtras   OrderExtra[]
   payments      Payment[]
   messages      OrderMessage[]
   
@@ -356,6 +358,46 @@ model OrderTicket {
   
   @@index([orderId])
   @@map("order_tickets")
+}
+
+model CardExtra {
+  id          String      @id @default(uuid())
+  cardId      String      @map("card_id")
+  card        Card        @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  title       String
+  description String?     @db.Text
+  price       Decimal     @db.Decimal(10, 2)
+  pricingType PricingType @default(PER_PERSON) @map("pricing_type")
+  isOptional  Boolean     @default(true) @map("is_optional")
+  isActive    Boolean     @default(true) @map("is_active")
+  sortOrder   Int         @default(0) @map("sort_order")
+
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  orderExtras OrderExtra[]
+
+  @@index([cardId])
+  @@map("card_extras")
+}
+
+model OrderExtra {
+  id       String    @id @default(uuid())
+  orderId  String    @map("order_id")
+  order    Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  extraId  String    @map("extra_id")
+  extra    CardExtra @relation(fields: [extraId], references: [id])
+
+  quantity Int       @default(1)
+  // Snapshot at time of booking: {title, price, pricingType, calculatedTotal}
+  priceSnapshot Json @map("price_snapshot")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([orderId])
+  @@map("order_extras")
 }
 
 model Payment {

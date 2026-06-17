@@ -137,6 +137,40 @@ export class OrdersService {
       });
     }
 
+    // Process extras
+    const extraDetails: Array<{
+      extraId: string;
+      quantity: number;
+      priceSnapshot: object;
+    }> = [];
+
+    if (dto.extras && dto.extras.length > 0) {
+      const totalTicketQty = dto.tickets.reduce((s, t) => s + t.quantity, 0);
+      for (const extraOrder of dto.extras) {
+        const extra = await this.prisma.cardExtra.findUnique({
+          where: { id: extraOrder.extraId },
+        });
+        if (!extra || extra.cardId !== dto.cardId || !extra.isActive) {
+          throw new BadRequestException(`Invalid extra: ${extraOrder.extraId}`);
+        }
+        const extraPrice = Number(extra.price);
+        const qty = extra.pricingType === 'PER_GROUP' ? 1 : extraOrder.quantity;
+        const calculatedTotal =
+          extra.pricingType === 'PER_GROUP' ? extraPrice : extraPrice * qty;
+        totalAmount += calculatedTotal;
+        extraDetails.push({
+          extraId: extra.id,
+          quantity: qty,
+          priceSnapshot: {
+            title: extra.title,
+            price: extraPrice,
+            pricingType: extra.pricingType,
+            calculatedTotal,
+          },
+        });
+      }
+    }
+
     // Calculate expiration time (20 minutes from now)
     const expiresAt = new Date();
     expiresAt.setMinutes(expiresAt.getMinutes() + 20);
@@ -161,6 +195,11 @@ export class OrdersService {
         orderTickets: {
           create: ticketDetails,
         },
+        ...(extraDetails.length > 0 && {
+          orderExtras: {
+            create: extraDetails,
+          },
+        }),
       },
       include: {
         card: {
@@ -470,6 +509,9 @@ export class OrdersService {
             ticket: true,
             price: true,
           },
+        },
+        orderExtras: {
+          include: { extra: true },
         },
         payments: {
           orderBy: { createdAt: 'desc' },

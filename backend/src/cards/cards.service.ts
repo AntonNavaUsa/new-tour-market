@@ -237,6 +237,10 @@ export class CardsService {
           },
         },
         cardGuides: { include: { guide: true } },
+        cardExtras: {
+          where: { isActive: true },
+          orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+        },
       },
     });
 

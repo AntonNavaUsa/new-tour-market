@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { cardsApi, ordersApi, authApi } from '../lib/api';
+import { cardsApi, ordersApi, authApi, extrasApi } from '../lib/api';
 import { useAuthStore } from '../store/authStore';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -14,6 +14,7 @@ import { formatPrice, formatDate, formatDuration, formatDurationRange, calculate
 import { ChevronLeft, Minus, Plus } from 'lucide-react';
 import { handleApiError } from '../lib/axios';
 import type { Price, Ticket } from '../types';
+import { PricingType } from '../types';
 
 function getTicketPriceForDate(ticket: Ticket, date: string): Price | undefined {
   if (!ticket.prices?.length) {
@@ -46,12 +47,20 @@ export function BookingPage() {
   const selectedDate = searchParams.get('date');
   const selectedTime = searchParams.get('time');
   const [ticketQuantities, setTicketQuantities] = useState<Record<string, number>>({});
+  // extraId -> quantity (0 = не выбрано)
+  const [extraQuantities, setExtraQuantities] = useState<Record<string, number>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
   const { data: card, isLoading } = useQuery({
     queryKey: ['card', id],
     queryFn: () => cardsApi.getCard(id!),
+    enabled: !!id,
+  });
+
+  const { data: cardExtras = [] } = useQuery({
+    queryKey: ['card-extras', id],
+    queryFn: () => extrasApi.getForCard(id!),
     enabled: !!id,
   });
 
@@ -160,7 +169,7 @@ export function BookingPage() {
     });
   };
 
-  const totalAmount = Object.entries(ticketQuantities).reduce(
+  const totalTicketsAmount = Object.entries(ticketQuantities).reduce(
     (sum, [ticketId, quantity]) => {
       const selectedTicket = availableTickets.find((item) => item.ticket.id === ticketId);
       if (!selectedTicket || quantity === 0) return sum;
@@ -169,6 +178,19 @@ export function BookingPage() {
     },
     0
   );
+
+  const totalExtrasAmount = Object.entries(extraQuantities).reduce(
+    (sum, [extraId, qty]) => {
+      if (qty === 0) return sum;
+      const extra = cardExtras.find((e) => e.id === extraId);
+      if (!extra) return sum;
+      const price = parseFloat(extra.price);
+      return sum + (extra.pricingType === PricingType.PER_GROUP ? price : price * qty);
+    },
+    0
+  );
+
+  const totalAmount = totalTicketsAmount + totalExtrasAmount;
 
   const totalTickets = Object.values(ticketQuantities).reduce(
     (sum, qty) => sum + qty,
@@ -209,11 +231,16 @@ export function BookingPage() {
           quantity,
         }));
 
+      const extras = Object.entries(extraQuantities)
+        .filter(([_, qty]) => qty > 0)
+        .map(([extraId, quantity]) => ({ extraId, quantity }));
+
       await ordersApi.createOrder({
         cardId: card.id,
         date: selectedDate,
         time: selectedTime || undefined,
         tickets,
+        ...(extras.length > 0 ? { extras } : {}),
         ...data,
       });
 
@@ -330,6 +357,89 @@ export function BookingPage() {
               </CardContent>
             </Card>
 
+            {/* Extras */}
+            {cardExtras.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Дополнительные опции</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {cardExtras.map((extra) => {
+                    const qty = extraQuantities[extra.id] ?? 0;
+                    const price = parseFloat(extra.price);
+                    const lineTotal = extra.pricingType === PricingType.PER_GROUP ? price : price * (qty || 1);
+                    const isPerGroup = extra.pricingType === PricingType.PER_GROUP;
+
+                    return (
+                      <div key={extra.id} className="p-4 border rounded-lg space-y-2">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1">
+                            <div className="font-semibold">{extra.title}</div>
+                            {extra.description && (
+                              <div className="text-sm text-muted-foreground">{extra.description}</div>
+                            )}
+                            <div className="text-sm text-muted-foreground mt-0.5">
+                              {formatPrice(price)}{isPerGroup ? ' / за группу' : ' / чел.'}
+                            </div>
+                          </div>
+                          {isPerGroup ? (
+                            /* За группу — просто чекбокс */
+                            <label className="flex items-center gap-2 cursor-pointer shrink-0">
+                              <input
+                                type="checkbox"
+                                checked={qty > 0}
+                                onChange={(e) =>
+                                  setExtraQuantities((prev) => ({
+                                    ...prev,
+                                    [extra.id]: e.target.checked ? 1 : 0,
+                                  }))
+                                }
+                                className="h-5 w-5 rounded border-input accent-primary"
+                              />
+                              <span className="text-sm">Добавить</span>
+                            </label>
+                          ) : (
+                            /* За чел — счётчик */
+                            <div className="flex items-center gap-3 shrink-0">
+                              <Button
+                                type="button" variant="outline" size="sm"
+                                onClick={() =>
+                                  setExtraQuantities((prev) => ({
+                                    ...prev,
+                                    [extra.id]: Math.max(0, (prev[extra.id] ?? 0) - 1),
+                                  }))
+                                }
+                                disabled={qty === 0}
+                              >
+                                <Minus className="h-4 w-4" />
+                              </Button>
+                              <span className="w-8 text-center font-semibold">{qty}</span>
+                              <Button
+                                type="button" variant="outline" size="sm"
+                                onClick={() =>
+                                  setExtraQuantities((prev) => ({
+                                    ...prev,
+                                    [extra.id]: (prev[extra.id] ?? 0) + 1,
+                                  }))
+                                }
+                              >
+                                <Plus className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                        {qty > 0 && (
+                          <div className="text-sm font-medium text-primary">
+                            Итого: {formatPrice(isPerGroup ? price : price * qty)}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </CardContent>
+              </Card>
+            )}
+
             {/* Contact Information */}
             <Card>
               <CardHeader>
@@ -404,6 +514,22 @@ export function BookingPage() {
                         <span>
                           {selectedTicket.ticket.title} x{quantity}
                         </span>
+                        <span>{formatPrice(lineTotal)}</span>
+                      </div>
+                    );
+                  })}
+
+                {/* Extras lines in summary */}
+                {Object.entries(extraQuantities)
+                  .filter(([_, qty]) => qty > 0)
+                  .map(([extraId, qty]) => {
+                    const extra = cardExtras.find((e) => e.id === extraId);
+                    if (!extra) return null;
+                    const price = parseFloat(extra.price);
+                    const lineTotal = extra.pricingType === PricingType.PER_GROUP ? price : price * qty;
+                    return (
+                      <div key={extraId} className="flex justify-between text-sm text-muted-foreground">
+                        <span>{extra.title}{extra.pricingType === PricingType.PER_PERSON ? ` x${qty}` : ''}</span>
                         <span>{formatPrice(lineTotal)}</span>
                       </div>
                     );

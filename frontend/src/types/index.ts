@@ -522,6 +522,10 @@ export interface CreateOrderRequest {
     ticketId: string;
     quantity: number;
   }[];
+  extras?: {
+    extraId: string;
+    quantity: number;
+  }[];
   customerName?: string;
   customerEmail?: string;
   customerPhone?: string;
