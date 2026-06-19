@@ -297,13 +297,13 @@ export function TourDetailPage() {
   const validUrl = (url?: string | null) => (url && !url.startsWith('blob:') ? url : undefined);
 
   const allImages = [
-    validUrl(card?.headPhotoUrl),
     ...(card?.slideshowPhotos || []).map((photo: any) => validUrl(photo.url)),
+    validUrl(card?.headPhotoUrl),
   ].filter((image): image is string => Boolean(image));
 
   const allThumbs = [
-    validUrl(card?.headPhotoThumbUrl) ?? validUrl(card?.headPhotoUrl),
     ...(card?.slideshowPhotos || []).map((photo: any) => validUrl(photo.thumbUrl) ?? validUrl(photo.url)),
+    validUrl(card?.headPhotoThumbUrl) ?? validUrl(card?.headPhotoUrl),
   ].filter((img): img is string => Boolean(img));
 
   useEffect(() => {

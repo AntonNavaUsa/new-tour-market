@@ -529,28 +529,7 @@ export function ProfilePage() {
             </CardContent>
           </Card>
 
-          {/* Guides block — only for PARTNER / ADMIN */}
-          {isPartnerOrAdmin && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <UserIcon className="h-5 w-5" />
-                  Гиды
-                </CardTitle>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Управление гидами вынесено в отдельный раздел
-                </p>
-              </CardHeader>
-              <CardContent>
-                <a
-                  href="/admin/guides"
-                  className="inline-flex items-center gap-2 text-sm text-primary underline hover:no-underline"
-                >
-                  Перейти к управлению гидами →
-                </a>
-              </CardContent>
-            </Card>
-          )}
+          
           {/* Test email block — only for ADMIN */}
           {displayUser.role === 'ADMIN' && (
             <TestEmailCard defaultEmail={displayUser.email} />

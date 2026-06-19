@@ -34,6 +34,10 @@ echo "Building and starting containers..."
 cd "$APP_DIR"
 docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
 
+# Apply DB schema changes
+echo "Applying database migrations..."
+docker exec travelio-backend npx prisma db push --accept-data-loss
+
 echo ""
 echo "=== Done! ==="
 echo "Frontend: http://80.87.102.197:8090"
