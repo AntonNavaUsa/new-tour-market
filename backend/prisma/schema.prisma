@@ -465,6 +465,7 @@ model Guide {
   
   name             String
   description      String?  @db.Text
+  location         String?  @map("location")
   certifications   String?  @db.Text @map("certifications")
   registryUrl      String?  @map("registry_url")
   registryLabel    String?  @map("registry_label")

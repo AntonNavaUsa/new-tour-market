@@ -84,7 +84,7 @@ export class CreateCardDto {
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
-  placeHistory?: string;
+  placeHistory?: string | null;
 
   @ApiProperty({ required: false })
   @IsOptional()

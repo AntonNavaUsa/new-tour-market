@@ -25,7 +25,7 @@ export class GuidesService {
     });
   }
 
-  async create(userId: string, data: { name: string; description?: string; position?: number }) {
+  async create(userId: string, data: { name: string; description?: string; location?: string; position?: number }) {
     if (!data.name?.trim()) {
       throw new BadRequestException('Имя обязательно');
     }
@@ -34,6 +34,7 @@ export class GuidesService {
         userId,
         name: data.name.trim(),
         description: data.description?.trim() || null,
+        location: data.location?.trim() || null,
         position: data.position ?? 0,
       },
     });
@@ -43,7 +44,7 @@ export class GuidesService {
     id: string,
     userId: string,
     userRole: UserRole,
-    data: { name?: string; description?: string; certifications?: string; registryUrl?: string; registryLabel?: string; position?: number },
+    data: { name?: string; description?: string; location?: string; certifications?: string; registryUrl?: string; registryLabel?: string; position?: number },
   ) {
     const guide = await this.prisma.guide.findUnique({ where: { id } });
     if (!guide) throw new NotFoundException('Гид не найден');
@@ -55,6 +56,7 @@ export class GuidesService {
       data: {
         ...(data.name !== undefined && { name: data.name.trim() }),
         ...(data.description !== undefined && { description: data.description?.trim() || null }),
+        ...(data.location !== undefined && { location: data.location?.trim() || null }),
         ...(data.certifications !== undefined && { certifications: data.certifications?.trim() || null }),
         ...(data.registryUrl !== undefined && { registryUrl: data.registryUrl?.trim() || null }),
         ...(data.registryLabel !== undefined && { registryLabel: data.registryLabel?.trim() || null }),

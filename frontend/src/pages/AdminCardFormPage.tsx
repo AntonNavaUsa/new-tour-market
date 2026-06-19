@@ -2485,7 +2485,7 @@ export function AdminCardFormPage() {
       distanceKm: toOptionalNumber(values.distanceKm),
       elevationGain: toOptionalNumber(values.elevationGain),
       difficulty: values.difficulty || undefined,
-      placeHistory: values.placeHistory || undefined,
+      placeHistory: values.placeHistory?.trim() || null,
       childFriendly: values.childFriendly === 'yes' ? true : values.childFriendly === 'no' ? false : undefined,
       meetingPoint: values.meetingPoint || undefined,
       postPaymentInfo: (values as any).postPaymentInfo || undefined,

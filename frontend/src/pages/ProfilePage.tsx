@@ -31,6 +31,7 @@ function GuideRow({
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(guide.name);
   const [description, setDescription] = useState(guide.description ?? '');
+  const [location, setLocation] = useState(guide.location ?? '');
   const [certifications, setCertifications] = useState(guide.certifications ?? '');
   const [registryUrl, setRegistryUrl] = useState(guide.registryUrl ?? '');
   const [registryLabel, setRegistryLabel] = useState(guide.registryLabel ?? '');
@@ -42,6 +43,7 @@ function GuideRow({
     mutationFn: () => guidesApi.updateGuide(guide.id, {
       name: name.trim(),
       description: description.trim() || undefined,
+      location: location.trim() || undefined,
       certifications: certifications.trim() || undefined,
       registryUrl: registryUrl.trim() || undefined,
       registryLabel: registryLabel.trim() || undefined,
@@ -126,6 +128,12 @@ function GuideRow({
               className="w-full rounded-md border bg-background px-3 py-1.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
             />
             <Input
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              placeholder="Где живёт / откуда гид, напр: Красная Поляна"
+              className="h-8 text-sm"
+            />
+            <Input
               value={certifications}
               onChange={(e) => setCertifications(e.target.value)}
               placeholder="Квалификации, напр: Удостоверение МЧС · Спасатель · Первая помощь"
@@ -160,6 +168,7 @@ function GuideRow({
                   setEditing(false);
                   setName(guide.name);
                   setDescription(guide.description ?? '');
+                  setLocation(guide.location ?? '');
                   setCertifications(guide.certifications ?? '');
                   setRegistryUrl(guide.registryUrl ?? '');
                   setRegistryLabel(guide.registryLabel ?? '');
@@ -174,6 +183,9 @@ function GuideRow({
         ) : (
           <div>
             <div className="font-semibold">{guide.name}</div>
+            {guide.location && (
+              <p className="text-xs text-muted-foreground mt-0.5">{guide.location}</p>
+            )}
             {guide.description && (
               <p className="text-sm text-muted-foreground mt-0.5 line-clamp-3">{guide.description}</p>
             )}
@@ -229,6 +241,7 @@ function GuideRow({
 function AddGuideForm({ onAdded }: { onAdded: () => void }) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [location, setLocation] = useState('');
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [error, setError] = useState('');
@@ -246,7 +259,7 @@ function AddGuideForm({ onAdded }: { onAdded: () => void }) {
 
   const mutation = useMutation({
     mutationFn: async () => {
-      const guide = await guidesApi.createGuide({ name: name.trim(), description: description.trim() || undefined });
+      const guide = await guidesApi.createGuide({ name: name.trim(), description: description.trim() || undefined, location: location.trim() || undefined });
       if (photoFile) {
         await guidesApi.uploadPhoto(guide.id, photoFile);
       }
@@ -256,6 +269,7 @@ function AddGuideForm({ onAdded }: { onAdded: () => void }) {
       queryClient.invalidateQueries({ queryKey: ['my-guides'] });
       setName('');
       setDescription('');
+      setLocation('');
       setPhotoFile(null);
       setPhotoPreview(null);
       setError('');
@@ -306,6 +320,16 @@ function AddGuideForm({ onAdded }: { onAdded: () => void }) {
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Имя и фамилия"
+          className="h-8 text-sm"
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="guide-location" className="text-xs">Откуда гид / где живёт</Label>
+        <Input
+          id="guide-location"
+          value={location}
+          onChange={(e) => setLocation(e.target.value)}
+          placeholder="напр: Красная Поляна, Сочи"
           className="h-8 text-sm"
         />
       </div>
@@ -399,17 +423,10 @@ function TestEmailCard({ defaultEmail }: { defaultEmail: string }) {
 
 export function ProfilePage() {
   const { user } = useAuthStore();
-  const [showAddForm, setShowAddForm] = useState(false);
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ['profile'],
     queryFn: () => authApi.getProfile(),
-  });
-
-  const { data: guides = [], isLoading: guidesLoading } = useQuery({
-    queryKey: ['my-guides'],
-    queryFn: () => guidesApi.getMyGuides(),
-    enabled: !!(profile?.role === 'PARTNER' || profile?.role === 'ADMIN' || user?.role === 'PARTNER' || user?.role === 'ADMIN'),
   });
 
   if (isLoading) {
@@ -516,51 +533,21 @@ export function ProfilePage() {
           {isPartnerOrAdmin && (
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center gap-2">
-                    <UserIcon className="h-5 w-5" />
-                    Гиды программы
-                  </CardTitle>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setShowAddForm((v) => !v)}
-                  >
-                    <Plus className="h-4 w-4 mr-1" />
-                    Добавить
-                  </Button>
-                </div>
+                <CardTitle className="flex items-center gap-2">
+                  <UserIcon className="h-5 w-5" />
+                  Гиды
+                </CardTitle>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Эти гиды будут показаны на всех ваших турах
+                  Управление гидами вынесено в отдельный раздел
                 </p>
               </CardHeader>
-              <CardContent className="space-y-4">
-                {showAddForm && (
-                  <AddGuideForm onAdded={() => setShowAddForm(false)} />
-                )}
-
-                {guidesLoading ? (
-                  <div className="space-y-3">
-                    {[1, 2].map((i) => (
-                      <div key={i} className="h-24 rounded-xl bg-muted animate-pulse" />
-                    ))}
-                  </div>
-                ) : guides.length === 0 && !showAddForm ? (
-                  <div className="rounded-xl border border-dashed py-10 text-center text-sm text-muted-foreground">
-                    Гиды не добавлены. Нажмите «Добавить», чтобы создать первого гида.
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {guides.map((guide) => (
-                      <GuideRow
-                        key={guide.id}
-                        guide={guide}
-                        onSaved={() => {}}
-                        onDeleted={() => {}}
-                      />
-                    ))}
-                  </div>
-                )}
+              <CardContent>
+                <a
+                  href="/admin/guides"
+                  className="inline-flex items-center gap-2 text-sm text-primary underline hover:no-underline"
+                >
+                  Перейти к управлению гидами →
+                </a>
               </CardContent>
             </Card>
           )}

@@ -1047,7 +1047,7 @@ export function TourDetailPage() {
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1D9E75" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
                     </svg>
-                    <span className="text-[13px] font-medium" style={{ color: '#1a1a18' }}>Гид программы</span>
+                    <span className="text-[13px] font-medium" style={{ color: '#1a1a18' }}>{card.cardType?.slug === 'self-guided' ? 'Дизайнер тура' : 'Гид программы'}</span>
                   </div>
 
                   {/* Фото + имя */}
@@ -1075,7 +1075,7 @@ export function TourDetailPage() {
                     </div>
                     <div className="min-w-0">
                       <div className="text-[15px] font-medium" style={{ color: '#1a1a18' }}>{guide.name}</div>
-                      <div className="text-xs mt-0.5 leading-snug" style={{ color: '#6b6b65' }}>Гид тура</div>
+                      <div className="text-xs mt-0.5 leading-snug" style={{ color: '#6b6b65' }}>{guide.location || 'Гид тура'}</div>
                     </div>
                   </div>
 

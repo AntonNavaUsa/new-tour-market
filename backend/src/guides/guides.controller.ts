@@ -48,7 +48,7 @@ export class GuidesController {
   @ApiOperation({ summary: 'Create a guide' })
   async create(
     @CurrentUser('id') userId: string,
-    @Body() data: { name: string; description?: string; position?: number },
+    @Body() data: { name: string; description?: string; location?: string; position?: number },
   ) {
     return this.guidesService.create(userId, data);
   }
@@ -62,7 +62,7 @@ export class GuidesController {
     @Param('id') id: string,
     @CurrentUser('id') userId: string,
     @CurrentUser('role') userRole: UserRole,
-    @Body() data: { name?: string; description?: string; certifications?: string; registryUrl?: string; registryLabel?: string; position?: number },
+    @Body() data: { name?: string; description?: string; location?: string; certifications?: string; registryUrl?: string; registryLabel?: string; position?: number },
   ) {
     return this.guidesService.update(id, userId, userRole, data);
   }

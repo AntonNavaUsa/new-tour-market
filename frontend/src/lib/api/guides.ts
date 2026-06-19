@@ -12,12 +12,12 @@ export const guidesApi = {
     return response.data;
   },
 
-  createGuide: async (data: { name: string; description?: string; position?: number }): Promise<Guide> => {
+  createGuide: async (data: { name: string; description?: string; location?: string; position?: number }): Promise<Guide> => {
     const response = await api.post<Guide>('/api/guides', data);
     return response.data;
   },
 
-  updateGuide: async (id: string, data: { name?: string; description?: string; certifications?: string; registryUrl?: string; registryLabel?: string; position?: number }): Promise<Guide> => {
+  updateGuide: async (id: string, data: { name?: string; description?: string; location?: string; certifications?: string; registryUrl?: string; registryLabel?: string; position?: number }): Promise<Guide> => {
     const response = await api.patch<Guide>(`/api/guides/${id}`, data);
     return response.data;
   },

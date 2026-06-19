@@ -90,6 +90,7 @@ export interface Guide {
   userId: string;
   name: string;
   description: string | null;
+  location: string | null;
   certifications: string | null;
   registryUrl: string | null;
   registryLabel: string | null;
@@ -428,7 +429,7 @@ export interface CreateCardRequest {
   distanceKm?: number;
   elevationGain?: number;
   difficulty?: string;
-  placeHistory?: string;
+  placeHistory?: string | null;
   childFriendly?: boolean;
   meetingPoint?: string;
   minParticipants?: number;
