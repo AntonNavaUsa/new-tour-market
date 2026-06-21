@@ -152,6 +152,8 @@ function CardFaqsSection() {
   const [form, setForm] = useState(EMPTY_FAQ);
   // Для создания — список выбранных карточек (множественный выбор)
   const [createCardIds, setCreateCardIds] = useState<string[]>([]);
+  // Для редактирования — дополнительные карточки для копирования
+  const [copyToCardIds, setCopyToCardIds] = useState<string[]>([]);
   const [cardSearch, setCardSearch] = useState('');
   const [error, setError] = useState('');
 
@@ -206,6 +208,8 @@ function CardFaqsSection() {
   const openEdit = (faq: Faq) => {
     setCreating(false); setError('');
     setForm({ cardId: faq.cardId, question: faq.question, answer: faq.answer, sortOrder: faq.sortOrder, isVisible: faq.isVisible });
+    setCopyToCardIds([]);
+    setCardSearch('');
     setEditing(faq);
   };
 
@@ -213,8 +217,22 @@ function CardFaqsSection() {
     e.preventDefault();
     setError('');
     if (editing) {
-      // Редактирование — одна карточка
-      updateMutation.mutate({ id: editing.id, data: form });
+      // Редактирование — обновляем текущую запись + копируем в дополнительные карточки
+      try {
+        await updateMutation.mutateAsync({ id: editing.id, data: form });
+        if (copyToCardIds.length > 0) {
+          await Promise.all(
+            copyToCardIds.map((cardId) =>
+              createMutation.mutateAsync({ ...form, cardId })
+            )
+          );
+        }
+        invalidate();
+        setEditing(null);
+        setCopyToCardIds([]);
+      } catch {
+        // error set by mutation
+      }
     } else {
       // Создание — по одной записи на каждую выбранную карточку
       if (createCardIds.length === 0) { setError('Выберите хотя бы одну карточку тура'); return; }
@@ -236,6 +254,11 @@ function CardFaqsSection() {
 
   const toggleCardId = (id: string) => {
     setCreateCardIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+  const toggleCopyCardId = (id: string) => {
+    setCopyToCardIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
   };
@@ -261,6 +284,8 @@ function CardFaqsSection() {
   const filteredCards = cardSearch.trim()
     ? allCards.filter((c) => c.title.toLowerCase().includes(cardSearch.toLowerCase()))
     : allCards;
+  // В режиме редактирования исключаем текущую карточку из списка копирования
+  const copyTargetCards = filteredCards.filter((c) => c.id !== form.cardId);
 
   const grouped: Record<string, { cardTitle: string; items: Faq[] }> = {};
   faqs.forEach((faq) => {
@@ -308,14 +333,52 @@ function CardFaqsSection() {
 
             {/* Карточки туров */}
             {editing ? (
-              // В режиме редактирования — одиночный выбор
-              <div>
-                <label className="text-xs font-medium mb-1 block">Карточка тура *</label>
-                <select className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
-                  value={form.cardId} onChange={(e) => setForm({ ...form, cardId: e.target.value })} required>
-                  <option value="">— Выберите карточку —</option>
-                  {allCards.map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
-                </select>
+              // В режиме редактирования — одиночный выбор + копирование в доп. карточки
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs font-medium mb-1 block">Карточка тура *</label>
+                  <select className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
+                    value={form.cardId} onChange={(e) => setForm({ ...form, cardId: e.target.value })} required>
+                    <option value="">— Выберите карточку —</option>
+                    {allCards.map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-medium mb-1 block">
+                    Скопировать ещё в
+                    {copyToCardIds.length > 0 && (
+                      <span className="ml-2 text-primary font-normal">+{copyToCardIds.length} карточек</span>
+                    )}
+                  </label>
+                  <Input
+                    placeholder="Поиск по названию..."
+                    value={cardSearch}
+                    onChange={(e) => setCardSearch(e.target.value)}
+                    className="mb-2 h-8 text-sm"
+                  />
+                  <div className="max-h-40 overflow-y-auto rounded-md border border-input bg-background divide-y divide-border">
+                    {copyTargetCards.length === 0 ? (
+                      <p className="px-3 py-2 text-sm text-muted-foreground">Ничего не найдено</p>
+                    ) : (
+                      copyTargetCards.map((c) => (
+                        <label key={c.id} className="flex items-center gap-2.5 px-3 py-2 cursor-pointer hover:bg-muted/40 transition-colors">
+                          <input
+                            type="checkbox"
+                            checked={copyToCardIds.includes(c.id)}
+                            onChange={() => toggleCopyCardId(c.id)}
+                            className="h-4 w-4 accent-primary shrink-0"
+                          />
+                          <span className="text-sm leading-snug">{c.title}</span>
+                        </label>
+                      ))
+                    )}
+                  </div>
+                  {copyToCardIds.length > 0 && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Будет создано {copyToCardIds.length} доп. {copyToCardIds.length === 1 ? 'запись' : 'записи'} с тем же вопросом.
+                    </p>
+                  )}
+                </div>
               </div>
             ) : (
               // В режиме создания — множественный выбор с чекбоксами
@@ -397,7 +460,11 @@ function CardFaqsSection() {
             </div>
             <div className="flex gap-2">
               <Button type="submit" size="sm" disabled={isSaving}>
-                {isSaving ? 'Сохранение...' : editing ? 'Сохранить' : `Создать${createCardIds.length > 1 ? ` (${createCardIds.length})` : ''}`}
+                {isSaving
+                  ? 'Сохранение...'
+                  : editing
+                  ? `Сохранить${copyToCardIds.length > 0 ? ` + скопировать в ${copyToCardIds.length}` : ''}`
+                  : `Создать${createCardIds.length > 1 ? ` (${createCardIds.length})` : ''}`}
               </Button>
               <Button type="button" size="sm" variant="outline"
                 onClick={() => { setCreating(false); setEditing(null); }}>Отмена</Button>
