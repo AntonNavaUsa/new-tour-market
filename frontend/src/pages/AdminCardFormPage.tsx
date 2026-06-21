@@ -24,7 +24,6 @@ import { cardsApi, metaApi, ticketsApi, schedulesApi, extrasApi } from '../lib/a
 import type { CardExtra } from '../lib/api/extras';
 import { bookingStepsTemplatesApi } from '../lib/api/faqs';
 import { handleApiError } from '../lib/axios';
-import { CoverCropModal } from '../components/CoverCropModal';
 import { PhotoEditModal } from '../components/PhotoEditModal';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
@@ -649,16 +648,6 @@ function PhotosTab({ cardId, headPhotoUrl }: { cardId: string; headPhotoUrl?: st
   const slideshowInputRef = useRef<HTMLInputElement>(null);
   const accommodationInputRef = useRef<HTMLInputElement>(null);
   const [photoError, setPhotoError] = useState('');
-  const [cropFile, setCropFile] = useState<File | null>(null);
-
-  // Pre-upload edit queues
-  const [slideshowEditQueue, setSlideshowEditQueue] = useState<File[]>([]);
-  const [slideshowEditIdx, setSlideshowEditIdx] = useState(0);
-  const [slideshowEditAccum, setSlideshowEditAccum] = useState<File[]>([]);
-
-  const [accommodationEditQueue, setAccommodationEditQueue] = useState<File[]>([]);
-  const [accommodationEditIdx, setAccommodationEditIdx] = useState(0);
-  const [accommodationEditAccum, setAccommodationEditAccum] = useState<File[]>([]);
 
   // Editing existing uploaded photos
   const [editingPhoto, setEditingPhoto] = useState<{
@@ -781,17 +770,7 @@ function PhotosTab({ cardId, headPhotoUrl }: { cardId: string; headPhotoUrl?: st
   };
 
   const handleCoverFileSelected = (file: File) => {
-    setCropFile(file);
-  };
-
-  const handleCropConfirm = (croppedFile: File) => {
-    setCropFile(null);
-    uploadMainMutation.mutate(croppedFile);
-  };
-
-  const handleCropCancel = () => {
-    setCropFile(null);
-    if (mainPhotoInputRef.current) mainPhotoInputRef.current.value = '';
+    uploadMainMutation.mutate(file);
   };
 
   const movePhoto = (index: number, direction: 'up' | 'down') => {
@@ -808,69 +787,6 @@ function PhotosTab({ cardId, headPhotoUrl }: { cardId: string; headPhotoUrl?: st
 
   return (
     <>
-    {cropFile && (
-      <CoverCropModal
-        file={cropFile}
-        onConfirm={handleCropConfirm}
-        onCancel={handleCropCancel}
-      />
-    )}
-    {/* Pre-upload edit: slideshow */}
-    {slideshowEditQueue.length > 0 && slideshowEditIdx < slideshowEditQueue.length && (
-      <PhotoEditModal
-        file={slideshowEditQueue[slideshowEditIdx]}
-        title={
-          slideshowEditQueue.length > 1
-            ? `Фото ${slideshowEditIdx + 1} из ${slideshowEditQueue.length}`
-            : 'Редактировать фото'
-        }
-        onConfirm={(editedFile) => {
-          const newAccum = [...slideshowEditAccum, editedFile];
-          if (slideshowEditIdx + 1 < slideshowEditQueue.length) {
-            setSlideshowEditAccum(newAccum);
-            setSlideshowEditIdx((i) => i + 1);
-          } else {
-            uploadSlideshowMutation.mutate(newAccum);
-            setSlideshowEditQueue([]);
-            setSlideshowEditIdx(0);
-            setSlideshowEditAccum([]);
-          }
-        }}
-        onCancel={() => {
-          setSlideshowEditQueue([]);
-          setSlideshowEditIdx(0);
-          setSlideshowEditAccum([]);
-        }}
-      />
-    )}
-    {/* Pre-upload edit: accommodation */}
-    {accommodationEditQueue.length > 0 && accommodationEditIdx < accommodationEditQueue.length && (
-      <PhotoEditModal
-        file={accommodationEditQueue[accommodationEditIdx]}
-        title={
-          accommodationEditQueue.length > 1
-            ? `Фото ${accommodationEditIdx + 1} из ${accommodationEditQueue.length}`
-            : 'Редактировать фото'
-        }
-        onConfirm={(editedFile) => {
-          const newAccum = [...accommodationEditAccum, editedFile];
-          if (accommodationEditIdx + 1 < accommodationEditQueue.length) {
-            setAccommodationEditAccum(newAccum);
-            setAccommodationEditIdx((i) => i + 1);
-          } else {
-            uploadAccommodationMutation.mutate(newAccum);
-            setAccommodationEditQueue([]);
-            setAccommodationEditIdx(0);
-            setAccommodationEditAccum([]);
-          }
-        }}
-        onCancel={() => {
-          setAccommodationEditQueue([]);
-          setAccommodationEditIdx(0);
-          setAccommodationEditAccum([]);
-        }}
-      />
-    )}
     {/* Edit existing uploaded photo */}
     {editingPhoto && (
       <PhotoEditModal
@@ -897,7 +813,7 @@ function PhotosTab({ cardId, headPhotoUrl }: { cardId: string; headPhotoUrl?: st
       <div>
         <h3 className="mb-1 text-lg font-semibold">Обложка тура</h3>
         <p className="mb-4 text-sm text-muted-foreground">
-          Главное фото, отображаемое в шапке страницы тура. После выбора файла откроется редактор кадрирования.
+          Главное фото, отображаемое в шапке страницы тура.
         </p>
 
         {/* Preview area */}
@@ -986,11 +902,7 @@ function PhotosTab({ cardId, headPhotoUrl }: { cardId: string; headPhotoUrl?: st
             className="hidden"
             onChange={(e) => {
               const files = e.target.files ? Array.from(e.target.files) : [];
-              if (files.length) {
-                setSlideshowEditQueue(files);
-                setSlideshowEditIdx(0);
-                setSlideshowEditAccum([]);
-              }
+              if (files.length) uploadSlideshowMutation.mutate(files);
               e.target.value = '';
             }}
           />
@@ -1096,11 +1008,7 @@ function PhotosTab({ cardId, headPhotoUrl }: { cardId: string; headPhotoUrl?: st
             className="hidden"
             onChange={(e) => {
               const files = e.target.files ? Array.from(e.target.files) : [];
-              if (files.length) {
-                setAccommodationEditQueue(files);
-                setAccommodationEditIdx(0);
-                setAccommodationEditAccum([]);
-              }
+              if (files.length) uploadAccommodationMutation.mutate(files);
               e.target.value = '';
             }}
           />
