@@ -150,6 +150,9 @@ function CardFaqsSection() {
   const [editing, setEditing] = useState<Faq | null>(null);
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState(EMPTY_FAQ);
+  // Для создания — список выбранных карточек (множественный выбор)
+  const [createCardIds, setCreateCardIds] = useState<string[]>([]);
+  const [cardSearch, setCardSearch] = useState('');
   const [error, setError] = useState('');
 
   const { data: cardsData } = useQuery({
@@ -173,7 +176,6 @@ function CardFaqsSection() {
 
   const createMutation = useMutation({
     mutationFn: (data: typeof EMPTY_FAQ) => faqsApi.create(data),
-    onSuccess: () => { invalidate(); setCreating(false); setForm(EMPTY_FAQ); setError(''); },
     onError: (e) => setError(handleApiError(e)),
   });
   const updateMutation = useMutation({
@@ -194,19 +196,50 @@ function CardFaqsSection() {
   });
 
   const openCreate = () => {
-    setEditing(null); setForm({ ...EMPTY_FAQ, cardId: selectedCardId }); setError(''); setCreating(true);
+    setEditing(null);
+    setForm({ ...EMPTY_FAQ });
+    setCreateCardIds(selectedCardId ? [selectedCardId] : []);
+    setCardSearch('');
+    setError('');
+    setCreating(true);
   };
   const openEdit = (faq: Faq) => {
     setCreating(false); setError('');
     setForm({ cardId: faq.cardId, question: faq.question, answer: faq.answer, sortOrder: faq.sortOrder, isVisible: faq.isVisible });
     setEditing(faq);
   };
-  const handleSubmit = (e: React.FormEvent) => {
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.cardId) { setError('Выберите карточку'); return; }
-    if (editing) updateMutation.mutate({ id: editing.id, data: form });
-    else createMutation.mutate(form);
+    setError('');
+    if (editing) {
+      // Редактирование — одна карточка
+      updateMutation.mutate({ id: editing.id, data: form });
+    } else {
+      // Создание — по одной записи на каждую выбранную карточку
+      if (createCardIds.length === 0) { setError('Выберите хотя бы одну карточку тура'); return; }
+      try {
+        await Promise.all(
+          createCardIds.map((cardId) =>
+            createMutation.mutateAsync({ ...form, cardId })
+          )
+        );
+        invalidate();
+        setCreating(false);
+        setForm(EMPTY_FAQ);
+        setCreateCardIds([]);
+      } catch {
+        // error already set by mutation
+      }
+    }
   };
+
+  const toggleCardId = (id: string) => {
+    setCreateCardIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
   const moveUp = (faq: Faq, list: Faq[]) => {
     const idx = list.findIndex((f) => f.id === faq.id);
     if (idx === 0) return;
@@ -223,6 +256,11 @@ function CardFaqsSection() {
   };
 
   const isFormOpen = creating || !!editing;
+  const isSaving = createMutation.isPending || updateMutation.isPending;
+
+  const filteredCards = cardSearch.trim()
+    ? allCards.filter((c) => c.title.toLowerCase().includes(cardSearch.toLowerCase()))
+    : allCards;
 
   const grouped: Record<string, { cardTitle: string; items: Faq[] }> = {};
   faqs.forEach((faq) => {
@@ -268,14 +306,56 @@ function CardFaqsSection() {
                 className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
             </div>
 
-            <div>
-              <label className="text-xs font-medium mb-1 block">Карточка тура *</label>
-              <select className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
-                value={form.cardId} onChange={(e) => setForm({ ...form, cardId: e.target.value })} required>
-                <option value="">— Выберите карточку —</option>
-                {allCards.map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
-              </select>
-            </div>
+            {/* Карточки туров */}
+            {editing ? (
+              // В режиме редактирования — одиночный выбор
+              <div>
+                <label className="text-xs font-medium mb-1 block">Карточка тура *</label>
+                <select className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
+                  value={form.cardId} onChange={(e) => setForm({ ...form, cardId: e.target.value })} required>
+                  <option value="">— Выберите карточку —</option>
+                  {allCards.map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
+                </select>
+              </div>
+            ) : (
+              // В режиме создания — множественный выбор с чекбоксами
+              <div>
+                <label className="text-xs font-medium mb-1 block">
+                  Карточки туров *
+                  {createCardIds.length > 0 && (
+                    <span className="ml-2 text-primary font-normal">выбрано: {createCardIds.length}</span>
+                  )}
+                </label>
+                <Input
+                  placeholder="Поиск по названию..."
+                  value={cardSearch}
+                  onChange={(e) => setCardSearch(e.target.value)}
+                  className="mb-2 h-8 text-sm"
+                />
+                <div className="max-h-48 overflow-y-auto rounded-md border border-input bg-background divide-y divide-border">
+                  {filteredCards.length === 0 ? (
+                    <p className="px-3 py-2 text-sm text-muted-foreground">Ничего не найдено</p>
+                  ) : (
+                    filteredCards.map((c) => (
+                      <label key={c.id} className="flex items-center gap-2.5 px-3 py-2 cursor-pointer hover:bg-muted/40 transition-colors">
+                        <input
+                          type="checkbox"
+                          checked={createCardIds.includes(c.id)}
+                          onChange={() => toggleCardId(c.id)}
+                          className="h-4 w-4 accent-primary shrink-0"
+                        />
+                        <span className="text-sm leading-snug">{c.title}</span>
+                      </label>
+                    ))
+                  )}
+                </div>
+                {createCardIds.length > 1 && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Будет создано {createCardIds.length} отдельных записи FAQ — по одной для каждой карточки.
+                  </p>
+                )}
+              </div>
+            )}
 
             {templates.length > 0 && (
               <div>
@@ -316,8 +396,8 @@ function CardFaqsSection() {
               </div>
             </div>
             <div className="flex gap-2">
-              <Button type="submit" size="sm" disabled={createMutation.isPending || updateMutation.isPending}>
-                {editing ? 'Сохранить' : 'Создать'}
+              <Button type="submit" size="sm" disabled={isSaving}>
+                {isSaving ? 'Сохранение...' : editing ? 'Сохранить' : `Создать${createCardIds.length > 1 ? ` (${createCardIds.length})` : ''}`}
               </Button>
               <Button type="button" size="sm" variant="outline"
                 onClick={() => { setCreating(false); setEditing(null); }}>Отмена</Button>
