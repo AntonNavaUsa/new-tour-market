@@ -99,6 +99,16 @@ export const cardsApi = {
     await api.delete(`/api/cards/photos/${photoId}`);
   },
 
+  // Загрузить фото дня программы
+  uploadDayPhoto: async (cardId: string, file: File): Promise<{ url: string }> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await api.post<{ url: string }>(`/api/cards/${cardId}/photos/day`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
+
   // Загрузить фото проживания
   uploadAccommodationPhotos: async (cardId: string, files: File[]): Promise<any> => {
     const formData = new FormData();

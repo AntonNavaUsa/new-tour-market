@@ -540,6 +540,25 @@ export class CardsService {
     };
   }
 
+  async uploadDayPhoto(
+    cardId: string,
+    userId: string,
+    userRole: UserRole,
+    file: Express.Multer.File,
+  ): Promise<{ url: string }> {
+    const card = await this.prisma.card.findUnique({ where: { id: cardId } });
+    if (!card) throw new NotFoundException('Card not found');
+    if (userRole !== UserRole.ADMIN && card.userId !== userId) {
+      throw new ForbiddenException('You do not have permission to update this card');
+    }
+    const { url } = await this.filesService.uploadImageWithThumb(file, 'tour-days', {
+      maxWidth: 1200,
+      maxHeight: 900,
+      quality: 85,
+    });
+    return { url };
+  }
+
   async uploadSlideshowPhotos(
     cardId: string,
     userId: string,

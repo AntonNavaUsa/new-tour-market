@@ -161,7 +161,7 @@ export interface Card {
   slideshowPhotos?: SlideshowPhoto[];
   expressions?: Expression[];
   schedules?: Schedule[];
-  tourProgram?: Array<{ title: string; description: string }> | null;
+  tourProgram?: Array<{ title: string; description: string; photoUrl?: string }> | null;
   bookingSteps?: Array<{ title: string; description: string }> | null;
   postPaymentInfo?: string | null;
   partner?: Partner | null;
@@ -441,7 +441,7 @@ export interface CreateCardRequest {
   noCover?: boolean;
   heroType?: string;
   heroPerks?: HeroPerk[];
-  tourProgram?: Array<{ title: string; description: string }>;
+  tourProgram?: Array<{ title: string; description: string; photoUrl?: string }>;
   bookingSteps?: Array<{ title: string; description: string }>;
   postPaymentInfo?: string;
   accommodationIds?: string[];

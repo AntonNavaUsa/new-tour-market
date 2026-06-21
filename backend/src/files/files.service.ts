@@ -14,6 +14,7 @@ export class FilesService {
     expressions: 'expressions',
     accommodation: 'accommodation',
     accommodations: 'accommodations',
+    'tour-days': 'tour-days',
   };
 
   constructor(private configService: ConfigService) {

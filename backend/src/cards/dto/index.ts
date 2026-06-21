@@ -150,7 +150,7 @@ export class CreateCardDto {
   @ApiProperty({ required: false, type: 'array', description: 'Tour program by days [{title, description}]' })
   @IsOptional()
   @IsArray()
-  tourProgram?: Array<{ title: string; description: string }>;
+  tourProgram?: Array<{ title: string; description: string; photoUrl?: string }>;
 
   @ApiProperty({ required: false, type: 'array', description: 'After-booking steps [{title, description}]' })
   @IsOptional()

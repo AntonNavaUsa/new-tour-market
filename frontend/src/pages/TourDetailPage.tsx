@@ -911,29 +911,51 @@ export function TourDetailPage() {
           {card.tourProgram && Array.isArray(card.tourProgram) && card.tourProgram.length > 0 && (
             <div>
               <h2 className="text-xl font-semibold mb-4">Программа тура</h2>
-              <div className="space-y-0 rounded-xl border border-border overflow-hidden">
-                {(card.tourProgram as Array<{ title: string; description: string }>).map((day, index) => (
-                  <div
-                    key={index}
-                    className="flex gap-0 border-b border-border last:border-b-0"
-                  >
-                    {/* Day badge */}
-                    <div className="flex flex-col items-center shrink-0 w-14 bg-primary/5 border-r border-border px-2 py-4">
-                      <span className="text-xs font-semibold text-primary uppercase tracking-wide leading-none">День</span>
-                      <span className="text-2xl font-bold text-primary mt-1 leading-none">{index + 1}</span>
-                    </div>
-                    {/* Content */}
-                    <div className="flex-1 min-w-0 px-4 py-4">
-                      <p className="font-semibold text-foreground text-sm md:text-base leading-snug mb-1">
-                        {day.title}
-                      </p>
-                      {day.description && (
-                        <p className="text-sm text-foreground leading-relaxed">{day.description}</p>
-                      )}
-                    </div>
+              {(() => {
+                const program = card.tourProgram as Array<{ title: string; description: string; photoUrl?: string }>;
+                const hasPhotos = program.some((d) => d.photoUrl);
+                return (
+                  <div className="space-y-0 rounded-xl border border-border overflow-hidden">
+                    {program.map((day, index) => (
+                      <div
+                        key={index}
+                        className="flex gap-0 border-b border-border last:border-b-0"
+                      >
+                        {/* Day badge */}
+                        <div className="flex flex-col items-center shrink-0 w-14 bg-primary/5 border-r border-border px-2 py-4">
+                          <span className="text-xs font-semibold text-primary uppercase tracking-wide leading-none">День</span>
+                          <span className="text-2xl font-bold text-primary mt-1 leading-none">{index + 1}</span>
+                        </div>
+                        {/* Content */}
+                        <div className="flex-1 min-w-0 px-4 py-4">
+                          <p className="font-semibold text-foreground text-sm md:text-base leading-snug mb-1">
+                            {day.title}
+                          </p>
+                          {day.description && (
+                            <div
+                              className="text-sm text-foreground leading-relaxed prose prose-sm max-w-none"
+                              dangerouslySetInnerHTML={{ __html: day.description }}
+                            />
+                          )}
+                        </div>
+                        {/* Photo column — only rendered if at least one day has a photo */}
+                        {hasPhotos && (
+                          <div className="shrink-0 w-28 md:w-40 border-l border-border overflow-hidden flex items-center justify-center bg-muted/30">
+                            {day.photoUrl ? (
+                              <img
+                                src={day.photoUrl}
+                                alt={`День ${index + 1}`}
+                                className="w-full h-full object-cover"
+                                loading="lazy"
+                              />
+                            ) : null}
+                          </div>
+                        )}
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                );
+              })()}
             </div>
           )}
 

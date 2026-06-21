@@ -32,6 +32,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { RichTextEditor } from '../components/RichTextEditor';
+import { RichEditor } from '../components/RichEditor';
 import { AccommodationPicker } from '../components/AccommodationPicker';
 import { GuidePicker } from '../components/GuidePicker';
 import { CardFaqSection } from '../components/CardFaqSection';
@@ -77,18 +78,40 @@ function toOptionalNumber(value?: string) {
 interface TourDay {
   title: string;
   description: string;
+  photoUrl?: string;
 }
 
 function TourProgramSection({
   days,
   onChange,
+  cardId,
 }: {
   days: TourDay[];
   onChange: (days: TourDay[]) => void;
+  cardId?: string;
 }) {
+  const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
+
   const updateDay = (index: number, field: keyof TourDay, value: string) => {
     onChange(days.map((d, i) => (i === index ? { ...d, [field]: value } : d)));
   };
+
+  const removePhoto = (index: number) => {
+    onChange(days.map((d, i) => (i === index ? { ...d, photoUrl: undefined } : d)));
+  };
+
+  const uploadPhotoMutation = useMutation({
+    mutationFn: async ({ file, index }: { file: File; index: number }) => {
+      setUploadingIdx(index);
+      const result = await cardsApi.uploadDayPhoto(cardId!, file);
+      return { url: result.url, index };
+    },
+    onSuccess: ({ url, index }) => {
+      updateDay(index, 'photoUrl', url);
+      setUploadingIdx(null);
+    },
+    onError: () => setUploadingIdx(null),
+  });
 
   const removeDay = (index: number) => {
     onChange(days.filter((_, i) => i !== index));
@@ -137,13 +160,71 @@ function TourProgramSection({
             </div>
             <div className="space-y-1">
               <Label className="text-xs">Описание</Label>
-              <textarea
-                rows={3}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-y"
+              <RichTextEditor
                 value={day.description}
-                onChange={(e) => updateDay(index, 'description', e.target.value)}
-                placeholder="Что запланировано на этот день..."
+                onChange={(val) => updateDay(index, 'description', val)}
               />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Фото дня</Label>
+              {day.photoUrl ? (
+                <div className="flex items-start gap-3">
+                  <img
+                    src={day.photoUrl}
+                    alt={`День ${index + 1}`}
+                    className="h-24 w-36 object-cover rounded-md border border-input flex-shrink-0"
+                  />
+                  <div className="flex flex-col gap-2">
+                    <label className="cursor-pointer">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="sr-only"
+                        disabled={!cardId || uploadingIdx === index}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0] ?? null;
+                          if (file && cardId) uploadPhotoMutation.mutate({ file, index });
+                          e.target.value = '';
+                        }}
+                      />
+                      <Button type="button" variant="outline" size="sm" asChild>
+                        <span>{uploadingIdx === index ? 'Загрузка…' : 'Заменить'}</span>
+                      </Button>
+                    </label>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => removePhoto(index)}
+                    >
+                      <Trash2 className="h-3.5 w-3.5 mr-1" />
+                      Удалить фото
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <label className={!cardId ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="sr-only"
+                    disabled={!cardId || uploadingIdx === index}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] ?? null;
+                      if (file && cardId) uploadPhotoMutation.mutate({ file, index });
+                      e.target.value = '';
+                    }}
+                  />
+                  <Button type="button" variant="outline" size="sm" asChild>
+                    <span>
+                      <ImageIcon className="h-3.5 w-3.5 mr-1.5" />
+                      {uploadingIdx === index ? 'Загрузка…' : 'Добавить фото'}
+                      {!cardId && ' (сохраните карточку сначала)'}
+                    </span>
+                  </Button>
+                </label>
+              )}
             </div>
           </div>
         ))}
@@ -2357,7 +2438,7 @@ export function AdminCardFormPage() {
   const [includedItems, setIncludedItems] = useState<string[]>([]);
   const [notIncludedItems, setNotIncludedItems] = useState<string[]>([]);
   const [forWhom, setForWhom] = useState<string[]>([]);
-  const [tourProgram, setTourProgram] = useState<Array<{ title: string; description: string }>>([]);
+  const [tourProgram, setTourProgram] = useState<TourDay[]>([]);
   const [bookingSteps, setBookingSteps] = useState<Array<{ title: string; description: string }>>([]);
   const [accommodationIds, setAccommodationIds] = useState<string[]>([]);
   const [guideIds, setGuideIds] = useState<string[]>([]);
@@ -2442,7 +2523,7 @@ export function AdminCardFormPage() {
     setIncludedItems((card.includedItems as string[] | null) || []);
     setNotIncludedItems((card.notIncludedItems as string[] | null) || []);
     setForWhom((card.forWhom as string[] | null) || []);
-    const loadedProgram = card.tourProgram as Array<{ title: string; description: string }> | null;
+    const loadedProgram = card.tourProgram as TourDay[] | null;
     setTourProgram(loadedProgram && loadedProgram.length > 0 ? loadedProgram : []);
     const loadedSteps = card.bookingSteps as Array<{ title: string; description: string }> | null;
     setBookingSteps(loadedSteps && loadedSteps.length > 0 ? loadedSteps : []);
@@ -2498,7 +2579,7 @@ export function AdminCardFormPage() {
       noCover: heroType === 'no_cover',
       heroType,
       heroPerks: heroPerks,
-      tourProgram: tourProgram.filter((d) => d.title.trim() || d.description.trim()),
+      tourProgram: tourProgram.filter((d) => d.title.trim() || d.description.trim() || d.photoUrl),
       bookingSteps: bookingSteps.filter((s) => s.title.trim() || s.description.trim()),
       accommodationIds,
       guideIds,
@@ -2709,7 +2790,7 @@ export function AdminCardFormPage() {
               <Card>
                 <CardHeader><CardTitle>Полное описание *</CardTitle></CardHeader>
                 <CardContent>
-                  <RichTextEditor value={description} onChange={setDescription} />
+                  <RichEditor value={description} onChange={setDescription} />
                   {description.replace(/<[^>]+>/g, '').trim().length < 20 && (
                     <p className="mt-1 text-sm text-destructive">
                       Описание должно содержать не менее 20 символов
@@ -2761,7 +2842,7 @@ export function AdminCardFormPage() {
                 </CardContent>
               </Card>
 
-              <TourProgramSection days={tourProgram} onChange={setTourProgram} />
+              <TourProgramSection days={tourProgram} onChange={setTourProgram} cardId={id} />
 
               <BookingStepsSection steps={bookingSteps} onChange={setBookingSteps} />
 

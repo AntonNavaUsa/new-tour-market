@@ -170,6 +170,23 @@ export class CardsController {
     return this.cardsService.uploadMainPhoto(cardId, userId, userRole, file);
   }
 
+  @Post(':id/photos/day')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.PARTNER)
+  @ApiBearerAuth()
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Upload a photo for a tour day' })
+  async uploadDayPhoto(
+    @Param('id') cardId: string,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('role') userRole: UserRole,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    if (!file) throw new BadRequestException('File is required');
+    return this.cardsService.uploadDayPhoto(cardId, userId, userRole, file);
+  }
+
   @Post(':id/photos/slideshow')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.PARTNER)
