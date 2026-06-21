@@ -196,6 +196,9 @@ model Card {
   meetingPoint    String?     @map("meeting_point")  // Meeting point description
   minParticipants Int?        @map("min_participants")
   maxParticipants Int?        @map("max_participants")
+
+  advanceBookingValue Int     @default(0) @map("advance_booking_value") // Min advance booking (value)
+  advanceBookingUnit  String  @default("hours") @map("advance_booking_unit") // 'hours' | 'days'
   
   createdAt       DateTime    @default(now()) @map("created_at")
   updatedAt       DateTime    @updatedAt @map("updated_at")

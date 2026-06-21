@@ -69,6 +69,8 @@ export class CardsService {
         meetingPoint: dto.meetingPoint,
         minParticipants: dto.minParticipants,
         maxParticipants: dto.maxParticipants,
+        advanceBookingValue: dto.advanceBookingValue ?? 0,
+        advanceBookingUnit: dto.advanceBookingUnit ?? 'hours',
         position: dto.position || 0,
         includedItems: dto.includedItems || [],
         notIncludedItems: dto.notIncludedItems || [],

@@ -151,6 +151,8 @@ export interface Card {
   meetingPoint: string | null;
   minParticipants: number | null;
   maxParticipants: number | null;
+  advanceBookingValue: number;
+  advanceBookingUnit: string;
   position: number;
   createdAt: string;
   updatedAt: string;
@@ -434,6 +436,8 @@ export interface CreateCardRequest {
   meetingPoint?: string;
   minParticipants?: number;
   maxParticipants?: number;
+  advanceBookingValue?: number;
+  advanceBookingUnit?: string;
   position?: number;
   includedItems?: string[];
   notIncludedItems?: string[];

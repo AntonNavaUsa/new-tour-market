@@ -46,7 +46,21 @@ function isTodayAvailableWithBuffer(times: string[], bufferHours = 3): boolean {
   return Date.now() + bufferHours * 60 * 60 * 1000 <= lastStart.getTime();
 }
 
-function getAvailableDates(schedule?: Schedule, scanDays = 90): string[] {
+function isDateAvailableWithAdvanceHours(date: Date, times: string[], advanceHours: number): boolean {
+  if (times.length === 0) return false;
+  const latestTime = times.reduce((latest, t) => (t > latest ? t : latest), times[0]);
+  const [h, m] = latestTime.split(':').map(Number);
+  const slotDateTime = new Date(date);
+  slotDateTime.setHours(h, m, 0, 0);
+  return Date.now() + advanceHours * 60 * 60 * 1000 <= slotDateTime.getTime();
+}
+
+function getAvailableDates(
+  schedule?: Schedule,
+  scanDays = 90,
+  advanceBookingValue = 0,
+  advanceBookingUnit: string = 'hours',
+): string[] {
   if (!schedule) {
     return [];
   }
@@ -78,8 +92,17 @@ function getAvailableDates(schedule?: Schedule, scanDays = 90): string[] {
     const isActive = specialDate?.times?.length ? true : baseSchedule?.active;
 
     if (isActive && times.length > 0) {
-      if (offset === 0 && !isTodayAvailableWithBuffer(times)) {
-        continue;
+      if (advanceBookingUnit === 'days') {
+        // Skip dates within the advance booking window
+        if (offset < advanceBookingValue) {
+          continue;
+        }
+      } else {
+        // Hours-based: check if the latest slot is far enough in the future
+        const bufferHours = advanceBookingValue > 0 ? advanceBookingValue : 3;
+        if (!isDateAvailableWithAdvanceHours(date, times, bufferHours)) {
+          continue;
+        }
       }
       dates.push(isoDate);
     }
@@ -263,7 +286,12 @@ export function TourDetailPage() {
 
   // Determine which calendar months the local schedule covers (up to ~90 days)
   const scheduleForLoad = card?.schedules?.[0];
-  const allLocalDates = getAvailableDates(scheduleForLoad);
+  const allLocalDates = getAvailableDates(
+    scheduleForLoad,
+    90,
+    card?.advanceBookingValue ?? 0,
+    card?.advanceBookingUnit ?? 'hours',
+  );
   const monthsToLoad = (() => {
     const monthSet = new Set<string>();
     for (const d of allLocalDates) {
@@ -358,7 +386,12 @@ export function TourDetailPage() {
   const lightboxPrev = () => setLightboxIndex((i) => (i - 1 + allImages.length) % allImages.length);
 
   const schedule = card.schedules?.[0];
-  const availableDates = getAvailableDates(schedule).filter((d) => !blockedDateSet.has(d));
+  const availableDates = getAvailableDates(
+    schedule,
+    90,
+    card.advanceBookingValue ?? 0,
+    card.advanceBookingUnit ?? 'hours',
+  ).filter((d) => !blockedDateSet.has(d));
   const quickDateOptions = availableDates.slice(0, 3);
   const hasEarlyBookingOnly = availableDates.length > 0 && isEarlyBooking(availableDates[0]);
   const minPrice = card.tickets && card.tickets.length > 0

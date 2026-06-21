@@ -60,6 +60,8 @@ const formSchema = z.object({
   postPaymentInfo: z.string().optional(),
   minParticipants: z.string().optional(),
   maxParticipants: z.string().optional(),
+  advanceBookingValue: z.string().optional(),
+  advanceBookingUnit: z.enum(['hours', 'days']).default('hours'),
   position: z.string().optional(),
   status: z.enum(['DRAFT', 'PUBLISHED', 'ARCHIVED']).default('DRAFT'),
 });
@@ -2488,6 +2490,8 @@ export function AdminCardFormPage() {
       postPaymentInfo: '',
       minParticipants: '',
       maxParticipants: '',
+      advanceBookingValue: '0',
+      advanceBookingUnit: 'hours',
       position: '0',
       status: 'DRAFT',
     },
@@ -2514,6 +2518,8 @@ export function AdminCardFormPage() {
       postPaymentInfo: (card as any).postPaymentInfo || '',
       minParticipants: card.minParticipants?.toString() || '',
       maxParticipants: card.maxParticipants?.toString() || '',
+      advanceBookingValue: card.advanceBookingValue?.toString() ?? '0',
+      advanceBookingUnit: (card.advanceBookingUnit as 'hours' | 'days') || 'hours',
       position: card.position.toString(),
       status: card.status,
     });
@@ -2572,6 +2578,8 @@ export function AdminCardFormPage() {
       postPaymentInfo: (values as any).postPaymentInfo || undefined,
       minParticipants: toOptionalNumber(values.minParticipants),
       maxParticipants: toOptionalNumber(values.maxParticipants),
+      advanceBookingValue: toOptionalNumber(values.advanceBookingValue) ?? 0,
+      advanceBookingUnit: values.advanceBookingUnit || 'hours',
       position: toOptionalNumber(values.position) ?? 0,
       includedItems,
       notIncludedItems,
@@ -2736,6 +2744,27 @@ export function AdminCardFormPage() {
                   <div className="space-y-2">
                     <Label htmlFor="maxParticipants">Макс. участников</Label>
                     <Input id="maxParticipants" type="number" min="1" {...register('maxParticipants')} />
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <Label>Минимум до начала тура</Label>
+                    <p className="text-xs text-muted-foreground">За сколько нужно забронировать тур до его начала. Влияет на доступные для выбора даты.</p>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="advanceBookingValue"
+                        type="number"
+                        min="0"
+                        placeholder="0"
+                        className="w-28"
+                        {...register('advanceBookingValue')}
+                      />
+                      <select
+                        className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                        {...register('advanceBookingUnit')}
+                      >
+                        <option value="hours">часов</option>
+                        <option value="days">дней</option>
+                      </select>
+                    </div>
                   </div>
                 </CardContent>
               </Card>

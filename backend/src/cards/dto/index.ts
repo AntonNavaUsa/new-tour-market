@@ -108,6 +108,17 @@ export class CreateCardDto {
   @Min(1)
   maxParticipants?: number;
 
+  @ApiProperty({ required: false, description: 'Minimum advance booking value (in hours or days)' })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  advanceBookingValue?: number;
+
+  @ApiProperty({ required: false, enum: ['hours', 'days'], description: 'Unit for advance booking: hours or days' })
+  @IsOptional()
+  @IsString()
+  advanceBookingUnit?: string;
+
   @ApiProperty({ required: false })
   @IsOptional()
   @IsInt()
