@@ -278,6 +278,10 @@ function CardFaqsSection() {
     reorderMutation.mutate({ cardId: faq.cardId, ids });
   };
 
+  const [openCards, setOpenCards] = useState<Set<string>>(new Set());
+  const toggleCard = (id: string) =>
+    setOpenCards((prev) => { const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next; });
+
   const isFormOpen = creating || !!editing;
   const isSaving = createMutation.isPending || updateMutation.isPending;
 
@@ -479,11 +483,24 @@ function CardFaqsSection() {
             Нет вопросов по выбранному фильтру.
           </div>
         ) : (
-          <div className="space-y-6">
-            {Object.entries(grouped).map(([cardId, { cardTitle, items }]) => (
-              <div key={cardId}>
-                <h3 className="text-sm font-semibold mb-2 text-muted-foreground">{cardTitle}</h3>
-                <div className="divide-y divide-border rounded-xl border overflow-hidden">
+          <div className="space-y-2">
+            {Object.entries(grouped).map(([cardId, { cardTitle, items }]) => {
+              const isOpen = openCards.has(cardId);
+              return (
+              <div key={cardId} className="rounded-xl border overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => toggleCard(cardId)}
+                  className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-muted/40 transition-colors"
+                >
+                  <span className="text-sm font-semibold">{cardTitle}</span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-xs text-muted-foreground">{items.length} {items.length === 1 ? 'вопрос' : items.length < 5 ? 'вопроса' : 'вопросов'}</span>
+                    {isOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                  </div>
+                </button>
+                {isOpen && (
+                <div className="divide-y divide-border border-t">
                   {items.map((faq, idx) => (
                     <div key={faq.id} className="flex items-start gap-3 px-4 py-3">
                       <div className="flex flex-col gap-0.5 mt-0.5 shrink-0">
@@ -511,8 +528,10 @@ function CardFaqsSection() {
                     </div>
                   ))}
                 </div>
+                )}
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </CardContent>
