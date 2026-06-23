@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -561,8 +561,49 @@ function HeroPerksEditor({
   perks: HeroPerk[];
   onChange: (perks: HeroPerk[]) => void;
 }) {
+  const [showSuggest, setShowSuggest] = useState(false);
+  const [suggestSearch, setSuggestSearch] = useState('');
+
+  const { data: allCards } = useQuery({
+    queryKey: ['cards-all-perks'],
+    queryFn: () => cardsApi.getCards({ take: 200, includeNonPublished: true }),
+    staleTime: 60_000,
+  });
+
+  const existingPerks = useMemo(() => {
+    if (!allCards?.data) return [];
+    const seen = new Set<string>();
+    const result: HeroPerk[] = [];
+    for (const card of allCards.data) {
+      if (!card.heroPerks) continue;
+      for (const p of (card.heroPerks as HeroPerk[])) {
+        const key = p.title.trim().toLowerCase();
+        if (!key || seen.has(key)) continue;
+        seen.add(key);
+        result.push(p);
+      }
+    }
+    return result;
+  }, [allCards]);
+
+  const filteredSuggestions = useMemo(() => {
+    const addedKeys = new Set(perks.map((p) => p.title.trim().toLowerCase()));
+    const q = suggestSearch.trim().toLowerCase();
+    return existingPerks.filter((p) => {
+      if (addedKeys.has(p.title.trim().toLowerCase())) return false;
+      if (q && !p.title.toLowerCase().includes(q)) return false;
+      return true;
+    });
+  }, [existingPerks, suggestSearch, perks]);
+
   const addPerk = () => {
     onChange([...perks, { icon: 'Star', title: '' }]);
+  };
+
+  const addFromSuggestion = (perk: HeroPerk) => {
+    onChange([...perks, { ...perk }]);
+    setShowSuggest(false);
+    setSuggestSearch('');
   };
 
   const updatePerk = (index: number, field: keyof HeroPerk, value: string) => {
@@ -631,10 +672,58 @@ function HeroPerksEditor({
           </button>
         </div>
       ))}
-      <Button type="button" variant="outline" size="sm" onClick={addPerk}>
-        <Plus className="mr-1.5 h-3.5 w-3.5" />
-        Добавить преимущество
-      </Button>
+      <div className="flex items-center gap-2 flex-wrap">
+        <Button type="button" variant="outline" size="sm" onClick={addPerk}>
+          <Plus className="mr-1.5 h-3.5 w-3.5" />
+          Добавить преимущество
+        </Button>
+        {existingPerks.length > 0 && (
+          <div className="relative">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => { setShowSuggest((o) => !o); setSuggestSearch(''); }}
+            >
+              <ChevronDown className="mr-1.5 h-3.5 w-3.5" />
+              Выбрать из существующих
+            </Button>
+            {showSuggest && (
+              <div className="absolute left-0 top-8 z-50 w-72 rounded-lg border border-input bg-background shadow-lg p-3 space-y-2">
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                  <input
+                    autoFocus
+                    value={suggestSearch}
+                    onChange={(e) => setSuggestSearch(e.target.value)}
+                    placeholder="Поиск..."
+                    className="h-8 w-full rounded-md border border-input bg-background pl-8 pr-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  />
+                </div>
+                <div className="max-h-52 overflow-y-auto space-y-1">
+                  {filteredSuggestions.length === 0 && (
+                    <p className="text-xs text-muted-foreground py-2 text-center">Ничего не найдено</p>
+                  )}
+                  {filteredSuggestions.map((p, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => addFromSuggestion(p)}
+                      className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm hover:bg-accent transition"
+                    >
+                      <LucideIconButton name={p.icon} size={4} />
+                      <div className="flex-1 min-w-0">
+                        <div className="truncate font-medium">{p.title}</div>
+                        {p.detail && <div className="truncate text-xs text-muted-foreground">{p.detail}</div>}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

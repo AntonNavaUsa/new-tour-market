@@ -45,15 +45,15 @@ const FEATURES = [
 
 const CATEGORIES = [
   {
-    title: 'Однодневные походы',
-    subtitle: 'Без ночёвки, от 1 500 ₽',
+    title: 'Однодневные трекинги',
+    subtitle: 'Горные прогулки в с гидом',
     image: '/img/photo_3_2026-05-16_11-46-11.jpg',
     badge: 'Популярно',
     slug: 'hiking',
   },
   {
-    title: 'Многодневные треккинги',
-    subtitle: 'С ночёвками в горах, от 6 000 ₽',
+    title: 'Трекинги с ночевками',
+    subtitle: 'Походы в сопровождении с гидом',
     image: '/img/photo_1_2026-05-16_11-46-11.jpg',
     badge: 'Топ сезон',
     slug: 'pohod',
