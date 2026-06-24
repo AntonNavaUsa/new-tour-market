@@ -44,6 +44,7 @@ export class GuidePagesService {
     content: string;
     excerpt?: string;
     headPhotoUrl?: string;
+    coverFixed?: boolean;
     isPublished?: boolean;
     sortOrder?: number;
   }) {
@@ -62,6 +63,7 @@ export class GuidePagesService {
         content: data.content ?? '',
         excerpt: data.excerpt?.trim() || null,
         headPhotoUrl: data.headPhotoUrl || null,
+        coverFixed: data.coverFixed ?? false,
         isPublished: data.isPublished ?? false,
         sortOrder: data.sortOrder ?? 0,
       },
@@ -76,6 +78,7 @@ export class GuidePagesService {
       content?: string;
       excerpt?: string;
       headPhotoUrl?: string;
+      coverFixed?: boolean;
       isPublished?: boolean;
       sortOrder?: number;
     },
@@ -97,6 +100,7 @@ export class GuidePagesService {
         ...(data.content !== undefined && { content: data.content }),
         ...(data.excerpt !== undefined && { excerpt: data.excerpt?.trim() || null }),
         ...(data.headPhotoUrl !== undefined && { headPhotoUrl: data.headPhotoUrl || null }),
+        ...(data.coverFixed !== undefined && { coverFixed: data.coverFixed }),
         ...(data.isPublished !== undefined && { isPublished: data.isPublished }),
         ...(data.sortOrder !== undefined && { sortOrder: data.sortOrder }),
       },

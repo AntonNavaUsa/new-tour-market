@@ -73,6 +73,7 @@ export class GuidePagesAdminController {
       content: string;
       excerpt?: string;
       headPhotoUrl?: string;
+      coverFixed?: boolean;
       isPublished?: boolean;
       sortOrder?: number;
     },
@@ -91,6 +92,7 @@ export class GuidePagesAdminController {
       content?: string;
       excerpt?: string;
       headPhotoUrl?: string;
+      coverFixed?: boolean;
       isPublished?: boolean;
       sortOrder?: number;
     },

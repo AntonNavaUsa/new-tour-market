@@ -7,6 +7,7 @@ import type { GuidePage } from '../lib/api/guide-pages';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { RichEditor } from '../components/RichEditor';
+import { PhotoEditModal } from '../components/PhotoEditModal';
 
 const EMPTY: Partial<GuidePage> = {
   title: '',
@@ -14,6 +15,7 @@ const EMPTY: Partial<GuidePage> = {
   content: '',
   excerpt: '',
   headPhotoUrl: '',
+  coverFixed: false,
   isPublished: false,
   sortOrder: 0,
 };
@@ -44,6 +46,7 @@ export function AdminGuidePageFormPage() {
   const [slugManual, setSlugManual] = useState(false);
   const [wysiwygEnabled, setWysiwygEnabled] = useState(true);
   const [uploadingCover, setUploadingCover] = useState(false);
+  const [editingCoverFile, setEditingCoverFile] = useState<File | null>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
 
   const { data: existing, isLoading } = useQuery({
@@ -92,19 +95,24 @@ export function AdminGuidePageFormPage() {
     saveMutation.mutate(form);
   }
 
-  async function handleCoverUpload(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleCoverSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    setEditingCoverFile(file);
+    if (coverInputRef.current) coverInputRef.current.value = '';
+  }
+
+  async function handleCoverEditConfirm(editedFile: File) {
+    setEditingCoverFile(null);
     setUploadingCover(true);
     setError('');
     try {
-      const { url } = await guidePagesApi.uploadCover(file);
+      const { url } = await guidePagesApi.uploadCover(editedFile);
       set('headPhotoUrl', url);
     } catch (err: any) {
       setError(err?.response?.data?.message ?? 'Ошибка загрузки фото');
     } finally {
       setUploadingCover(false);
-      if (coverInputRef.current) coverInputRef.current.value = '';
     }
   }
 
@@ -175,7 +183,7 @@ export function AdminGuidePageFormPage() {
               type="file"
               accept="image/*"
               className="hidden"
-              onChange={handleCoverUpload}
+              onChange={handleCoverSelect}
             />
             <Button
               type="button"
@@ -190,11 +198,25 @@ export function AdminGuidePageFormPage() {
             </Button>
           </div>
           {form.headPhotoUrl && (
-            <img
-              src={form.headPhotoUrl}
-              alt="Обложка"
-              className="mt-2 h-24 w-auto rounded-md border object-cover"
-            />
+            <div className="mt-2 space-y-2">
+              <img
+                src={form.headPhotoUrl}
+                alt="Обложка"
+                className="h-24 w-auto rounded-md border object-cover"
+              />
+              <label className="flex items-center gap-2 cursor-pointer select-none w-fit">
+                <input
+                  type="checkbox"
+                  checked={form.coverFixed ?? false}
+                  onChange={(e) => set('coverFixed', e.target.checked)}
+                  className="rounded"
+                />
+                <span className="text-sm">Фиксированная высота обложки</span>
+                <span className="text-xs text-muted-foreground">
+                  ({form.coverFixed ? 'фиксировано ~384px' : 'по пропорциям фото'})
+                </span>
+              </label>
+            </div>
           )}
         </div>
 
@@ -266,6 +288,16 @@ export function AdminGuidePageFormPage() {
           </Button>
         </div>
       </form>
+
+      {editingCoverFile && (
+        <PhotoEditModal
+          file={editingCoverFile}
+          aspectRatio={16 / 9}
+          title="Редактирование обложки"
+          onConfirm={handleCoverEditConfirm}
+          onCancel={() => setEditingCoverFile(null)}
+        />
+      )}
     </div>
   );
 }

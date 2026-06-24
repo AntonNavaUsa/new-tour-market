@@ -564,6 +564,7 @@ model GuidePage {
   content      String   @db.Text
   excerpt      String?  @db.Text
   headPhotoUrl String?  @map("head_photo_url")
+  coverFixed   Boolean  @default(false) @map("cover_fixed")
   isPublished  Boolean  @default(false) @map("is_published")
   sortOrder    Int      @default(0) @map("sort_order")
 

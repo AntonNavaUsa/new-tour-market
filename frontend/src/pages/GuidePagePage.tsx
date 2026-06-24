@@ -51,8 +51,12 @@ export function GuidePagePage() {
 
       {/* Hero image */}
       {page.headPhotoUrl && (
-        <div className="rounded-2xl overflow-hidden mb-8 h-72 md:h-96">
-          <img src={page.headPhotoUrl} alt={page.title} className="w-full h-full object-cover" />
+        <div className={`rounded-2xl overflow-hidden mb-8 ${page.coverFixed ? 'h-72 md:h-96' : ''}`}>
+          <img
+            src={page.headPhotoUrl}
+            alt={page.title}
+            className={`w-full ${page.coverFixed ? 'h-full object-cover' : 'object-contain'}`}
+          />
         </div>
       )}
 

@@ -7,6 +7,7 @@ export interface GuidePage {
   content: string;
   excerpt: string | null;
   headPhotoUrl: string | null;
+  coverFixed: boolean;
   isPublished: boolean;
   sortOrder: number;
   createdAt: string;
