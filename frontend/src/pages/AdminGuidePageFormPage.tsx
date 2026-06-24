@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Save, Upload } from 'lucide-react';
 import { guidePagesApi } from '../lib/api';
 import type { GuidePage } from '../lib/api/guide-pages';
 import { Button } from '../components/ui/button';
@@ -43,6 +43,8 @@ export function AdminGuidePageFormPage() {
   const [error, setError] = useState('');
   const [slugManual, setSlugManual] = useState(false);
   const [wysiwygEnabled, setWysiwygEnabled] = useState(true);
+  const [uploadingCover, setUploadingCover] = useState(false);
+  const coverInputRef = useRef<HTMLInputElement>(null);
 
   const { data: existing, isLoading } = useQuery({
     queryKey: ['admin-guide-page', id],
@@ -88,6 +90,22 @@ export function AdminGuidePageFormPage() {
     if (!form.title?.trim()) return setError('Заголовок обязателен');
     if (!form.slug?.trim()) return setError('Slug обязателен');
     saveMutation.mutate(form);
+  }
+
+  async function handleCoverUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingCover(true);
+    setError('');
+    try {
+      const { url } = await guidePagesApi.uploadCover(file);
+      set('headPhotoUrl', url);
+    } catch (err: any) {
+      setError(err?.response?.data?.message ?? 'Ошибка загрузки фото');
+    } finally {
+      setUploadingCover(false);
+      if (coverInputRef.current) coverInputRef.current.value = '';
+    }
   }
 
   if (!isNew && isLoading) {
@@ -146,11 +164,38 @@ export function AdminGuidePageFormPage() {
         {/* Head photo URL */}
         <div>
           <label className="block text-sm font-medium mb-1">URL обложки</label>
-          <Input
-            value={form.headPhotoUrl ?? ''}
-            onChange={(e) => set('headPhotoUrl', e.target.value)}
-            placeholder="/img/photo-xxx.jpg"
-          />
+          <div className="flex gap-2">
+            <Input
+              value={form.headPhotoUrl ?? ''}
+              onChange={(e) => set('headPhotoUrl', e.target.value)}
+              placeholder="/img/photo-xxx.jpg"
+            />
+            <input
+              ref={coverInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleCoverUpload}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={uploadingCover}
+              onClick={() => coverInputRef.current?.click()}
+              className="shrink-0"
+            >
+              <Upload className="h-4 w-4 mr-1.5" />
+              {uploadingCover ? 'Загрузка...' : 'Загрузить'}
+            </Button>
+          </div>
+          {form.headPhotoUrl && (
+            <img
+              src={form.headPhotoUrl}
+              alt="Обложка"
+              className="mt-2 h-24 w-auto rounded-md border object-cover"
+            />
+          )}
         </div>
 
         {/* Content */}

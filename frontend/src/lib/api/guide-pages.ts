@@ -38,4 +38,14 @@ export const guidePagesApi = {
 
   remove: (id: string): Promise<{ success: boolean }> =>
     api.delete(`/api/admin/guide-pages/${id}`).then((r) => r.data),
+
+  uploadCover: async (file: File): Promise<{ url: string }> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api
+      .post<{ url: string }>('/api/admin/guide-pages/upload-cover', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      .then((r) => r.data);
+  },
 };

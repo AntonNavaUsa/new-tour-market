@@ -7,9 +7,14 @@ import {
   Body,
   Param,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { GuidePagesService } from './guide-pages.service';
+import { FilesService } from '../files/files.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -41,7 +46,10 @@ export class GuidePagesPublicController {
 @Roles(UserRole.ADMIN)
 @ApiBearerAuth()
 export class GuidePagesAdminController {
-  constructor(private guidePagesService: GuidePagesService) {}
+  constructor(
+    private guidePagesService: GuidePagesService,
+    private filesService: FilesService,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: '[Admin] List all guide pages' })
@@ -94,5 +102,19 @@ export class GuidePagesAdminController {
   @ApiOperation({ summary: '[Admin] Delete guide page' })
   remove(@Param('id') id: string) {
     return this.guidePagesService.remove(id);
+  }
+
+  @Post('upload-cover')
+  @ApiOperation({ summary: '[Admin] Upload guide page cover image' })
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadCover(@UploadedFile() file: Express.Multer.File) {
+    if (!file) throw new BadRequestException('Файл не предоставлен');
+    const url = await this.filesService.uploadImage(file, 'photos', {
+      maxWidth: 1920,
+      maxHeight: 1080,
+      quality: 85,
+      format: 'webp',
+    });
+    return { url };
   }
 }

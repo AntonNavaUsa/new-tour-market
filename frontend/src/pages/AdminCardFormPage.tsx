@@ -744,6 +744,9 @@ function PhotosTab({ cardId, headPhotoUrl }: { cardId: string; headPhotoUrl?: st
     type: 'slideshow' | 'accommodation';
     file: File;
   } | null>(null);
+
+  // Pending cover file awaiting crop/rotate before upload
+  const [pendingCoverFile, setPendingCoverFile] = useState<File | null>(null);
   const [loadingPhotoId, setLoadingPhotoId] = useState<string | null>(null);
 
   const { data: card, isLoading } = useQuery({
@@ -859,7 +862,7 @@ function PhotosTab({ cardId, headPhotoUrl }: { cardId: string; headPhotoUrl?: st
   };
 
   const handleCoverFileSelected = (file: File) => {
-    uploadMainMutation.mutate(file);
+    setPendingCoverFile(file);
   };
 
   const movePhoto = (index: number, direction: 'up' | 'down') => {
@@ -876,6 +879,19 @@ function PhotosTab({ cardId, headPhotoUrl }: { cardId: string; headPhotoUrl?: st
 
   return (
     <>
+    {/* Edit cover photo before upload */}
+    {pendingCoverFile && (
+      <PhotoEditModal
+        file={pendingCoverFile}
+        aspectRatio={16 / 9}
+        title="Редактирование обложки тура"
+        onConfirm={(editedFile) => {
+          setPendingCoverFile(null);
+          uploadMainMutation.mutate(editedFile);
+        }}
+        onCancel={() => setPendingCoverFile(null)}
+      />
+    )}
     {/* Edit existing uploaded photo */}
     {editingPhoto && (
       <PhotoEditModal
