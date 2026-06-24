@@ -1,6 +1,6 @@
 import {
   Controller, Get, Post, Patch, Delete,
-  Param, Body, UploadedFile, UseGuards, UseInterceptors,
+  Param, Body, UploadedFile, UseGuards, UseInterceptors, BadRequestException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
@@ -9,6 +9,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { UserRole } from '@prisma/client';
+import { CreateGpxFileDto } from './dto/create-gpx-file.dto';
 
 @ApiTags('gpx-files')
 @Controller('gpx-files')
@@ -28,9 +29,10 @@ export class GpxFilesController {
   @ApiOperation({ summary: 'Admin: upload GPX file' })
   @UseInterceptors(FileInterceptor('file'))
   create(
-    @Body() body: { name: string; slug: string; description?: string },
+    @Body() body: CreateGpxFileDto,
     @UploadedFile() file: Express.Multer.File,
   ) {
+    if (!file) throw new BadRequestException('GPX файл обязателен');
     return this.gpxFilesService.create(body, file);
   }
 
