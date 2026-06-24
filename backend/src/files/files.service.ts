@@ -15,6 +15,7 @@ export class FilesService {
     accommodation: 'accommodation',
     accommodations: 'accommodations',
     'tour-days': 'tour-days',
+    gpx: 'gpx',
   };
 
   constructor(private configService: ConfigService) {
@@ -296,6 +297,23 @@ export class FilesService {
       this.logger.error('Error generating presigned URL:', error);
       return url; // Вернуть оригинальный URL в случае ошибки
     }
+  }
+
+  async uploadGpxFile(file: Express.Multer.File): Promise<string> {
+    const filename = `${randomUUID()}.gpx`;
+    const bucket = this.buckets.gpx;
+
+    await this.minioClient.putObject(
+      bucket,
+      filename,
+      file.buffer,
+      file.buffer.length,
+      { 'Content-Type': 'application/gpx+xml' },
+    );
+
+    const url = this.buildUrl(bucket, filename);
+    this.logger.log(`GPX uploaded: ${url}`);
+    return url;
   }
 
   async getImageBuffer(url: string): Promise<{ buffer: Buffer; contentType: string }> {

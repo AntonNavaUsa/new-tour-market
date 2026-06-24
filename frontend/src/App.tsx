@@ -30,6 +30,7 @@ import { AdminAccommodationCalendarPage } from './pages/AdminAccommodationCalend
 import { AdminGuideCalendarPage } from './pages/AdminGuideCalendarPage';
 import { AdminGuidesPage } from './pages/AdminGuidesPage';
 import { AdminFaqsPage } from './pages/AdminFaqsPage';
+import { AdminGpxFilesPage } from './pages/AdminGpxFilesPage';
 import { GuidePagePage } from './pages/GuidePagePage';
 import { KrasnayaPolyanaSpringPage } from './pages/KrasnayaPolyanaSpringPage';
 import { TourPackagesPage } from './pages/TourPackagesPage';
@@ -271,6 +272,14 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
               <AdminFaqsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/gpx-files"
+          element={
+            <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
+              <AdminGpxFilesPage />
             </ProtectedRoute>
           }
         />

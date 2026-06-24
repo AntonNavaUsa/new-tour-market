@@ -1,5 +1,5 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, RequestMethod } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import helmet from 'helmet';
@@ -18,8 +18,10 @@ async function bootstrap() {
     credentials: true,
   });
 
-  // Global prefix
-  app.setGlobalPrefix('api');
+  // Global prefix (GPX client pages excluded — served without /api prefix)
+  app.setGlobalPrefix('api', {
+    exclude: [{ path: 'gpx/:slug', method: RequestMethod.GET }],
+  });
 
   // Validation pipe
   app.useGlobalPipes(

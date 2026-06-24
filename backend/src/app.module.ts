@@ -16,6 +16,7 @@ import { GuidePagesModule } from './guide-pages/guide-pages.module';
 import { AccommodationsModule } from './accommodations/accommodations.module';
 import { FaqsModule } from './faqs/faqs.module';
 import { ExtrasModule } from './extras/extras.module';
+import { GpxFilesModule } from './gpx-files/gpx-files.module';
 import { AppController } from './app.controller';
 
 @Module({
@@ -52,6 +53,7 @@ import { AppController } from './app.controller';
     AccommodationsModule,
     FaqsModule,
     ExtrasModule,
+    GpxFilesModule,
   ],
   controllers: [AppController],
 })

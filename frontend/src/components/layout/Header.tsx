@@ -55,6 +55,7 @@ export function Header() {
     { to: '/admin/guides', label: 'Гиды' },
     { to: '/admin/guide-pages', label: 'Путеводитель' },
     { to: '/admin/settings', label: 'Настройки сайта' },
+    { to: '/admin/gpx-files', label: 'GPX-треки' },
   ];
 
   return (

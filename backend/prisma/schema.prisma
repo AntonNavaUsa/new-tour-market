@@ -694,3 +694,18 @@ model Faq {
   @@index([cardId, sortOrder])
   @@map("faqs")
 }
+
+// ── GPX-файлы (треки для Organic Maps) ──────────────────────────────────────
+
+model GpxFile {
+  id          String   @id @default(uuid())
+  name        String
+  slug        String   @unique
+  description String?  @db.Text
+  fileUrl     String   @map("file_url")
+
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("gpx_files")
+}

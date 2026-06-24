@@ -57,6 +57,10 @@ export default defineConfig({
         target: process.env.VITE_API_URL || 'http://localhost:3000',
         changeOrigin: true,
       },
+      '/gpx': {
+        target: process.env.VITE_API_URL || 'http://localhost:3000',
+        changeOrigin: true,
+      },
     },
   },
 });
