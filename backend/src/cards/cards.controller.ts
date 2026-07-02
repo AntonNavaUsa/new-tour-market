@@ -73,6 +73,20 @@ export class CardsController {
     return this.cardsService.create(userId, userRole, dto);
   }
 
+  @Post(':id/duplicate')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.PARTNER)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Create a copy of card' })
+  @ApiResponse({ status: 201, description: 'Card copy created' })
+  async duplicate(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('role') userRole: UserRole,
+  ) {
+    return this.cardsService.duplicate(id, userId, userRole);
+  }
+
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.PARTNER)

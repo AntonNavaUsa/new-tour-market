@@ -43,6 +43,12 @@ export const cardsApi = {
     await api.delete(`/api/cards/${id}`);
   },
 
+  // Создать копию карточки
+  duplicateCard: async (id: string): Promise<Card> => {
+    const response = await api.post<Card>(`/api/cards/${id}/duplicate`);
+    return response.data;
+  },
+
   // Загрузить главное фото
   uploadMainPhoto: async (cardId: string, file: File): Promise<Card> => {
     const formData = new FormData();

@@ -7,6 +7,7 @@ import * as z from 'zod';
 import * as LucideIcons from 'lucide-react';
 import {
   ArrowLeft,
+  Copy,
   Save,
   Plus,
   Trash2,
@@ -2569,6 +2570,16 @@ export function AdminCardFormPage() {
     onError: (err) => setFormError(handleApiError(err)),
   });
 
+  const duplicateMutation = useMutation({
+    mutationFn: (cardId: string) => cardsApi.duplicateCard(cardId),
+    onSuccess: async (created) => {
+      await queryClient.invalidateQueries({ queryKey: ['admin-cards'] });
+      setFormError('');
+      navigate(`/admin/cards/${created.id}/edit`);
+    },
+    onError: (err) => setFormError(handleApiError(err)),
+  });
+
   const onSubmit = async (values: FormValues) => {
     setFormError('');
     const payloadBase: CreateCardRequest = {
@@ -2631,12 +2642,29 @@ export function AdminCardFormPage() {
               : 'После создания откроется режим редактирования с вкладкой «Фото».'}
           </p>
         </div>
-        <Button variant="outline" asChild>
-          <Link to="/admin/cards">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Назад к списку
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          {isEditMode && id && (
+            <Button
+              type="button"
+              variant="outline"
+              disabled={duplicateMutation.isPending}
+              onClick={() => {
+                if (window.confirm('Создать копию текущей карточки тура?')) {
+                  duplicateMutation.mutate(id);
+                }
+              }}
+            >
+              <Copy className="mr-2 h-4 w-4" />
+              Дублировать
+            </Button>
+          )}
+          <Button variant="outline" asChild>
+            <Link to="/admin/cards">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Назад к списку
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {formError && (

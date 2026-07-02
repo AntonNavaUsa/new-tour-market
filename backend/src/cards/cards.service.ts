@@ -336,6 +336,210 @@ export class CardsService {
     return { message: 'Card deleted successfully' };
   }
 
+  async duplicate(id: string, userId: string, userRole: UserRole) {
+    const sourceCard = await this.prisma.card.findUnique({
+      where: { id },
+      include: {
+        tickets: {
+          include: {
+            prices: {
+              orderBy: { dateFrom: 'asc' },
+            },
+          },
+          orderBy: { position: 'asc' },
+        },
+        schedules: true,
+        slideshowPhotos: {
+          orderBy: { sortOrder: 'asc' },
+        },
+        expressions: {
+          orderBy: { sortOrder: 'asc' },
+        },
+        cardAccommodations: true,
+        cardGuides: true,
+        cardExtras: {
+          orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+        },
+        faqs: {
+          orderBy: { sortOrder: 'asc' },
+        },
+      },
+    });
+
+    if (!sourceCard) {
+      throw new NotFoundException('Card not found');
+    }
+
+    if (userRole !== UserRole.ADMIN && sourceCard.userId !== userId) {
+      throw new ForbiddenException('You do not have permission to duplicate this card');
+    }
+
+    const maxPositionCard = await this.prisma.card.findFirst({
+      select: { position: true },
+      orderBy: { position: 'desc' },
+    });
+
+    const nextPosition = (maxPositionCard?.position ?? 0) + 1;
+    const copyTitle = sourceCard.title.endsWith('(копия)')
+      ? sourceCard.title
+      : `${sourceCard.title} (копия)`;
+
+    return this.prisma.card.create({
+      data: {
+        user: { connect: { id: sourceCard.userId } },
+        location: { connect: { id: sourceCard.locationId } },
+        cardType: { connect: { id: sourceCard.cardTypeId } },
+        title: copyTitle,
+        description: sourceCard.description,
+        shortDescription: sourceCard.shortDescription,
+        headPhotoUrl: sourceCard.headPhotoUrl,
+        headPhotoThumbUrl: sourceCard.headPhotoThumbUrl,
+        noCover: sourceCard.noCover,
+        heroType: sourceCard.heroType,
+        heroPerks: sourceCard.heroPerks,
+        tags: sourceCard.tags,
+        pricingConfig: sourceCard.pricingConfig,
+        scheduleConfig: sourceCard.scheduleConfig,
+        includedItems: sourceCard.includedItems,
+        notIncludedItems: sourceCard.notIncludedItems,
+        forWhom: sourceCard.forWhom,
+        tourProgram: sourceCard.tourProgram,
+        bookingSteps: sourceCard.bookingSteps,
+        postPaymentInfo: sourceCard.postPaymentInfo,
+        status: CardStatus.DRAFT,
+        position: nextPosition,
+        durationFrom: sourceCard.durationFrom,
+        durationTo: sourceCard.durationTo,
+        durationDays: sourceCard.durationDays,
+        distanceKm: sourceCard.distanceKm,
+        elevationGain: sourceCard.elevationGain,
+        difficulty: sourceCard.difficulty,
+        placeHistory: sourceCard.placeHistory,
+        childFriendly: sourceCard.childFriendly,
+        meetingPoint: sourceCard.meetingPoint,
+        minParticipants: sourceCard.minParticipants,
+        maxParticipants: sourceCard.maxParticipants,
+        advanceBookingValue: sourceCard.advanceBookingValue,
+        advanceBookingUnit: sourceCard.advanceBookingUnit,
+        ...(sourceCard.partnerId
+          ? { partner: { connect: { id: sourceCard.partnerId } } }
+          : {}),
+        ...(sourceCard.tickets.length > 0 && {
+          tickets: {
+            create: sourceCard.tickets.map((ticket) => ({
+              title: ticket.title,
+              description: ticket.description,
+              isMain: ticket.isMain,
+              position: ticket.position,
+              typeConfig: ticket.typeConfig,
+              pricingType: ticket.pricingType,
+              tariffTypeId: ticket.tariffTypeId,
+              ...(ticket.prices.length > 0 && {
+                prices: {
+                  create: ticket.prices.map((price) => ({
+                    dateFrom: price.dateFrom,
+                    dateTo: price.dateTo,
+                    adultPrice: price.adultPrice,
+                    childPrice: price.childPrice,
+                    minPrice: price.minPrice,
+                    availableSlots: price.availableSlots,
+                    groupTiers: price.groupTiers,
+                    isArchived: price.isArchived,
+                  })),
+                },
+              }),
+            })),
+          },
+        }),
+        ...(sourceCard.schedules.length > 0 && {
+          schedules: {
+            create: sourceCard.schedules.map((schedule) => ({
+              weeklySchedule: schedule.weeklySchedule,
+              specialDates: schedule.specialDates,
+            })),
+          },
+        }),
+        ...(sourceCard.slideshowPhotos.length > 0 && {
+          slideshowPhotos: {
+            create: sourceCard.slideshowPhotos.map((photo) => ({
+              url: photo.url,
+              thumbUrl: photo.thumbUrl,
+              sortOrder: photo.sortOrder,
+              caption: photo.caption,
+            })),
+          },
+        }),
+        ...(sourceCard.expressions.length > 0 && {
+          expressions: {
+            create: sourceCard.expressions.map((photo) => ({
+              photoUrl: photo.photoUrl,
+              thumbUrl: photo.thumbUrl,
+              sortOrder: photo.sortOrder,
+              title: photo.title,
+            })),
+          },
+        }),
+        ...(sourceCard.cardAccommodations.length > 0 && {
+          cardAccommodations: {
+            create: sourceCard.cardAccommodations.map((item) => ({
+              accommodationId: item.accommodationId,
+            })),
+          },
+        }),
+        ...(sourceCard.cardGuides.length > 0 && {
+          cardGuides: {
+            create: sourceCard.cardGuides.map((item) => ({
+              guideId: item.guideId,
+            })),
+          },
+        }),
+        ...(sourceCard.cardExtras.length > 0 && {
+          cardExtras: {
+            create: sourceCard.cardExtras.map((extra) => ({
+              title: extra.title,
+              description: extra.description,
+              price: extra.price,
+              pricingType: extra.pricingType,
+              isOptional: extra.isOptional,
+              isActive: extra.isActive,
+              sortOrder: extra.sortOrder,
+            })),
+          },
+        }),
+        ...(sourceCard.faqs.length > 0 && {
+          faqs: {
+            create: sourceCard.faqs.map((faq) => ({
+              question: faq.question,
+              answer: faq.answer,
+              sortOrder: faq.sortOrder,
+              isVisible: faq.isVisible,
+            })),
+          },
+        }),
+      },
+      include: {
+        location: true,
+        cardType: true,
+        partner: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        tickets: {
+          include: {
+            prices: {
+              where: { isArchived: false },
+              orderBy: { adultPrice: 'asc' },
+            },
+          },
+        },
+      },
+    });
+  }
+
   async getUserCards(userId: string, filters: CardFilterDto) {
     const { skip = 0, take = 20 } = filters;
 
