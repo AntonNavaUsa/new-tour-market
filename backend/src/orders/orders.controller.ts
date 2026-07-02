@@ -8,7 +8,9 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
-} from '@nestjs/common';import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiQuery } from '@nestjs/swagger';
+  Req,
+} from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto, OrderFilterDto, CreateMessageDto } from './dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -27,8 +29,14 @@ export class OrdersController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create pre-order (booking)' })
   @ApiResponse({ status: 201, description: 'Order created' })
-  async createOrder(@CurrentUser('id') userId: string, @Body() dto: CreateOrderDto) {
-    return this.ordersService.createPreOrder(userId, dto);
+  async createOrder(@CurrentUser('id') userId: string, @Body() dto: CreateOrderDto, @Req() request: any) {
+    const clientIp =
+      (request.headers['x-forwarded-for'] as string | undefined)?.split(',')[0]?.trim() ||
+      request.ip ||
+      request.socket?.remoteAddress ||
+      null;
+
+    return this.ordersService.createPreOrder(userId, dto, clientIp);
   }
 
   @Get()

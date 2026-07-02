@@ -15,7 +15,11 @@ export class ReviewsService {
       where: {
         isVisible: true,
         accommodationId: null,
-        OR: [{ cardId }, { cardId: null }],
+        OR: [
+          { cardId },
+          { reviewCards: { some: { cardId } } },
+          { cardId: null },
+        ],
       },
       orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
     });
@@ -38,6 +42,11 @@ export class ReviewsService {
       where: Object.keys(where).length ? where : undefined,
       include: {
         card: { select: { id: true, title: true } },
+        reviewCards: {
+          include: {
+            card: { select: { id: true, title: true } },
+          },
+        },
         accommodation: { select: { id: true, name: true } },
       },
       orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
@@ -55,6 +64,7 @@ export class ReviewsService {
 
   async create(data: {
     cardId?: string | null;
+    cardIds?: string[];
     accommodationId?: string | null;
     authorName: string;
     authorPhoto?: string;
@@ -64,8 +74,14 @@ export class ReviewsService {
     isVisible?: boolean;
     sortOrder?: number;
   }) {
+    const cardIds = data.cardIds && data.cardIds.length > 0
+      ? data.cardIds
+      : data.cardId
+        ? [data.cardId]
+        : [];
+
     return this.prisma.review.create({ data: {
-      cardId: data.cardId ?? null,
+      cardId: cardIds[0] ?? null,
       accommodationId: data.accommodationId ?? null,
       authorName: data.authorName,
       authorPhoto: data.authorPhoto,
@@ -74,6 +90,9 @@ export class ReviewsService {
       rating: data.rating ?? 5,
       isVisible: data.isVisible ?? true,
       sortOrder: data.sortOrder ?? 0,
+      reviewCards: cardIds.length > 0 ? {
+        create: cardIds.map((cardId) => ({ cardId })),
+      } : undefined,
     }});
   }
 
@@ -81,6 +100,7 @@ export class ReviewsService {
     id: string,
     data: {
       cardId?: string | null;
+      cardIds?: string[];
       accommodationId?: string | null;
       authorName?: string;
       authorPhoto?: string | null;
@@ -92,7 +112,34 @@ export class ReviewsService {
     },
   ) {
     await this.findOne(id);
-    return this.prisma.review.update({ where: { id }, data });
+
+    const cardIds = data.cardIds
+      ? data.cardIds
+      : data.cardId !== undefined
+        ? (data.cardId ? [data.cardId] : [])
+        : undefined;
+
+    return this.prisma.review.update({
+      where: { id },
+      data: {
+        cardId: data.cardId,
+        accommodationId: data.accommodationId,
+        authorName: data.authorName,
+        authorPhoto: data.authorPhoto,
+        title: data.title,
+        text: data.text,
+        rating: data.rating,
+        isVisible: data.isVisible,
+        sortOrder: data.sortOrder,
+        ...(cardIds !== undefined ? {
+          cardId: cardIds[0] ?? null,
+          reviewCards: {
+            deleteMany: {},
+            create: cardIds.map((cardId) => ({ cardId })),
+          },
+        } : {}),
+      },
+    });
   }
 
   async uploadPhoto(id: string, file: Express.Multer.File) {

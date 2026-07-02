@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Edit2, Plus, Star, Trash2, Upload, X } from 'lucide-react';
 import { cardsApi, reviewsApi } from '../lib/api';
@@ -8,7 +8,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 
 const EMPTY_FORM = {
-  cardId: '' as string | null,
+  cardIds: [] as string[],
   authorName: '',
   title: '',
   text: '',
@@ -19,7 +19,6 @@ const EMPTY_FORM = {
 
 export function AdminReviewsPage() {
   const queryClient = useQueryClient();
-  const photoInputRef = useRef<HTMLInputElement>(null);
 
   const [editing, setEditing] = useState<Review | null>(null);
   const [creating, setCreating] = useState(false);
@@ -36,10 +35,29 @@ export function AdminReviewsPage() {
     queryFn: () => cardsApi.getCards({ includeNonPublished: true, take: 200 }),
   });
   const allCards = cardsData?.data ?? [];
+  const selectedCards = form.cardIds
+    .map((cardId) => allCards.find((card) => card.id === cardId))
+    .filter((card): card is NonNullable<typeof card> => Boolean(card));
+
+  const toggleCardId = (cardId: string) => {
+    setForm((current) => ({
+      ...current,
+      cardIds: current.cardIds.includes(cardId)
+        ? current.cardIds.filter((item) => item !== cardId)
+        : [...current.cardIds, cardId],
+    }));
+  };
+
+  const removeCardId = (cardId: string) => {
+    setForm((current) => ({
+      ...current,
+      cardIds: current.cardIds.filter((item) => item !== cardId),
+    }));
+  };
 
   const createMutation = useMutation({
     mutationFn: (data: typeof EMPTY_FORM) =>
-      reviewsApi.create({ ...data, cardId: data.cardId || null }),
+      reviewsApi.create({ ...data, cardIds: data.cardIds }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-reviews'] });
       setCreating(false);
@@ -51,7 +69,7 @@ export function AdminReviewsPage() {
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: typeof EMPTY_FORM }) =>
-      reviewsApi.update(id, { ...data, cardId: data.cardId || null }),
+      reviewsApi.update(id, { ...data, cardIds: data.cardIds }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-reviews'] });
       setEditing(null);
@@ -83,7 +101,11 @@ export function AdminReviewsPage() {
     setCreating(false);
     setError('');
     setForm({
-      cardId: r.cardId ?? '',
+      cardIds: r.reviewCards?.length
+        ? r.reviewCards.map((item) => item.cardId)
+        : r.cardId
+          ? [r.cardId]
+          : [],
       authorName: r.authorName,
       title: r.title ?? '',
       text: r.text,
@@ -144,17 +166,74 @@ export function AdminReviewsPage() {
 
           {/* Card select */}
           <div>
-            <label className="text-sm font-medium mb-1 block">Карточка тура</label>
-            <select
-              className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
-              value={form.cardId ?? ''}
-              onChange={(e) => setForm({ ...form, cardId: e.target.value || null })}
-            >
-              <option value="">Все карточки (общий отзыв)</option>
-              {allCards.map((c) => (
-                <option key={c.id} value={c.id}>{c.title}</option>
-              ))}
-            </select>
+            <div className="flex items-center justify-between gap-3">
+              <label className="text-sm font-medium block">Карточка тура</label>
+              {form.cardIds.length > 0 && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="h-auto p-0 text-xs text-muted-foreground hover:text-foreground"
+                  onClick={() => setForm({ ...form, cardIds: [] })}
+                >
+                  Очистить выбор
+                </Button>
+              )}
+            </div>
+            <div className="mt-2 rounded-xl border border-input bg-background p-3">
+              {allCards.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Карточки тура пока не загружены.</p>
+              ) : (
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {allCards.map((card) => {
+                    const checked = form.cardIds.includes(card.id);
+
+                    return (
+                      <label
+                        key={card.id}
+                        className={`flex items-start gap-3 rounded-lg border px-3 py-2 text-sm transition-colors ${
+                          checked
+                            ? 'border-primary/60 bg-primary/5'
+                            : 'border-border hover:border-primary/30 hover:bg-muted/40'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggleCardId(card.id)}
+                          className="mt-1 h-4 w-4 shrink-0"
+                        />
+                        <span className="leading-5">{card.title}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {selectedCards.length > 0 ? (
+                selectedCards.map((card) => (
+                  <span
+                    key={card.id}
+                    className="inline-flex items-center gap-2 rounded-full border bg-muted px-3 py-1 text-xs"
+                  >
+                    <span className="max-w-[220px] truncate">{card.title}</span>
+                    <button
+                      type="button"
+                      onClick={() => removeCardId(card.id)}
+                      className="text-muted-foreground hover:text-foreground"
+                      aria-label={`Удалить ${card.title}`}
+                      title="Удалить"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Если ничего не выбрано, отзыв будет общим для всех карточек.
+                </p>
+              )}
+            </div>
           </div>
 
           <div className="grid sm:grid-cols-2 gap-4">
@@ -293,7 +372,9 @@ export function AdminReviewsPage() {
                     {review.card && (
                       <p className="text-xs text-muted-foreground">{review.card.title}</p>
                     )}
-                    {!review.cardId && (
+                    {(review.reviewCards?.length ?? 0) > 0 ? (
+                      <p className="text-xs text-muted-foreground">Карточек тура: {review.reviewCards?.length}</p>
+                    ) : !review.cardId && (
                       <p className="text-xs text-muted-foreground italic">Все карточки</p>
                     )}
                   </div>

@@ -482,7 +482,7 @@
       </div>
       <div class="format-card">
         <div class="format-icon">🏨</div>
-        <div class="format-name">!Туры с проживанием</div>
+        <div class="format-name">Туры с проживанием</div>
         <p class="format-desc">Отель + маршруты + трансфер под ключ. Несколько дней в горах без самостоятельной организации.</p>
       </div>
     </div>
@@ -584,7 +584,7 @@
  
 <!-- FOOTER -->
 <footer class="site-footer">
-  <p>© 2026 <a href="/">Сезон приключений</a> · ИП Навакус Антон Борисович · ИНН 665908836379</p>
+  <p>© 2026 <a href="/">Сезон путешествий</a> · ИП Навакус Антон Борисович · ИНН 665908836379</p>
 </footer>
  
 <script>

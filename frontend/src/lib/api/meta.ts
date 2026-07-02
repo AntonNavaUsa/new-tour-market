@@ -1,5 +1,5 @@
 import api from '../axios';
-import type { Location, CardType, TariffType, AdminUserOption } from '../../types';
+import type { Location, CardType, TariffType, AdminUserOption, Offer } from '../../types';
 
 export const metaApi = {
   getLocations: async (): Promise<Location[]> => {
@@ -24,6 +24,35 @@ export const metaApi = {
   getCardTypes: async (): Promise<CardType[]> => {
     const response = await api.get<CardType[]>('/api/meta/card-types');
     return response.data;
+  },
+
+  getOfferById: async (id: string): Promise<Offer> => {
+    const response = await api.get<Offer>(`/api/meta/offers/${id}`);
+    return response.data;
+  },
+
+  getOfferForCardType: async (cardTypeId: string): Promise<Offer> => {
+    const response = await api.get<Offer>(`/api/meta/offers/for-card-type/${cardTypeId}`);
+    return response.data;
+  },
+
+  getAdminOffers: async (): Promise<Offer[]> => {
+    const response = await api.get<Offer[]>('/api/admin/offers');
+    return response.data;
+  },
+
+  createOffer: async (data: { text: string; revisionDate: string; cardTypeIds: string[]; isActive?: boolean }): Promise<Offer> => {
+    const response = await api.post<Offer>('/api/admin/offers', data);
+    return response.data;
+  },
+
+  updateOffer: async (id: string, data: Partial<{ text: string; revisionDate: string; cardTypeIds: string[]; isActive: boolean }>): Promise<Offer> => {
+    const response = await api.patch<Offer>(`/api/admin/offers/${id}`, data);
+    return response.data;
+  },
+
+  deleteOffer: async (id: string): Promise<void> => {
+    await api.delete(`/api/admin/offers/${id}`);
   },
 
   createCardType: async (data: { name: string; slug: string; icon?: string | null; sortOrder?: number }): Promise<CardType> => {

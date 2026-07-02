@@ -1,4 +1,5 @@
 import {
+  Equals,
   IsString,
   IsOptional,
   IsArray,
@@ -84,6 +85,18 @@ export class CreateOrderDto {
   @IsOptional()
   @IsString()
   notes?: string;
+
+  @ApiProperty({ description: 'Selected offer ID for this booking' })
+  @IsUUID()
+  offerId: string;
+
+  @ApiProperty({ description: 'Offer revision date accepted by user', example: '2026-07-02' })
+  @IsDateString()
+  offerRevisionDate: string;
+
+  @ApiProperty({ description: 'Consent checkbox must be checked', example: true })
+  @Equals(true)
+  offerConsentAccepted: true;
 }
 
 export class OrderFilterDto {

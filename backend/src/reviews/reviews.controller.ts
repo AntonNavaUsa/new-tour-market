@@ -55,7 +55,7 @@ export class ReviewsController {
   create(
     @Body() data: {
       cardId?: string | null;
-      accommodationId?: string | null;
+      cardIds?: string[];
       authorName: string;
       authorPhoto?: string;
       title?: string;
@@ -77,6 +77,7 @@ export class ReviewsController {
     @Param('id') id: string,
     @Body() data: {
       cardId?: string | null;
+      cardIds?: string[];
       authorName?: string;
       authorPhoto?: string | null;
       title?: string | null;

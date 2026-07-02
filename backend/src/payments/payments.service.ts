@@ -43,7 +43,7 @@ export class PaymentsService {
     }
   }
 
-  async createPayment(userId: string, dto: CreatePaymentDto) {
+  async createPayment(userId: string, dto: CreatePaymentDto, clientIp: string | null) {
     // Verify order exists and belongs to user
     const order = await this.prisma.order.findUnique({
       where: { id: dto.orderId },
@@ -88,8 +88,16 @@ export class PaymentsService {
         orderId: dto.orderId,
         amount: paymentAmount,
         status: PaymentStatus.PENDING,
+        consentAcceptedAt: new Date(),
+        consentIpAddress: clientIp,
+        consentOfferVersion: order.offerRevisionDate,
+        consentUserEmail: order.user.email,
       },
     });
+
+    this.logger.log(
+      `Payment intent created: order ${order.id}, user ${userId}, email ${order.user.email}, ip ${clientIp ?? 'unknown'}, offer ${order.offerRevisionDate ?? 'unknown'}`,
+    );
 
     // Create payment in YooKassa
     if (this.yooKassa) {

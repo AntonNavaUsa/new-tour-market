@@ -204,7 +204,7 @@ export class NotificationsService {
             </div>
             <div class="footer">
               <p>Это автоматическое письмо, пожалуйста, не отвечайте на него.</p>
-              <p>&copy; ${new Date().getFullYear()} Сезон приключений. Все права защищены.</p>
+              <p>&copy; ${new Date().getFullYear()} Сезон путешествий. Все права защищены.</p>
             </div>
           </div>
         </body>
@@ -301,7 +301,7 @@ export class NotificationsService {
               </p>
             </div>
             <div class="footer">
-              <p>&copy; ${new Date().getFullYear()} Сезон приключений</p>
+              <p>&copy; ${new Date().getFullYear()} Сезон путешествий</p>
             </div>
           </div>
         </body>

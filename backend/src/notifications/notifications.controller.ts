@@ -22,7 +22,7 @@ export class NotificationsController {
   async sendTestEmail(@Body() dto: SendTestEmailDto) {
     await this.notificationsService.sendEmail({
       to: dto.to,
-      subject: '✅ Тестовое письмо — Сезон приключений',
+      subject: '✅ Тестовое письмо — Сезон путешествий',
       html: `
         <!DOCTYPE html>
         <html>
@@ -38,7 +38,7 @@ export class NotificationsController {
           <body>
             <div class="container">
               <div class="header">
-                <h1 style="margin:0;">Сезон приключений</h1>
+                <h1 style="margin:0;">Сезон путешествий</h1>
               </div>
               <div class="content">
                 <div style="text-align:center;margin:16px 0;">
@@ -51,7 +51,7 @@ export class NotificationsController {
           </body>
         </html>
       `,
-      text: `Тестовое письмо от Сезон приключений. Если вы его получили — SMTP настроен правильно. Отправлено: ${new Date().toLocaleString('ru-RU')}`,
+      text: `Тестовое письмо от Сезон путешествий. Если вы его получили — SMTP настроен правильно. Отправлено: ${new Date().toLocaleString('ru-RU')}`,
     });
 
     return { ok: true, message: `Письмо отправлено на ${dto.to}` };

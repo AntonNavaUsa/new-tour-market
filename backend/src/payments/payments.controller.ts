@@ -8,6 +8,7 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  Req,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import { PaymentsService } from './payments.service';
@@ -31,8 +32,14 @@ export class PaymentsController {
     status: 201,
     description: 'Payment created, returns confirmation token for YooKassa widget',
   })
-  async createPayment(@CurrentUser('id') userId: string, @Body() dto: CreatePaymentDto) {
-    return this.paymentsService.createPayment(userId, dto);
+  async createPayment(@CurrentUser('id') userId: string, @Body() dto: CreatePaymentDto, @Req() request: any) {
+    const clientIp =
+      (request.headers['x-forwarded-for'] as string | undefined)?.split(',')[0]?.trim() ||
+      request.ip ||
+      request.socket?.remoteAddress ||
+      null;
+
+    return this.paymentsService.createPayment(userId, dto, clientIp);
   }
 
   @Get(':id/status')

@@ -127,8 +127,37 @@ model CardType {
   
   // Relations
   cards     Card[]
+  offerCardTypes OfferCardType[]
   
   @@map("card_types")
+}
+
+model Offer {
+  id           String   @id @default(uuid())
+  text         String   @db.Text
+  revisionDate String   @map("revision_date")
+  isActive     Boolean  @default(true) @map("is_active")
+
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  offerCardTypes OfferCardType[]
+  orders         Order[]
+
+  @@index([isActive])
+  @@map("offers")
+}
+
+model OfferCardType {
+  offerId    String   @map("offer_id")
+  cardTypeId String   @map("card_type_id")
+
+  offer      Offer    @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  cardType   CardType @relation(fields: [cardTypeId], references: [id], onDelete: Cascade)
+
+  @@id([offerId, cardTypeId])
+  @@index([cardTypeId])
+  @@map("offer_card_types")
 }
 
 model TariffType {
@@ -210,6 +239,7 @@ model Card {
   expressions     Expression[]
   orders          Order[]
   reviews         Review[]
+  reviewCards     ReviewCard[]
   faqs            Faq[]
   cardGuides      CardGuide[]
   cardAccommodations CardAccommodation[]
@@ -220,6 +250,18 @@ model Card {
   @@index([status])
   @@index([cardTypeId])
   @@map("cards")
+}
+
+model ReviewCard {
+  reviewId String @map("review_id")
+  cardId   String @map("card_id")
+
+  review   Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  card     Card   @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@id([reviewId, cardId])
+  @@index([cardId])
+  @@map("review_cards")
 }
 
 model Ticket {
@@ -303,6 +345,12 @@ model Order {
   
   cardId        String      @map("card_id")
   card          Card        @relation(fields: [cardId], references: [id])
+
+  offerId       String?     @map("offer_id")
+  offer         Offer?      @relation(fields: [offerId], references: [id], onDelete: SetNull)
+  offerRevisionDate String? @map("offer_revision_date")
+  offerAcceptedAt   DateTime? @map("offer_accepted_at")
+  offerAcceptedIp   String?   @map("offer_accepted_ip")
   
   date          DateTime    @db.Date
   time          String?     // Format: "HH:MM"
@@ -336,6 +384,7 @@ model Order {
   
   @@index([userId])
   @@index([cardId])
+  @@index([offerId])
   @@index([status])
   @@index([date])
   @@map("orders")
@@ -419,6 +468,10 @@ model Payment {
   confirmationToken String?       @map("confirmation_token") // YooKassa confirmation token
   
   metadata          Json?         // Additional payment data from YooKassa
+  consentAcceptedAt DateTime?     @map("consent_accepted_at")
+  consentIpAddress  String?       @map("consent_ip_address")
+  consentOfferVersion String?     @map("consent_offer_version")
+  consentUserEmail  String?       @map("consent_user_email")
   
   createdAt         DateTime      @default(now()) @map("created_at")
   updatedAt         DateTime      @updatedAt @map("updated_at")
@@ -491,6 +544,7 @@ model Review {
   
   cardId      String?  @map("card_id")
   card        Card?    @relation(fields: [cardId], references: [id], onDelete: SetNull)
+  reviewCards ReviewCard[]
 
   accommodationId String? @map("accommodation_id")
   accommodation   Accommodation? @relation(fields: [accommodationId], references: [id], onDelete: SetNull)

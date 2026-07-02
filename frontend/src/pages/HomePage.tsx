@@ -203,10 +203,10 @@ export function HomePage() {
       <div className="container relative z-10 py-24 md:py-32">
         <div className="max-w-3xl">
           <div className="flex items-center gap-4 mb-10">
-            <img src="/logo.png" alt="Сезон приключений" className="h-16 w-16 object-contain drop-shadow-xl flex-shrink-0" />
+            <img src="/logo.png" alt="Сезон путешествий" className="h-16 w-16 object-contain drop-shadow-xl flex-shrink-0" />
             <div className="border-l border-white/30 pl-4">
               <p className="text-white/50 text-xs uppercase tracking-widest mb-0.5">Красная Поляна, Сочи</p>
-              <p className="text-white font-bold text-xl leading-tight">Сезон<br />приключений</p>
+              <p className="text-white font-bold text-xl leading-tight">Сезон<br />путешествий</p>
             </div>
           </div>
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-white leading-tight tracking-tight mb-6">
@@ -242,7 +242,7 @@ export function HomePage() {
           <div className="hidden lg:flex flex-shrink-0 items-center justify-center">
             <div className="relative">
               <div className="absolute inset-0 bg-emerald-400/20 rounded-full blur-3xl scale-150" />
-              <img src="/logo.png" alt="Сезон приключений" className="relative h-64 w-64 object-contain drop-shadow-2xl" />
+              <img src="/logo.png" alt="Сезон путешествий" className="relative h-64 w-64 object-contain drop-shadow-2xl" />
             </div>
           </div>
         </div>

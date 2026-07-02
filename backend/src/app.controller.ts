@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Delete, UseGuards, Body, Param, BadRequestException, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, UseGuards, Body, Param, BadRequestException, NotFoundException, UseInterceptors, UploadedFile } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { PrismaService } from './prisma/prisma.service';
 import { FilesService } from './files/files.service';
@@ -52,6 +52,54 @@ export class AppController {
     return this.prisma.cardType.findMany({
       orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
     });
+  }
+
+  @Get('meta/offers/for-card-type/:cardTypeId')
+  async getOfferForCardType(@Param('cardTypeId') cardTypeId: string) {
+    const offer = await this.prisma.offer.findFirst({
+      where: {
+        isActive: true,
+        offerCardTypes: {
+          some: {
+            cardTypeId,
+          },
+        },
+      },
+      include: {
+        offerCardTypes: {
+          include: {
+            cardType: true,
+          },
+        },
+      },
+      orderBy: [{ updatedAt: 'desc' }],
+    });
+
+    if (!offer) {
+      throw new NotFoundException('Offer not found for selected card type');
+    }
+
+    return offer;
+  }
+
+  @Get('meta/offers/:id')
+  async getOfferById(@Param('id') id: string) {
+    const offer = await this.prisma.offer.findFirst({
+      where: { id, isActive: true },
+      include: {
+        offerCardTypes: {
+          include: {
+            cardType: true,
+          },
+        },
+      },
+    });
+
+    if (!offer) {
+      throw new NotFoundException('Offer not found');
+    }
+
+    return offer;
   }
 
   @Get('admin/users')
@@ -205,6 +253,137 @@ export class AppController {
     }
 
     return this.prisma.cardType.delete({
+      where: { id },
+    });
+  }
+
+  // Offers Management
+  @Get('admin/offers')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async getAdminOffers() {
+    return this.prisma.offer.findMany({
+      include: {
+        offerCardTypes: {
+          include: {
+            cardType: true,
+          },
+        },
+      },
+      orderBy: [{ updatedAt: 'desc' }],
+    });
+  }
+
+  @Post('admin/offers')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async createOffer(@Body() data: { text: string; revisionDate: string; cardTypeIds: string[]; isActive?: boolean }) {
+    if (!data.text?.trim()) {
+      throw new BadRequestException('Текст оферты обязателен');
+    }
+    if (!data.revisionDate?.trim()) {
+      throw new BadRequestException('Дата редакции обязательна');
+    }
+    if (!Array.isArray(data.cardTypeIds) || data.cardTypeIds.length === 0) {
+      throw new BadRequestException('Выберите хотя бы один тип карточки');
+    }
+
+    const cardTypesCount = await this.prisma.cardType.count({
+      where: {
+        id: {
+          in: data.cardTypeIds,
+        },
+      },
+    });
+
+    if (cardTypesCount !== data.cardTypeIds.length) {
+      throw new BadRequestException('Некоторые типы карточек не найдены');
+    }
+
+    return this.prisma.offer.create({
+      data: {
+        text: data.text,
+        revisionDate: data.revisionDate,
+        isActive: data.isActive ?? true,
+        offerCardTypes: {
+          create: data.cardTypeIds.map((cardTypeId) => ({ cardTypeId })),
+        },
+      },
+      include: {
+        offerCardTypes: {
+          include: {
+            cardType: true,
+          },
+        },
+      },
+    });
+  }
+
+  @Patch('admin/offers/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async updateOffer(
+    @Param('id') id: string,
+    @Body() data: { text?: string; revisionDate?: string; cardTypeIds?: string[]; isActive?: boolean }
+  ) {
+    const existing = await this.prisma.offer.findUnique({ where: { id } });
+    if (!existing) {
+      throw new NotFoundException('Offer not found');
+    }
+
+    if (data.cardTypeIds && data.cardTypeIds.length === 0) {
+      throw new BadRequestException('Выберите хотя бы один тип карточки');
+    }
+
+    if (data.cardTypeIds) {
+      const cardTypesCount = await this.prisma.cardType.count({
+        where: {
+          id: {
+            in: data.cardTypeIds,
+          },
+        },
+      });
+
+      if (cardTypesCount !== data.cardTypeIds.length) {
+        throw new BadRequestException('Некоторые типы карточек не найдены');
+      }
+    }
+
+    return this.prisma.offer.update({
+      where: { id },
+      data: {
+        ...(data.text !== undefined ? { text: data.text } : {}),
+        ...(data.revisionDate !== undefined ? { revisionDate: data.revisionDate } : {}),
+        ...(data.isActive !== undefined ? { isActive: data.isActive } : {}),
+        ...(data.cardTypeIds
+          ? {
+              offerCardTypes: {
+                deleteMany: {},
+                create: data.cardTypeIds.map((cardTypeId) => ({ cardTypeId })),
+              },
+            }
+          : {}),
+      },
+      include: {
+        offerCardTypes: {
+          include: {
+            cardType: true,
+          },
+        },
+      },
+    });
+  }
+
+  @Delete('admin/offers/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async deleteOffer(@Param('id') id: string) {
+    const existing = await this.prisma.offer.findUnique({ where: { id } });
+    if (!existing) {
+      throw new NotFoundException('Offer not found');
+    }
+
+    return this.prisma.offer.delete({
       where: { id },
     });
   }

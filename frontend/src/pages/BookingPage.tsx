@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { cardsApi, ordersApi, authApi, extrasApi } from '../lib/api';
+import { cardsApi, ordersApi, authApi, extrasApi, metaApi } from '../lib/api';
 import { useAuthStore } from '../store/authStore';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -49,6 +49,7 @@ export function BookingPage() {
   const [ticketQuantities, setTicketQuantities] = useState<Record<string, number>>({});
   // extraId -> выбрано ли
   const [selectedExtras, setSelectedExtras] = useState<Record<string, boolean>>({});
+  const [offerConsentAccepted, setOfferConsentAccepted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -62,6 +63,13 @@ export function BookingPage() {
     queryKey: ['card-extras', id],
     queryFn: () => extrasApi.getForCard(id!),
     enabled: !!id,
+  });
+
+  const { data: offer, isLoading: isOfferLoading } = useQuery({
+    queryKey: ['offer-for-card-type', card?.cardTypeId],
+    queryFn: () => metaApi.getOfferForCardType(card!.cardTypeId),
+    enabled: Boolean(card?.cardTypeId),
+    retry: false,
   });
 
   const {
@@ -199,6 +207,16 @@ export function BookingPage() {
       return;
     }
 
+    if (!offer) {
+      setError('Для этого типа тура не настроена оферта. Обратитесь к администратору.');
+      return;
+    }
+
+    if (!offerConsentAccepted) {
+      setError('Для продолжения необходимо согласиться с офертой.');
+      return;
+    }
+
     setError('');
     setIsSubmitting(true);
 
@@ -240,6 +258,9 @@ export function BookingPage() {
         time: selectedTime || undefined,
         tickets,
         ...(extras.length > 0 ? { extras } : {}),
+        offerId: offer.id,
+        offerRevisionDate: offer.revisionDate,
+        offerConsentAccepted: true,
         ...data,
       });
 
@@ -522,11 +543,35 @@ export function BookingPage() {
                   </div>
                 )}
 
+                <label className="flex items-start gap-3 rounded-lg border bg-muted/20 p-3 text-sm leading-6">
+                  <input
+                    type="checkbox"
+                    className="mt-1 h-4 w-4 rounded border-input"
+                    checked={offerConsentAccepted}
+                    onChange={(event) => setOfferConsentAccepted(event.target.checked)}
+                  />
+                  <span>
+                    Ознакомлен(а) и согласен(на) с{' '}
+                    <a
+                      href={offer ? `/terms?offerId=${offer.id}` : '/terms'}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="font-medium text-primary underline underline-offset-4"
+                    >
+                      офертой
+                    </a>
+                    , разделом 6 (риски self-guided маршрута) и Приложением № 1.
+                    {offer?.revisionDate ? (
+                      <span className="block text-xs text-muted-foreground mt-1">Редакция: {offer.revisionDate}</span>
+                    ) : null}
+                  </span>
+                </label>
+
                 <Button
                   onClick={handleSubmit(onSubmit)}
                   className="w-full"
                   size="lg"
-                  disabled={isSubmitting || totalTickets === 0}
+                  disabled={isSubmitting || totalTickets === 0 || !offerConsentAccepted}
                 >
                   {isSubmitting ? 'Обработка...' : 'Забронировать'}
                 </Button>

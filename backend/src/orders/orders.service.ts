@@ -24,7 +24,16 @@ export class OrdersService {
     private notificationsService: NotificationsService,
   ) {}
 
-  async createPreOrder(userId: string, dto: CreateOrderDto) {
+  async createPreOrder(userId: string, dto: CreateOrderDto, clientIp: string | null) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, email: true },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
     // Verify card exists and is published
     const card = await this.prisma.card.findUnique({
       where: { id: dto.cardId },
@@ -39,6 +48,26 @@ export class OrdersService {
 
     if (card.status !== 'PUBLISHED') {
       throw new BadRequestException('Card is not available for booking');
+    }
+
+    const offer = await this.prisma.offer.findUnique({
+      where: { id: dto.offerId },
+      include: {
+        offerCardTypes: true,
+      },
+    });
+
+    if (!offer || !offer.isActive) {
+      throw new BadRequestException('Offer not found or inactive');
+    }
+
+    const offerSupportsCardType = offer.offerCardTypes.some((item) => item.cardTypeId === card.cardTypeId);
+    if (!offerSupportsCardType) {
+      throw new BadRequestException('Selected offer is not applicable for this tour type');
+    }
+
+    if (offer.revisionDate !== dto.offerRevisionDate) {
+      throw new BadRequestException('Offer revision mismatch. Please reload booking page and accept latest offer.');
     }
 
     // Verify schedule - check if the selected date and time are available
@@ -180,6 +209,10 @@ export class OrdersService {
       data: {
         userId,
         cardId: dto.cardId,
+        offerId: offer.id,
+        offerRevisionDate: dto.offerRevisionDate,
+        offerAcceptedAt: new Date(),
+        offerAcceptedIp: clientIp,
         date: new Date(dto.date),
         time: dto.time,
         quantity: dto.tickets.reduce((sum, t) => sum + t.quantity, 0),
@@ -217,6 +250,10 @@ export class OrdersService {
         },
       },
     });
+
+    this.logger.log(
+      `Offer consent recorded at booking: userId=${user.id}, email=${user.email}, orderId=${order.id}, ip=${clientIp ?? 'unknown'}, offerVersion=${dto.offerRevisionDate}`,
+    );
 
     // Notify admin about new pre-order
     try {

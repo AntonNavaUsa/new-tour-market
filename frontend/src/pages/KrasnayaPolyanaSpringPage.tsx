@@ -432,10 +432,10 @@ export function KrasnayaPolyanaSpringPage() {
     headline: 'Что посмотреть в Красной Поляне весной: топ красивых мест',
     description:
       'Путеводитель по весенней Красной Поляне. Водопады, эко-тропы, парк альпак и смотровые площадки. Узнайте, куда сходить и что посмотреть прямо сейчас.',
-    author: { '@type': 'Organization', name: 'Сезон Приключений' },
+    author: { '@type': 'Organization', name: 'Сезон путешествий' },
     publisher: {
       '@type': 'Organization',
-      name: 'Сезон Приключений',
+      name: 'Сезон путешествий',
       url: 'https://seasonadventures.ru',
     },
     datePublished: '2026-04-22',
@@ -477,7 +477,7 @@ export function KrasnayaPolyanaSpringPage() {
           </h1>
           <p className="text-lg md:text-xl text-gray-200 mb-8 leading-relaxed drop-shadow">
             Гид по самым сочным локациям межсезонья от команды&nbsp;
-            <span className="font-semibold text-white">«Сезон Приключений»</span>
+            <span className="font-semibold text-white">«Сезон путешествий»</span>
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link to="/tours">

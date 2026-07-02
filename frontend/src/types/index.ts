@@ -67,6 +67,22 @@ export interface CardType {
   createdAt: string;
 }
 
+export interface OfferCardTypeLink {
+  offerId: string;
+  cardTypeId: string;
+  cardType?: CardType;
+}
+
+export interface Offer {
+  id: string;
+  text: string;
+  revisionDate: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  offerCardTypes: OfferCardTypeLink[];
+}
+
 export interface TariffType {
   id: string;
   name: string;
@@ -306,6 +322,7 @@ export interface AccommodationBlock {
 export interface Review {
   id: string;
   cardId: string | null;
+  reviewCards?: Array<{ cardId: string; card: { id: string; title: string } }>;
   accommodationId: string | null;
   authorName: string;
   authorPhoto: string | null;
@@ -535,6 +552,9 @@ export interface CreateOrderRequest {
   customerEmail?: string;
   customerPhone?: string;
   notes?: string;
+  offerId: string;
+  offerRevisionDate: string;
+  offerConsentAccepted: true;
 }
 
 export interface CreatePaymentRequest {

@@ -8,7 +8,7 @@ export function Footer() {
       <div className="container py-8 md:py-12">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
           <div>
-            <h3 className="text-lg font-semibold mb-4">Сезон приключений!</h3>
+            <h3 className="text-lg font-semibold mb-4">Сезон путешествий!</h3>
             <p className="text-sm text-muted-foreground">
               Треккинги, походы и горные туры
             </p>
@@ -84,7 +84,7 @@ export function Footer() {
         </div>
 
         <div className="mt-8 border-t pt-8 text-center text-sm text-muted-foreground space-y-1">
-          <p>&copy; {currentYear} Сезон приключений! Все права защищены.</p>
+          <p>&copy; {currentYear} Сезон путешествий! Все права защищены.</p>
           <p>ИП Навакус Антон Борисович &mdash; ИНН&nbsp;665908836379</p>
         </div>
       </div>

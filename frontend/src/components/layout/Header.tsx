@@ -65,10 +65,10 @@ export function Header() {
           <Link to="/" className="flex items-center gap-2 shrink-0">
             <picture>
                 <source srcSet="/logo-thumb.webp" type="image/webp" />
-                <img src="/logo.png" alt="Сезон приключений" className="h-9 w-9 rounded-full object-contain" />
+                <img src="/logo.png" alt="Сезон путешествий" className="h-9 w-9 rounded-full object-contain" />
               </picture>
             {!isAuthenticated && (
-              <span className="text-base sm:text-xl md:text-2xl font-bold text-primary whitespace-nowrap">Сезон приключений!</span>
+              <span className="text-base sm:text-xl md:text-2xl font-bold text-primary whitespace-nowrap">Сезон путешествий!</span>
             )}
           </Link>
           

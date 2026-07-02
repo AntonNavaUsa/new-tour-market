@@ -11,6 +11,7 @@ import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { OrdersPage } from './pages/OrdersPage';
+import { TermsPage } from './pages/TermsPage';
 import { AdminCardsPage } from './pages/AdminCardsPage';
 import { AdminCardFormPage } from './pages/AdminCardFormPage';
 import { AdminLocationsPage } from './pages/AdminLocationsPage';
@@ -31,6 +32,7 @@ import { AdminGuideCalendarPage } from './pages/AdminGuideCalendarPage';
 import { AdminGuidesPage } from './pages/AdminGuidesPage';
 import { AdminFaqsPage } from './pages/AdminFaqsPage';
 import { AdminGpxFilesPage } from './pages/AdminGpxFilesPage';
+import { AdminOffersPage } from './pages/AdminOffersPage';
 import { GuidePagePage } from './pages/GuidePagePage';
 import { KrasnayaPolyanaSpringPage } from './pages/KrasnayaPolyanaSpringPage';
 import { TourPackagesPage } from './pages/TourPackagesPage';
@@ -71,6 +73,7 @@ function App() {
         <Route path="/guides/:slug" element={<GuidePagePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/terms" element={<TermsPage />} />
         
         {/* Protected routes */}
         <Route
@@ -224,6 +227,14 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
               <AdminSiteSettingsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/settings/offers"
+          element={
+            <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
+              <AdminOffersPage />
             </ProtectedRoute>
           }
         />

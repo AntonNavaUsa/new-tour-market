@@ -6,6 +6,7 @@ import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
+import { Link } from 'react-router-dom';
 
 export function AdminSiteSettingsPage() {
   const queryClient = useQueryClient();
@@ -61,6 +62,11 @@ export function AdminSiteSettingsPage() {
         <p className="text-muted-foreground">
           Общие параметры: название, описание и email для уведомлений.
         </p>
+        <div className="mt-3">
+          <Link to="/admin/settings/offers" className="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground">
+            Управление офертами
+          </Link>
+        </div>
       </div>
 
       {error && (
@@ -89,7 +95,7 @@ export function AdminSiteSettingsPage() {
                   id="siteName"
                   value={siteName}
                   onChange={(e) => setSiteName(e.target.value)}
-                  placeholder="Сезон приключений"
+                  placeholder="Сезон путешествий"
                 />
                 <p className="text-xs text-muted-foreground">
                   Используется в заголовке и метатегах
