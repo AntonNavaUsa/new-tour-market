@@ -65,6 +65,13 @@ const CATEGORIES = [
     badge: 'Самостоятельно',
     slug: 'self-guided',
   },
+  {
+    title: 'Туры с проживанием',
+    subtitle: 'Маршруты с размещением и походами с гидом',
+    image: '/img/tourspackage.png',
+    badge: 'С проживанием и гидом',
+    slug: 'tour-packages',
+  },
 ];
 
 const REVIEWS = [
@@ -320,7 +327,7 @@ export function HomePage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
             {CATEGORIES.map((cat) => (
               <a
                 key={cat.title}
