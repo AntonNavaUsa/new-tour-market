@@ -38,6 +38,9 @@ import { KrasnayaPolyanaSpringPage } from './pages/KrasnayaPolyanaSpringPage';
 import { TourPackagesPage } from './pages/TourPackagesPage';
 import AccommodationPage from './pages/AccommodationPage';
 import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage';
+import { AboutPage } from './pages/AboutPage';
+import { ContactsPage } from './pages/ContactsPage';
+import { BecomePartnerPage } from './pages/BecomePartnerPage';
 import { UserRole } from './types';
 
 function App() {
@@ -74,6 +77,9 @@ function App() {
         <Route path="/guides/:slug" element={<GuidePagePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/about" element={<AboutPage />} />
+        <Route path="/contacts" element={<ContactsPage />} />
+        <Route path="/become-partner" element={<BecomePartnerPage />} />
         <Route path="/terms" element={<TermsPage />} />
         <Route path="/privacy" element={<PrivacyPolicyPage />} />
         

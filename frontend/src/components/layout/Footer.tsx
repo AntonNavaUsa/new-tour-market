@@ -18,23 +18,28 @@ export function Footer() {
             <h4 className="text-sm font-semibold mb-4">Туры</h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link to="/tours" className="text-muted-foreground hover:text-foreground transition-colors">
-                  Все походы
+                <Link to="/#tours" className="text-muted-foreground hover:text-foreground transition-colors">
+                  Все маршруты
                 </Link>
               </li>
               <li>
-                <Link to="/tours?type=trekking" className="text-muted-foreground hover:text-foreground transition-colors">
-                  Треккинги
+                <Link to="/#hiking" className="text-muted-foreground hover:text-foreground transition-colors">
+                  Однодневные трекинги
                 </Link>
               </li>
               <li>
-                <Link to="/tours?type=hiking" className="text-muted-foreground hover:text-foreground transition-colors">
-                  Пешие походы
+                <Link to="/#pohod" className="text-muted-foreground hover:text-foreground transition-colors">
+                  Трекинги с ночевками
                 </Link>
               </li>
               <li>
-                <Link to="/tours?type=expedition" className="text-muted-foreground hover:text-foreground transition-colors">
-                  Экспедиции
+                <Link to="/#self-guided" className="text-muted-foreground hover:text-foreground transition-colors">
+                  Туры без гида
+                </Link>
+              </li>
+              <li>
+                <Link to="/tour-packages" className="text-muted-foreground hover:text-foreground transition-colors">
+                  Туры с проживанием
                 </Link>
               </li>
             </ul>
@@ -62,13 +67,9 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="text-sm font-semibold mb-4">Поддержка</h4>
+            <h4 className="text-sm font-semibold mb-4">Офрета</h4>
             <ul className="space-y-2 text-sm">
-              <li>
-                <Link to="/help" className="text-muted-foreground hover:text-foreground transition-colors">
-                  Помощь
-                </Link>
-              </li>
+              
               <li>
                 <Link to="/terms" className="text-muted-foreground hover:text-foreground transition-colors">
                   Условия использования
