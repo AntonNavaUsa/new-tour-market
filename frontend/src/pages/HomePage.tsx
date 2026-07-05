@@ -179,9 +179,7 @@ export function HomePage() {
       <Button size="lg" className="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-600 text-white text-base px-8 py-3 h-auto shadow-xl shadow-emerald-900/40 border-0" onClick={() => scrollToId('catalog')}>
         <Compass className="h-5 w-5 mr-2" />Выбрать поход
       </Button>
-      <Button size="lg" variant="outline" className="w-full sm:w-auto border-white/50 text-white bg-white/10 hover:bg-white/20 backdrop-blur-sm text-base px-8 py-3 h-auto" onClick={() => scrollToId('self-guided')}>
-        <Tent className="h-5 w-5 mr-2" />Туры без гида
-      </Button>
+     
     </div>
   );
 
@@ -196,7 +194,7 @@ export function HomePage() {
           </div>
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-white leading-tight tracking-tight mb-6">
             Походы и треккинги<br />
-            <span className="text-emerald-400">в горах Кавказа</span>
+            <span className="text-emerald-400">в Красной Поляне</span>
           </h1>
           <p className="text-lg sm:text-xl text-white/85 mb-10 max-w-xl leading-relaxed">
             Однодневные прогулки, многодневные маршруты и туры с проживанием.<br />
@@ -546,14 +544,7 @@ export function HomePage() {
               >
                 Все походы и маршруты
               </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-white/40 text-white bg-white/10 hover:bg-white/20 text-base px-8 py-3 h-auto"
-                onClick={() => scrollToId('tours')}
-              >
-                Туры без гида
-              </Button>
+              
             </div>
           </div>
         </div>

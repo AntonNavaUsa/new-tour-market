@@ -37,6 +37,7 @@ import { GuidePagePage } from './pages/GuidePagePage';
 import { KrasnayaPolyanaSpringPage } from './pages/KrasnayaPolyanaSpringPage';
 import { TourPackagesPage } from './pages/TourPackagesPage';
 import AccommodationPage from './pages/AccommodationPage';
+import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage';
 import { UserRole } from './types';
 
 function App() {
@@ -74,6 +75,7 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/terms" element={<TermsPage />} />
+        <Route path="/privacy" element={<PrivacyPolicyPage />} />
         
         {/* Protected routes */}
         <Route

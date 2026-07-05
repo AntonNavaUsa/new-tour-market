@@ -76,7 +76,7 @@ export function Footer() {
               </li>
               <li>
                 <Link to="/privacy" className="text-muted-foreground hover:text-foreground transition-colors">
-                  Политика конфиденциальности
+                  Обработка персональных данных
                 </Link>
               </li>
             </ul>
