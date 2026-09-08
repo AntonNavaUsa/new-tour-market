@@ -10,6 +10,11 @@ import type {
 export interface AccommodationFilter {
   search?: string;
   type?: string;
+  skiInSkiOut?: boolean;
+  stars?: number;
+  locationIds?: string[];
+  isAvailableInOta?: boolean;
+  isArchived?: boolean;
   skip?: number;
   take?: number;
 }
@@ -26,10 +31,21 @@ export const accommodationsApi = {
   getOne: (id: string) =>
     api.get<Accommodation>(`/api/accommodations/${id}`).then((r) => r.data),
 
-  create: (data: { name: string; description?: string; address?: string; type?: string }) =>
+  getSkiHotels: (filters?: AccommodationFilter) =>
+    api.get<PaginatedAccommodations>('/api/ski-tours/hotels', { params: filters }).then((r) => r.data),
+
+  create: (data: {
+    name: string; description?: string; address?: string; type?: string;
+    stars?: number | null; skiInSkiOut?: boolean; isAvailableInOta?: boolean;
+    isArchived?: boolean; locationIds?: string[];
+  }) =>
     api.post<Accommodation>('/api/accommodations', data).then((r) => r.data),
 
-  update: (id: string, data: { name?: string; description?: string; address?: string; type?: string }) =>
+  update: (id: string, data: {
+    name?: string; description?: string; address?: string; type?: string;
+    stars?: number | null; skiInSkiOut?: boolean; isAvailableInOta?: boolean;
+    isArchived?: boolean; locationIds?: string[];
+  }) =>
     api.patch<Accommodation>(`/api/accommodations/${id}`, data).then((r) => r.data),
 
   delete: (id: string) =>

@@ -7,7 +7,6 @@ import { handleApiError } from '../lib/axios';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
 import { Input } from '../components/ui/input';
-import { AccommodationType } from '../types';
 
 const TYPE_LABELS: Record<string, string> = {
   HOTEL: 'Отель',
@@ -104,6 +103,15 @@ export function AdminAccommodationsPage() {
                 </div>
                 {acc.address && (
                   <p className="mb-2 text-sm text-muted-foreground line-clamp-1">{acc.address}</p>
+                )}
+                <div className="mb-2 flex flex-wrap gap-1 text-xs">
+                  {acc.stars != null && <span className="text-amber-600">{'★'.repeat(acc.stars)}</span>}
+                  {acc.skiInSkiOut && <span className="rounded bg-green-50 px-2 py-0.5 text-green-700">Ski-in / ski-out</span>}
+                </div>
+                {acc.locations && acc.locations.length > 0 && (
+                  <p className="mb-2 text-xs text-muted-foreground line-clamp-1">
+                    {acc.locations.map((item) => item.location.city).join(', ')}
+                  </p>
                 )}
                 <p className="mb-3 text-xs text-muted-foreground">
                   Отзывов: {(acc as any)._count?.reviews ?? 0}

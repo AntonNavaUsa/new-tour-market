@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AccommodationsController } from './accommodations.controller';
+import { SkiToursController } from './ski-tours.controller';
 import { AccommodationsService } from './accommodations.service';
 import { PrismaModule } from '../prisma/prisma.module';
 import { FilesModule } from '../files/files.module';
@@ -7,7 +8,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [PrismaModule, FilesModule, NotificationsModule],
-  controllers: [AccommodationsController],
+  controllers: [AccommodationsController, SkiToursController],
   providers: [AccommodationsService],
   exports: [AccommodationsService],
 })

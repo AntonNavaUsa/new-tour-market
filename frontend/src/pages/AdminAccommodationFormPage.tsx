@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Save, Upload, Trash2, GripVertical, Star } from 'lucide-react';
+import { ArrowLeft, Save, Upload, Trash2, Star } from 'lucide-react';
 import { accommodationsApi } from '../lib/api/accommodationsApi';
+import { metaApi } from '../lib/api/meta';
 import { handleApiError } from '../lib/axios';
 import { api } from '../lib/axios';
 import { Button } from '../components/ui/button';
@@ -37,6 +38,11 @@ export function AdminAccommodationFormPage() {
   const [description, setDescription] = useState('');
   const [address, setAddress] = useState('');
   const [type, setType] = useState('OTHER');
+  const [stars, setStars] = useState('');
+  const [skiInSkiOut, setSkiInSkiOut] = useState(false);
+  const [isAvailableInOta, setIsAvailableInOta] = useState(true);
+  const [isArchived, setIsArchived] = useState(false);
+  const [locationIds, setLocationIds] = useState<string[]>([]);
 
   // Calendar state
   const now = new Date();
@@ -61,18 +67,38 @@ export function AdminAccommodationFormPage() {
     enabled: isEdit && tab === 'reviews',
   });
 
+  const { data: locations = [] } = useQuery({
+    queryKey: ['locations'],
+    queryFn: metaApi.getLocations,
+  });
+
   useEffect(() => {
     if (accommodation) {
       setName(accommodation.name);
       setDescription(accommodation.description ?? '');
       setAddress(accommodation.address ?? '');
       setType(accommodation.type ?? 'OTHER');
+      setStars(accommodation.stars == null ? '' : String(accommodation.stars));
+      setSkiInSkiOut(accommodation.skiInSkiOut);
+      setIsAvailableInOta(accommodation.isAvailableInOta);
+      setIsArchived(accommodation.isArchived);
+      setLocationIds((accommodation.locations ?? []).map((item) => item.locationId));
     }
   }, [accommodation]);
 
   const saveMutation = useMutation({
     mutationFn: () => {
-      const data = { name, description: description || undefined, address: address || undefined, type };
+      const data = {
+        name,
+        description: description || undefined,
+        address: address || undefined,
+        type,
+        stars: stars ? Number(stars) : null,
+        skiInSkiOut,
+        isAvailableInOta,
+        isArchived,
+        locationIds,
+      };
       return isEdit ? accommodationsApi.update(id!, data) : accommodationsApi.create(data);
     },
     onSuccess: (result) => {
@@ -204,6 +230,58 @@ export function AdminAccommodationFormPage() {
               >
                 {TYPE_OPTIONS.map((o) => (
                   <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Звездность</label>
+              <select
+                value={stars}
+                onChange={(e) => setStars(e.target.value)}
+                className="w-full border rounded px-3 py-2 text-sm"
+              >
+                <option value="">Не указана</option>
+                {[1, 2, 3, 4, 5].map((value) => (
+                  <option key={value} value={value}>{value} звезд</option>
+                ))}
+              </select>
+            </div>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={skiInSkiOut}
+                onChange={(e) => setSkiInSkiOut(e.target.checked)}
+              />
+              Ski-in / ski-out
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={isAvailableInOta}
+                onChange={(e) => setIsAvailableInOta(e.target.checked)}
+              />
+              Доступен в ОТА
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={isArchived}
+                onChange={(e) => setIsArchived(e.target.checked)}
+              />
+              Отель в архиве
+            </label>
+            <div>
+              <label className="block text-sm font-medium mb-1">Локации</label>
+              <select
+                multiple
+                value={locationIds}
+                onChange={(e) => setLocationIds(Array.from(e.target.selectedOptions, (option) => option.value))}
+                className="w-full border rounded px-3 py-2 text-sm min-h-32"
+              >
+                {locations.map((location) => (
+                  <option key={location.id} value={location.id}>
+                    {location.city}{location.region ? `, ${location.region}` : ''}
+                  </option>
                 ))}
               </select>
             </div>

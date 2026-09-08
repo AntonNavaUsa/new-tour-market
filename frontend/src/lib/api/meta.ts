@@ -7,12 +7,12 @@ export const metaApi = {
     return response.data;
   },
 
-  createLocation: async (data: { country: string; city: string; region?: string; urlSlug: string; language?: string }): Promise<Location> => {
+  createLocation: async (data: { country?: string; city: string; region?: string; urlSlug: string; language?: string; parentId?: string | null }): Promise<Location> => {
     const response = await api.post<Location>('/api/admin/locations', data);
     return response.data;
   },
 
-  updateLocation: async (id: string, data: Partial<{ country: string; city: string; region: string; urlSlug: string; language: string }>): Promise<Location> => {
+  updateLocation: async (id: string, data: Partial<{ country: string; city: string; region: string; urlSlug: string; language: string; parentId: string | null }>): Promise<Location> => {
     const response = await api.patch<Location>(`/api/admin/locations/${id}`, data);
     return response.data;
   },

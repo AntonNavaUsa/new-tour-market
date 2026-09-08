@@ -35,16 +35,26 @@ export class AccommodationsService {
         description: dto.description,
         address: dto.address,
         type: dto.type ?? 'OTHER',
+        stars: dto.stars,
+        skiInSkiOut: dto.skiInSkiOut ?? false,
+        isAvailableInOta: dto.isAvailableInOta ?? true,
+        isArchived: dto.isArchived ?? false,
+        locations: dto.locationIds
+          ? { create: dto.locationIds.map((locationId) => ({ locationId })) }
+          : undefined,
         createdByUserId: userId,
         partnerId: user?.partnerId ?? null,
       },
-      include: { photos: { orderBy: { sortOrder: 'asc' } } },
+      include: {
+        photos: { orderBy: { sortOrder: 'asc' } },
+        locations: { include: { location: true } },
+      },
     });
   }
 
-  async findAll(filters: AccommodationFilterDto) {
-    const { search, type, skip = 0, take = 50 } = filters;
-    const where: any = {};
+  async findAll(filters: AccommodationFilterDto, baseWhere: Record<string, unknown> = {}) {
+    const { search, type, skiInSkiOut, stars, locationIds, skip = 0, take = 50 } = filters;
+    const where: any = { ...baseWhere };
 
     if (search) {
       where.OR = [
@@ -55,6 +65,15 @@ export class AccommodationsService {
     if (type) {
       where.type = type;
     }
+    if (typeof skiInSkiOut === 'boolean') {
+      where.skiInSkiOut = skiInSkiOut;
+    }
+    if (typeof stars === 'number') {
+      where.stars = stars;
+    }
+    if (locationIds?.length) {
+      where.locations = { some: { locationId: { in: locationIds } } };
+    }
 
     const [data, total] = await Promise.all([
       this.prisma.accommodation.findMany({
@@ -64,6 +83,7 @@ export class AccommodationsService {
         orderBy: { name: 'asc' },
         include: {
           photos: { orderBy: { sortOrder: 'asc' }, take: 1 },
+          locations: { include: { location: true } },
           _count: { select: { reviews: true } },
         },
       }),
@@ -73,11 +93,19 @@ export class AccommodationsService {
     return { data, meta: { total, skip, take, hasMore: skip + take < total } };
   }
 
+  async findSkiHotels(filters: AccommodationFilterDto) {
+    return this.findAll(
+      filters,
+      { isAvailableInOta: true, isArchived: false },
+    );
+  }
+
   async findOne(id: string) {
     const accommodation = await this.prisma.accommodation.findUnique({
       where: { id },
       include: {
         photos: { orderBy: { sortOrder: 'asc' } },
+        locations: { include: { location: true } },
         reviews: {
           where: { isVisible: true },
           orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
@@ -95,10 +123,24 @@ export class AccommodationsService {
     dto: UpdateAccommodationDto,
   ) {
     await this.checkAccess(id, userId, userRole);
-    return this.prisma.accommodation.update({
-      where: { id },
-      data: dto,
-      include: { photos: { orderBy: { sortOrder: 'asc' } } },
+    const { locationIds, ...fields } = dto;
+    return this.prisma.$transaction(async (transaction) => {
+      if (locationIds !== undefined) {
+        await transaction.accommodationLocation.deleteMany({ where: { accommodationId: id } });
+      }
+      return transaction.accommodation.update({
+        where: { id },
+        data: {
+          ...fields,
+          locations: locationIds === undefined
+            ? undefined
+            : { create: locationIds.map((locationId) => ({ locationId })) },
+        },
+        include: {
+          photos: { orderBy: { sortOrder: 'asc' } },
+          locations: { include: { location: true } },
+        },
+      });
     });
   }
 

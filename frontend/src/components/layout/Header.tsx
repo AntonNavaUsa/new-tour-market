@@ -79,6 +79,12 @@ export function Header() {
             >
               Все туры
             </Link>
+            <Link
+              to="/ski-tours"
+              className="transition-colors hover:text-foreground/80 text-foreground"
+            >
+              Горнолыжные туры
+            </Link>
 
             {/* Путеводитель dropdown */}
             <div ref={guideRef} className="relative">

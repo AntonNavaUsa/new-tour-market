@@ -26,7 +26,7 @@ COPY package*.json ./
 COPY --from=build /app/prisma ./prisma
 
 # Install all deps (incl. prisma CLI) and generate client
-RUN npm ci && npx prisma generate
+RUN npm ci && npx prisma generate && npx playwright install --with-deps chromium
 
 COPY --from=build /app/dist ./dist
 

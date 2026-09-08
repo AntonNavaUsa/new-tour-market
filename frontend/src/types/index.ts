@@ -54,6 +54,7 @@ export interface Location {
   region: string | null;
   city: string | null;
   language: string;
+  parentId: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -280,6 +281,10 @@ export interface Accommodation {
   description: string | null;
   address: string | null;
   type: AccommodationType;
+  stars: number | null;
+  skiInSkiOut: boolean;
+  isAvailableInOta: boolean;
+  isArchived: boolean;
   createdByUserId: string | null;
   partnerId: string | null;
   createdAt: string;
@@ -287,6 +292,7 @@ export interface Accommodation {
   photos?: AccommodationPhoto[];
   reviews?: Review[];
   _count?: { reviews: number };
+  locations?: Array<{ accommodationId: string; locationId: string; location: Location }>;
 }
 
 export interface CardAccommodation {

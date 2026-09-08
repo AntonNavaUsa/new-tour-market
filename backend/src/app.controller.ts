@@ -43,7 +43,7 @@ export class AppController {
   @Get('meta/locations')
   async getLocations() {
     return this.prisma.location.findMany({
-      orderBy: [{ country: 'asc' }, { city: 'asc' }],
+      orderBy: [{ country: 'asc' }, { parentId: 'asc' }, { city: 'asc' }],
     });
   }
 
@@ -122,7 +122,7 @@ export class AppController {
   @Post('admin/locations')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
-  async createLocation(@Body() data: { country: string; city: string; region?: string; urlSlug: string; language?: string }) {
+  async createLocation(@Body() data: { country?: string; city: string; region?: string; urlSlug: string; language?: string; parentId?: string | null }) {
     // Check if urlSlug already exists
     const existing = await this.prisma.location.findUnique({
       where: { urlSlug: data.urlSlug },
@@ -131,13 +131,21 @@ export class AppController {
       throw new BadRequestException('URL slug уже существует');
     }
 
+    const parent = data.parentId
+      ? await this.prisma.location.findUnique({ where: { id: data.parentId } })
+      : null;
+    if (data.parentId && !parent) {
+      throw new BadRequestException('Родительская локация не найдена');
+    }
+
     return this.prisma.location.create({
       data: {
-        country: data.country,
+        country: parent?.country ?? data.country ?? '',
         city: data.city,
-        region: data.region,
+        region: parent?.region ?? data.region,
         urlSlug: data.urlSlug,
-        language: data.language || 'ru',
+        language: parent?.language ?? data.language ?? 'ru',
+        parentId: data.parentId ?? null,
       },
     });
   }
@@ -147,7 +155,7 @@ export class AppController {
   @Roles(UserRole.ADMIN)
   async updateLocation(
     @Param('id') id: string,
-    @Body() data: { country?: string; city?: string; region?: string; urlSlug?: string; language?: string }
+    @Body() data: { country?: string; city?: string; region?: string; urlSlug?: string; language?: string; parentId?: string | null }
   ) {
     // Check if new urlSlug conflicts with existing location
     if (data.urlSlug) {
@@ -159,9 +167,26 @@ export class AppController {
       }
     }
 
+    if (data.parentId === id) {
+      throw new BadRequestException('Локация не может быть родителем самой себя');
+    }
+    const parent = data.parentId
+      ? await this.prisma.location.findUnique({ where: { id: data.parentId } })
+      : null;
+    if (data.parentId && !parent) {
+      throw new BadRequestException('Родительская локация не найдена');
+    }
+
+    const updateData = Object.fromEntries(Object.entries(data).filter(([key, value]) => key !== 'parentId' && value !== undefined));
     return this.prisma.location.update({
       where: { id },
-      data: Object.fromEntries(Object.entries(data).filter(([, v]) => v !== undefined)),
+      data: {
+        ...updateData,
+        ...(data.parentId !== undefined && {
+          parentId: data.parentId,
+          ...(parent && { country: parent.country, region: parent.region, language: parent.language }),
+        }),
+      },
     });
   }
 

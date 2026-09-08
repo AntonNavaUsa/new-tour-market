@@ -15,6 +15,7 @@ COPY . .
 
 # Generate Prisma Client
 RUN npx prisma generate
+RUN npx playwright install chromium
 
 # Expose port
 EXPOSE 3000

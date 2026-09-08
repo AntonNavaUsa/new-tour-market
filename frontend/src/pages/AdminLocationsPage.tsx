@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { Edit, Plus, Search, Trash2 } from 'lucide-react';
 import { metaApi } from '../lib/api';
 import { handleApiError } from '../lib/axios';
+import { buildLocationTree } from '../lib/locationTree';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
 import { Input } from '../components/ui/input';
@@ -43,6 +44,13 @@ export function AdminLocationsPage() {
   });
 
   const locations = data ?? [];
+  const locationTree = buildLocationTree(locations);
+
+  const locationTitle = (location: Location) => {
+    const city = location.city ?? 'Без названия';
+    const country = location.country ?? 'Страна не указана';
+    return `${city}, ${country}`;
+  };
 
   return (
     <div className="container py-10">
@@ -95,14 +103,20 @@ export function AdminLocationsPage() {
         </Card>
       ) : (
         <div className="space-y-2">
-          {locations.map((location: Location) => (
+          {locationTree.map(({ item: location, depth, hasChildren }) => (
             <Card key={location.id}>
               <CardContent className="flex items-center justify-between p-4">
-                <div className="flex-1">
-                  <h3 className="font-semibold">
-                    {location.city}, {location.country}
-                  </h3>
-                  <div className="text-sm text-muted-foreground">
+                <div className="flex-1" style={{ paddingLeft: `${depth * 1}rem` }}>
+                  <div className="flex items-center gap-2">
+                    {depth > 0 && <span className="text-xs text-emerald-700">↳</span>}
+                    <h3 className="font-semibold">{locationTitle(location)}</h3>
+                    {hasChildren && (
+                      <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
+                        Родитель
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-1 text-sm text-muted-foreground">
                     {location.region && <span>{location.region} · </span>}
                     <span>{location.urlSlug}</span>
                   </div>
@@ -119,7 +133,7 @@ export function AdminLocationsPage() {
                     size="sm"
                     disabled={deleteMutation.isPending}
                     onClick={() => {
-                      if (window.confirm(`Удалить локацию "${location.city}, ${location.country}"?`)) {
+                      if (window.confirm(`Удалить локацию "${locationTitle(location)}"?`)) {
                         deleteMutation.mutate(location.id);
                       }
                     }}
