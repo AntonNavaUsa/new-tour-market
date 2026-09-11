@@ -12,8 +12,139 @@ import {
   X,
   Check,
   Sparkles,
+  Info,
+  Bath,
 } from 'lucide-react';
 import type { TourSearchResult, TourSearchForm } from '../types';
+
+interface RoomOption {
+  id: string;
+  name: string;
+  price: number;
+  priceOld?: number;
+  size: string;
+  features: string[];
+  thumbnails: string[];
+  mealName: string;
+  roomCountText: string;
+  services: string[];
+  internet: string[];
+  bathroom: string[];
+}
+
+const ROOM_OPTIONS: RoomOption[] = [
+  {
+    id: 'economy',
+    name: 'Номер эконом-класса',
+    price: 199898,
+    priceOld: 235000,
+    size: '22 м²',
+    features: ['22 м²', 'Кондиционер', 'Без балкона'],
+    thumbnails: [
+      'https://images.unsplash.com/photo-1618773928121-c32242e63f39?auto=format&fit=crop&w=600&q=80',
+      'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=600&q=80',
+      'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=600&q=80',
+    ],
+    mealName: 'Всё включено (All Inclusive)',
+    roomCountText:
+      '40 номеров. В номере: Wi-Fi - платно (3$/день, 10$/неделя, 15$/2 недели), сейф - платно (2$/сутки), балкона нет. Некоторые номера расположены на минус первом этаже и имеют вид в коридор.',
+    services: [
+      'Телевизор',
+      'Мини-бар',
+      'Телефон',
+      'Уборка в номере - ежедневно',
+      'Мини-бар: пустой. Заполнение по запросу',
+      'Смена белья - 2 раза в неделю',
+      'Смена белья - 3 раза в неделю',
+      'Покрытие пола - ламинат',
+      'Сейф',
+      'Отопление',
+      'Пляжные полотенца',
+      'Смена полотенец',
+      'Мини-бар: вода при заселении',
+      'Смена белья',
+    ],
+    internet: ['Wi-Fi', 'Платный Wi-Fi'],
+    bathroom: [
+      'Фен',
+      'Ванная комната в номере',
+      'Ванна или душ',
+      'Душ',
+      'Полотенца',
+      'Туалетно-косметические принадлежности',
+      'Туалетная бумага',
+      'Туалет',
+    ],
+  },
+  {
+    id: 'standard',
+    name: 'Стандартный номер с балконом',
+    price: 210425,
+    size: '26 м²',
+    features: ['26 м²', 'Кондиционер', 'Балкон', 'Вид во двор'],
+    thumbnails: [
+      'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=600&q=80',
+      'https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=600&q=80',
+    ],
+    mealName: 'Всё включено (All Inclusive)',
+    roomCountText:
+      '120 номеров. Уютные стандартные номера с балконом. В номере есть все необходимые удобства для комфортного отдыха.',
+    services: [
+      'Телевизор с плоским экраном',
+      'Балкон',
+      'Кондиционер',
+      'Мини-бар (вода при заезде)',
+      'Телефон',
+      'Уборка в номере - ежедневно',
+      'Смена белья - 3 раза в неделю',
+      'Покрытие пола - ламинат',
+      'Сейф',
+      'Пляжные полотенца',
+    ],
+    internet: ['Wi-Fi в номере'],
+    bathroom: [
+      'Фен',
+      'Душевая кабина',
+      'Набор полотенец',
+      'Туалетно-косметические принадлежности',
+      'Тапочки',
+    ],
+  },
+  {
+    id: 'family',
+    name: '2-комнатный семейный номер',
+    price: 245000,
+    priceOld: 270000,
+    size: '42 м²',
+    features: ['42 м²', '2 комнаты', 'Кондиционер', 'Балкон'],
+    thumbnails: [
+      'https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=600&q=80',
+      'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=600&q=80',
+      'https://images.unsplash.com/photo-1595526114035-0d45ed16cfbf?auto=format&fit=crop&w=600&q=80',
+    ],
+    mealName: 'Ультра всё включено (UAI)',
+    roomCountText:
+      '35 номеров. Просторный семейный номер с двумя изолированными спальнями и балконом. Отличный выбор для отдыха всей семьёй.',
+    services: [
+      '2 телевизора',
+      '2 изолированные комнаты',
+      'Балкон с видом на сад',
+      'Мини-бар пополняется ежедневно',
+      'Ежедневная уборка',
+      'Халаты и тапочки',
+      'Чайный набор и электрочайник',
+      'Бесплатный сейф',
+    ],
+    internet: ['Бесплатный Wi-Fi'],
+    bathroom: [
+      'Просторная ванная комната',
+      'Фен',
+      'Ванна и душ',
+      'Премиум косметика',
+      'Комплект халатов и полотенец',
+    ],
+  },
+];
 
 // Default gallery fallback images if tour item has limited photos
 const DEFAULT_GALLERY = [
@@ -67,6 +198,10 @@ export function TourSearchHotelPage() {
 
   const [activePhotoIndex, setActivePhotoIndex] = useState<number | null>(null);
   const [isFavorite, setIsFavorite] = useState(false);
+
+  // Room modal state
+  const [selectedModalRoom, setSelectedModalRoom] = useState<RoomOption | null>(null);
+  const [activeRoomPhotoIndex, setActiveRoomPhotoIndex] = useState<number>(0);
 
   // Consultation form state
   const [consultName, setConsultName] = useState('');
@@ -397,6 +532,121 @@ export function TourSearchHotelPage() {
           </div>
         </section>
 
+        {/* ROOMS AND RATES SECTION */}
+        <section className="mb-10 rounded-3xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 sm:p-8 shadow-sm space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white">
+                Номера и цены
+              </h2>
+              <p className="text-xs text-slate-500 mt-1">
+                Выберите подходящую категорию номера
+              </p>
+            </div>
+            <span className="text-xs font-semibold text-slate-400 hidden sm:inline">
+              Цены за 1 номер ({hotel.nights || 7} ночей)
+            </span>
+          </div>
+
+          <div className="space-y-4">
+            {ROOM_OPTIONS.map((room) => (
+              <div
+                key={room.id}
+                className="group flex flex-col md:flex-row items-start md:items-center justify-between gap-6 p-5 rounded-2xl border border-slate-200/80 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-800/30 hover:bg-slate-50 dark:hover:bg-zinc-800/60 transition shadow-sm"
+              >
+                {/* LEFT: THUMBNAILS */}
+                <div className="flex items-center gap-2 shrink-0">
+                  {room.thumbnails.slice(0, 2).map((thumb, idx) => (
+                    <div
+                      key={idx}
+                      onClick={() => {
+                        setSelectedModalRoom(room);
+                        setActiveRoomPhotoIndex(idx);
+                      }}
+                      className="relative h-20 w-24 sm:h-24 sm:w-28 overflow-hidden rounded-xl bg-slate-200 dark:bg-zinc-700 cursor-pointer group/thumb"
+                    >
+                      <img
+                        src={thumb}
+                        alt={`${room.name} - ${idx + 1}`}
+                        className="h-full w-full object-cover transition-transform duration-300 group-hover/thumb:scale-110"
+                      />
+                      <div className="absolute inset-0 bg-black/10 group-hover/thumb:bg-transparent transition-colors" />
+                    </div>
+                  ))}
+                </div>
+
+                {/* MIDDLE: ROOM INFO */}
+                <div className="flex-1 space-y-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedModalRoom(room);
+                        setActiveRoomPhotoIndex(0);
+                      }}
+                      className="text-lg font-bold text-slate-900 dark:text-white hover:text-orange-600 dark:hover:text-orange-400 transition text-left"
+                    >
+                      {room.name}
+                    </button>
+                  </div>
+
+                  {/* BADGES */}
+                  <div className="flex flex-wrap items-center gap-2 text-xs">
+                    {room.features.map((feat, i) => (
+                      <span
+                        key={i}
+                        className="px-2.5 py-1 rounded-lg bg-white dark:bg-zinc-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-zinc-700 font-medium"
+                      >
+                        {feat}
+                      </span>
+                    ))}
+                    <span className="px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-semibold">
+                      {room.mealName}
+                    </span>
+                  </div>
+
+                  <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
+                    {room.roomCountText}
+                  </p>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedModalRoom(room);
+                      setActiveRoomPhotoIndex(0);
+                    }}
+                    className="inline-flex items-center gap-1 text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline pt-1"
+                  >
+                    <Info className="h-3.5 w-3.5" />
+                    <span>Описание номера и фото</span>
+                  </button>
+                </div>
+
+                {/* RIGHT: PRICE & BOOK BUTTON */}
+                <div className="flex md:flex-col items-center md:items-end justify-between w-full md:w-auto pt-3 md:pt-0 border-t md:border-t-0 border-slate-200 dark:border-zinc-700 gap-4 shrink-0">
+                  <div className="text-left md:text-right">
+                    {room.priceOld && (
+                      <span className="text-xs text-slate-400 line-through block">
+                        {room.priceOld.toLocaleString('ru-RU')} ₽
+                      </span>
+                    )}
+                    <span className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                      {room.price.toLocaleString('ru-RU')} ₽
+                    </span>
+                  </div>
+
+                  <Link
+                    to={`/booking/${hotel.id}`}
+                    className="px-6 py-2.5 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white font-bold rounded-xl shadow-sm text-sm transition"
+                  >
+                    Выбрать
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
         {/* CONSULTATION / HELP CARD ("Подбираете отель?") */}
         <section className="mb-10 rounded-3xl bg-gradient-to-br from-blue-50 via-slate-50 to-indigo-50 dark:from-zinc-900 dark:via-zinc-900 dark:to-blue-950/40 p-6 sm:p-8 border border-blue-100 dark:border-zinc-800 shadow-md">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
@@ -605,6 +855,149 @@ export function TourSearchHotelPage() {
           >
             <ChevronRight className="h-7 w-7" />
           </button>
+        </div>
+      )}
+
+      {/* ROOM DESCRIPTION & GALLERY MODAL */}
+      {selectedModalRoom && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
+          <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white dark:bg-zinc-900 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
+            {/* CLOSE BUTTON */}
+            <button
+              type="button"
+              onClick={() => setSelectedModalRoom(null)}
+              className="absolute top-5 right-5 p-2 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-600 dark:text-slate-300 transition"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            {/* MODAL HEADER */}
+            <div>
+              <span className="text-xs font-bold text-orange-500 uppercase tracking-wider block mb-1">
+                Описание номера
+              </span>
+              <h3 className="text-2xl font-black text-slate-900 dark:text-white">
+                {selectedModalRoom.name}
+              </h3>
+              <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                {selectedModalRoom.features.map((feat, i) => (
+                  <span
+                    key={i}
+                    className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-zinc-800 font-semibold text-slate-700 dark:text-slate-300"
+                  >
+                    {feat}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* ROOM PHOTO ALBUM */}
+            {selectedModalRoom.thumbnails.length > 0 && (
+              <div className="space-y-2">
+                <div className="h-64 sm:h-72 w-full overflow-hidden rounded-2xl bg-slate-100 dark:bg-zinc-800">
+                  <img
+                    src={selectedModalRoom.thumbnails[activeRoomPhotoIndex] || selectedModalRoom.thumbnails[0]}
+                    alt={selectedModalRoom.name}
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+                <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                  {selectedModalRoom.thumbnails.map((thumb, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setActiveRoomPhotoIndex(idx)}
+                      className={`h-16 w-20 shrink-0 overflow-hidden rounded-xl border-2 transition ${
+                        activeRoomPhotoIndex === idx
+                          ? 'border-orange-500 scale-95'
+                          : 'border-transparent opacity-70 hover:opacity-100'
+                      }`}
+                    >
+                      <img src={thumb} alt={`Фото ${idx + 1}`} className="h-full w-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ROOM SUMMARY TEXT */}
+            <div className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-zinc-800/50 p-4 rounded-2xl border border-slate-100 dark:border-zinc-800">
+              {selectedModalRoom.roomCountText}
+            </div>
+
+            {/* SERVICES AND AMENITIES BREAKDOWN */}
+            <div className="space-y-5 pt-2">
+              {/* SECTION: УСЛУГИ И УДОБСТВА */}
+              {selectedModalRoom.services.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="text-xs font-extrabold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                    <Sparkles className="h-4 w-4 text-orange-500" />
+                    Услуги и удобства
+                  </h4>
+                  <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-600 dark:text-slate-300">
+                    {selectedModalRoom.services.map((srv, idx) => (
+                      <li key={idx} className="flex items-center gap-2">
+                        <span className="h-1.5 w-1.5 rounded-full bg-orange-500 shrink-0" />
+                        <span>{srv}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* SECTION: ИНТЕРНЕТ В НОМЕРЕ */}
+              {selectedModalRoom.internet.length > 0 && (
+                <div className="space-y-2 pt-3 border-t border-slate-100 dark:border-zinc-800">
+                  <h4 className="text-xs font-extrabold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                    <Wifi className="h-4 w-4 text-blue-500" />
+                    Интернет в номере
+                  </h4>
+                  <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-600 dark:text-slate-300">
+                    {selectedModalRoom.internet.map((net, idx) => (
+                      <li key={idx} className="flex items-center gap-2">
+                        <span className="h-1.5 w-1.5 rounded-full bg-blue-500 shrink-0" />
+                        <span>{net}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* SECTION: В ВАННОЙ КОМНАТЕ */}
+              {selectedModalRoom.bathroom.length > 0 && (
+                <div className="space-y-2 pt-3 border-t border-slate-100 dark:border-zinc-800">
+                  <h4 className="text-xs font-extrabold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                    <Bath className="h-4 w-4 text-emerald-500" />
+                    В ванной комнате
+                  </h4>
+                  <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-600 dark:text-slate-300">
+                    {selectedModalRoom.bathroom.map((bath, idx) => (
+                      <li key={idx} className="flex items-center gap-2">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0" />
+                        <span>{bath}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+
+            {/* MODAL FOOTER BUTTON */}
+            <div className="pt-4 border-t border-slate-100 dark:border-zinc-800 flex items-center justify-between gap-4">
+              <div>
+                <span className="text-xs text-slate-400 block font-medium">Стоимость за тур</span>
+                <span className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                  {selectedModalRoom.price.toLocaleString('ru-RU')} ₽
+                </span>
+              </div>
+              <Link
+                to={`/booking/${hotel.id}`}
+                className="px-8 py-3 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl shadow-md text-sm transition"
+              >
+                Забронировать номер
+              </Link>
+            </div>
+          </div>
         </div>
       )}
     </main>
