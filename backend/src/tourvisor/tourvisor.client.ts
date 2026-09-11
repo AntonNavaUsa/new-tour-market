@@ -3,11 +3,13 @@ import {
   HttpException,
   Injectable,
   HttpStatus,
+  Logger,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class TourvisorClient {
+  private readonly logger = new Logger(TourvisorClient.name);
   private readonly baseUrl: string;
   private readonly token: string;
   private readonly timeoutMs: number;
@@ -20,6 +22,7 @@ export class TourvisorClient {
 
   async get<T>(path: string, params?: Record<string, unknown>): Promise<T> {
     if (!this.token) {
+      this.logger.error('TOURVISOR_JWT_TOKEN is missing in environment variables');
       throw new BadGatewayException('Tourvisor integration is not configured');
     }
 
@@ -37,7 +40,7 @@ export class TourvisorClient {
     const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
 
     try {
-      const response = await fetch(url, {
+      const response = await fetch(url.toString(), {
         method: 'GET',
         headers: {
           Accept: 'application/json',
@@ -51,13 +54,19 @@ export class TourvisorClient {
       }
 
       if (response.status === 429) {
+        this.logger.warn(`Tourvisor rate limit exceeded for ${url.toString()}`);
         throw new HttpException('Tourvisor rate limit exceeded', HttpStatus.TOO_MANY_REQUESTS);
       }
 
       const reason = await response.text().catch(() => '');
-      throw new HttpException(`Tourvisor request failed: ${reason || response.statusText}`, response.status >= 400 && response.status < 500 ? response.status : 502);
+      this.logger.error(`Tourvisor request failed (${response.status}): ${reason || response.statusText}`);
+      throw new HttpException(
+        `Tourvisor request failed: ${reason || response.statusText}`,
+        response.status >= 400 && response.status < 500 ? response.status : HttpStatus.BAD_GATEWAY,
+      );
     } catch (error) {
       if (error instanceof HttpException) throw error;
+      this.logger.error(`Tourvisor request error: ${(error as Error)?.message || error}`);
       throw new BadGatewayException('Tourvisor is temporarily unavailable');
     } finally {
       clearTimeout(timeout);

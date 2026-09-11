@@ -59,6 +59,9 @@ services:
       SMTP_PASSWORD: ${SMTP_PASSWORD}
       SMTP_FROM_EMAIL: ${SMTP_FROM_EMAIL:-noreply@szntravel.ru}
       SMTP_FROM_NAME: ${SMTP_FROM_NAME:-Сезон путешествий}
+      TOURVISOR_API_BASE_URL: ${TOURVISOR_API_BASE_URL:-https://api.tourvisor.ru}
+      TOURVISOR_JWT_TOKEN: ${TOURVISOR_JWT_TOKEN}
+      TOURVISOR_TIMEOUT_MS: ${TOURVISOR_TIMEOUT_MS:-15000}
       NODE_ENV: production
     ports:
       - "127.0.0.1:3010:3000"
