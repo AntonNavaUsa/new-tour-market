@@ -1,5 +1,6 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Star,
   Heart,
@@ -89,9 +90,15 @@ function HotelTourCard({ result, form }: { result: TourSearchResult; form: TourS
       {/* CARD BODY */}
       <div className="flex flex-1 flex-col justify-between p-5 space-y-4">
         <div>
-          <h3 className="text-lg font-bold text-slate-900 dark:text-white line-clamp-2 leading-snug group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">
-            {hotelName}
-          </h3>
+          <Link
+            to={`/tour-search/hotel/${result.id}`}
+            state={{ hotel: result, form }}
+            className="block"
+          >
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white line-clamp-2 leading-snug group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">
+              {hotelName}
+            </h3>
+          </Link>
 
           <div className="mt-2.5 flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
             {result.meal?.name && (
@@ -119,13 +126,14 @@ function HotelTourCard({ result, form }: { result: TourSearchResult; form: TourS
             </div>
           </div>
 
-          <button
-            type="button"
+          <Link
+            to={`/tour-search/hotel/${result.id}`}
+            state={{ hotel: result, form }}
             className="w-full py-3 px-4 bg-orange-500 hover:bg-orange-600 active:scale-[0.99] text-white font-bold rounded-2xl shadow-md shadow-orange-500/20 transition-all flex items-center justify-center gap-2 text-sm"
           >
             <span>Показать туры</span>
             <ChevronRight className="h-4 w-4" />
-          </button>
+          </Link>
         </div>
       </div>
     </article>
