@@ -15,7 +15,7 @@ export class TourvisorClient {
   private readonly timeoutMs: number;
 
   constructor(private readonly config: ConfigService) {
-    this.baseUrl = (this.config.get<string>('TOURVISOR_API_BASE_URL') || 'https://api.tourvisor.ru').replace(/\/$/, '');
+    this.baseUrl = (this.config.get<string>('TOURVISOR_API_BASE_URL') || 'https://api.tourvisor.ru/search/api/v1').replace(/\/$/, '');
     this.token = this.config.get<string>('TOURVISOR_JWT_TOKEN') || '';
     this.timeoutMs = Number(this.config.get<string>('TOURVISOR_TIMEOUT_MS') || 15000);
   }

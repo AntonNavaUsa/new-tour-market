@@ -123,7 +123,7 @@ backend/src/tourvisor/
 ### 5.1. Переменные окружения
 
 ```env
-TOURVISOR_API_BASE_URL=https://api.tourvisor.ru/search
+TOURVISOR_API_BASE_URL=https://api.tourvisor.ru/search/api/v1
 TOURVISOR_JWT_TOKEN=...
 TOURVISOR_TIMEOUT_MS=15000
 ```

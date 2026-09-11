@@ -77,7 +77,7 @@ services:
   #     SMTP_PORT: 1025
   #     YOOKASSA_SHOP_ID: ${YOOKASSA_SHOP_ID}
   #     YOOKASSA_SECRET_KEY: ${YOOKASSA_SECRET_KEY}
-  #     TOURVISOR_API_BASE_URL: ${TOURVISOR_API_BASE_URL:-https://api.tourvisor.ru}
+  #     TOURVISOR_API_BASE_URL: ${TOURVISOR_API_BASE_URL:-https://api.tourvisor.ru/search/api/v1}
   #     TOURVISOR_JWT_TOKEN: ${TOURVISOR_JWT_TOKEN}
   #     TOURVISOR_TIMEOUT_MS: ${TOURVISOR_TIMEOUT_MS:-15000}
   #     NODE_ENV: ${NODE_ENV:-development}
