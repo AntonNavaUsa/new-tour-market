@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import { CalendarDays, ChevronDown, Loader2, Search, Users } from 'lucide-react';
 import { tourSearchApi } from '../lib/api';
+import { TourSearchBar } from '../components/TourSearchBar';
 import type { TourSearchForm, TourSearchResult, TourSearchStatus } from '../types';
 
 const initialForm: TourSearchForm = {
@@ -17,16 +17,6 @@ const initialForm: TourSearchForm = {
   onlyCharter: false,
   onlyDirect: false,
 };
-
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <label className="relative flex min-h-[86px] min-w-0 flex-col justify-center bg-[#edf4f2] px-5 py-3 hover:bg-[#e5efec]">
-      <span className="mb-1 block truncate text-sm leading-5 text-muted-foreground">{label}</span>
-      {children}
-    </label>
-  );
-}
 
 export function TourSearchPage() {
   const [form, setForm] = useState<TourSearchForm>(initialForm);
@@ -116,8 +106,6 @@ export function TourSearchPage() {
     searchMutation.mutate(form);
   };
 
-  const departureName = departuresQuery.data?.find((item) => item.id === form.departureId)?.name || 'Выберите город';
-  const countryName = countriesQuery.data?.find((item) => item.id === form.countryId)?.name || 'Выберите страну';
   const isSearching = searchMutation.isPending || searchId !== null;
 
   return (
@@ -129,66 +117,25 @@ export function TourSearchPage() {
           <p className="mt-4 text-muted-foreground">Сравним предложения туроператоров по вашим датам и направлению.</p>
         </header>
 
-        <section className="rounded-[28px] bg-white p-3 shadow-xl shadow-indigo-200/40 sm:p-4" aria-label="Параметры поиска туров">
-          <div className="grid gap-px overflow-hidden rounded-2xl bg-white md:grid-cols-[minmax(150px,1.1fr)_minmax(150px,1.1fr)_minmax(235px,1.45fr)_minmax(155px,1fr)_minmax(150px,1fr)_minmax(165px,auto)]">
-            <Field label="Откуда">
-              <select
-                className="w-full min-w-0 appearance-none truncate bg-transparent pr-6 text-lg font-medium outline-none"
-                value={form.departureId ?? ''}
-                onChange={(event) => changeDeparture(Number(event.target.value) || null)}
-              >
-                <option value="">{departuresQuery.isLoading ? 'Загрузка...' : departureName}</option>
-                {departuresQuery.data?.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-              </select>
-              <ChevronDown className="pointer-events-none absolute ml-[calc(100%-2rem)] mt-7 h-4 w-4 text-foreground" aria-hidden="true" />
-            </Field>
-            <Field label="Куда">
-              <select
-                className="w-full min-w-0 appearance-none truncate bg-transparent pr-6 text-lg font-medium outline-none disabled:text-muted-foreground"
-                value={form.countryId ?? ''}
-                disabled={!form.departureId}
-                onChange={(event) => updateForm('countryId', Number(event.target.value) || null)}
-              >
-                <option value="">{countryName}</option>
-                {countriesQuery.data?.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-              </select>
-              <ChevronDown className="pointer-events-none absolute ml-[calc(100%-2rem)] mt-7 h-4 w-4 text-foreground" aria-hidden="true" />
-            </Field>
-            <Field label="Дата вылета">
-              <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 text-base font-medium">
-                <div className="relative min-w-0">
-                  <input aria-label="Дата от" type="date" min={datesQuery.data?.[0]} value={form.dateFrom} onChange={(event) => updateForm('dateFrom', event.target.value)} className="block w-full min-w-0 bg-transparent pr-5 text-sm outline-none" />
-                  <CalendarDays className="pointer-events-none absolute right-0 top-1/2 h-4 w-4 -translate-y-1/2" aria-hidden="true" />
-                </div>
-                <span className="text-muted-foreground">-</span>
-                <div className="relative min-w-0">
-                  <input aria-label="Дата до" type="date" max={datesQuery.data?.at(-1)} value={form.dateTo} onChange={(event) => updateForm('dateTo', event.target.value)} className="block w-full min-w-0 bg-transparent pr-5 text-sm outline-none" />
-                  <CalendarDays className="pointer-events-none absolute right-0 top-1/2 h-4 w-4 -translate-y-1/2" aria-hidden="true" />
-                </div>
-              </div>
-            </Field>
-            <Field label="На сколько">
-              <div className="flex min-w-0 items-center gap-2 text-lg font-medium">
-                <input aria-label="Ночей от" type="number" min="1" max="28" value={form.nightsFrom} onChange={(event) => updateForm('nightsFrom', Number(event.target.value))} className="w-12 min-w-0 bg-transparent outline-none" />
-                <span className="text-muted-foreground">-</span>
-                <input aria-label="Ночей до" type="number" min="1" max="28" value={form.nightsTo} onChange={(event) => updateForm('nightsTo', Number(event.target.value))} className="w-12 min-w-0 bg-transparent outline-none" />
-                <span className="truncate">ночей</span>
-              </div>
-            </Field>
-            <Field label="Кто едет">
-              <div className="flex min-w-0 items-center gap-2 text-lg font-medium">
-                <Users className="h-5 w-5 shrink-0 text-muted-foreground" />
-                <input aria-label="Взрослых" type="number" min="1" max="6" value={form.adults} onChange={(event) => updateForm('adults', Number(event.target.value))} className="w-10 min-w-0 bg-transparent outline-none" />
-                <span className="truncate">взрослых</span>
-              </div>
-            </Field>
-            <button type="button" onClick={submit} disabled={isSearching} className="flex min-h-[86px] items-center justify-center gap-2 bg-orange-500 px-5 text-lg font-bold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-70">
-              {isSearching ? <Loader2 className="h-5 w-5 animate-spin" /> : <Search className="h-5 w-5" />}
-              {searchMutation.isPending ? 'Ищем...' : searchId ? 'Идет поиск' : 'Найти тур'}
-            </button>
-          </div>
+        <section aria-label="Параметры поиска туров">
+          <TourSearchBar
+            form={form}
+            departures={departuresQuery.data}
+            countries={countriesQuery.data}
+            availableDates={datesQuery.data}
+            isDeparturesLoading={departuresQuery.isLoading}
+            isCountriesLoading={countriesQuery.isLoading}
+            isSearching={isSearching}
+            onUpdateForm={updateForm}
+            onChangeDeparture={changeDeparture}
+            onSubmit={submit}
+          />
 
-          {errorMessage && <p className="px-3 pt-3 text-sm text-destructive" role="alert">{errorMessage}</p>}
+          {errorMessage && (
+            <p className="px-3 pt-3 text-sm text-destructive font-medium" role="alert">
+              {errorMessage}
+            </p>
+          )}
         </section>
 
         {searchId && (
