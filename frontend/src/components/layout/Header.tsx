@@ -85,6 +85,18 @@ export function Header() {
             >
               Горнолыжные туры
             </Link>
+            <Link
+              to="/tour-search"
+              className="transition-colors hover:text-foreground/80 text-foreground"
+            >
+              Поиск туров
+            </Link>
+            <Link
+              to="/hot-tours"
+              className="transition-colors hover:text-foreground/80 text-foreground"
+            >
+              Горящие туры
+            </Link>
 
             {/* Путеводитель dropdown */}
             <div ref={guideRef} className="relative">

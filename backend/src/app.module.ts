@@ -17,6 +17,7 @@ import { AccommodationsModule } from './accommodations/accommodations.module';
 import { FaqsModule } from './faqs/faqs.module';
 import { ExtrasModule } from './extras/extras.module';
 import { GpxFilesModule } from './gpx-files/gpx-files.module';
+import { TourvisorModule } from './tourvisor/tourvisor.module';
 import { AppController } from './app.controller';
 
 @Module({
@@ -24,7 +25,7 @@ import { AppController } from './app.controller';
     // Configuration
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: '../.env',
+      envFilePath: ['../.env', '.env'],
     }),
     
     // Rate limiting
@@ -54,6 +55,7 @@ import { AppController } from './app.controller';
     FaqsModule,
     ExtrasModule,
     GpxFilesModule,
+    TourvisorModule,
   ],
   controllers: [AppController],
 })

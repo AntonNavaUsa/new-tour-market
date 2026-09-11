@@ -1,5 +1,44 @@
 // API Types based on backend Prisma schema
 
+export interface TourSearchReference {
+  id: number;
+  name: string;
+}
+
+export interface TourSearchForm {
+  departureId: number | null;
+  countryId: number | null;
+  dateFrom: string;
+  dateTo: string;
+  nightsFrom: number;
+  nightsTo: number;
+  adults: number;
+  childs: number[];
+  currency: string;
+  onlyCharter: boolean;
+  onlyDirect: boolean;
+}
+
+export interface TourSearchStatus {
+  searchId: number;
+  status: string;
+  progress: number;
+  minPrice: number;
+}
+
+export interface TourSearchResult {
+  id: number;
+  name: string;
+  category: number;
+  rating: number;
+  price: number;
+  currency: string;
+  picturelink?: string;
+  country?: { name?: string };
+  region?: { name?: string };
+  tours?: Array<Record<string, unknown>>;
+}
+
 export enum UserRole {
   USER = 'USER',
   ADMIN = 'ADMIN',

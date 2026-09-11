@@ -12,3 +12,4 @@ export * from './payments';
 export * from './reviews';
 export * from './tickets';
 export * from './schedules';
+export * from './tour-search';
