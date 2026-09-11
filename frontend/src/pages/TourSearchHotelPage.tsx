@@ -635,12 +635,22 @@ export function TourSearchHotelPage() {
                     </span>
                   </div>
 
-                  <Link
-                    to={`/booking/${hotel.id}`}
-                    className="px-6 py-2.5 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white font-bold rounded-xl shadow-sm text-sm transition"
+                  <a
+                    href={`/tour-search/flights/${hotel.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => {
+                      // Pass state via sessionStorage before opening new tab
+                      sessionStorage.setItem('selected_tour_hotel', JSON.stringify(hotel));
+                      sessionStorage.setItem('selected_tour_room_name', room.name);
+                      if (stateForm) {
+                        sessionStorage.setItem('selected_tour_form', JSON.stringify(stateForm));
+                      }
+                    }}
+                    className="px-6 py-2.5 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white font-bold rounded-xl shadow-sm text-sm transition inline-flex items-center gap-1"
                   >
                     Выбрать
-                  </Link>
+                  </a>
                 </div>
               </div>
             ))}
@@ -990,12 +1000,21 @@ export function TourSearchHotelPage() {
                   {selectedModalRoom.price.toLocaleString('ru-RU')} ₽
                 </span>
               </div>
-              <Link
-                to={`/booking/${hotel.id}`}
+              <a
+                href={`/tour-search/flights/${hotel.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => {
+                  sessionStorage.setItem('selected_tour_hotel', JSON.stringify(hotel));
+                  sessionStorage.setItem('selected_tour_room_name', selectedModalRoom.name);
+                  if (stateForm) {
+                    sessionStorage.setItem('selected_tour_form', JSON.stringify(stateForm));
+                  }
+                }}
                 className="px-8 py-3 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl shadow-md text-sm transition"
               >
-                Забронировать номер
-              </Link>
+                Выбрать номер
+              </a>
             </div>
           </div>
         </div>

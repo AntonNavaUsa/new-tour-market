@@ -42,6 +42,7 @@ import { AboutPage } from './pages/AboutPage';
 import { SkiToursPage } from './pages/SkiToursPage';
 import { TourSearchPage } from './pages/TourSearchPage';
 import { TourSearchHotelPage } from './pages/TourSearchHotelPage';
+import { TourSearchFlightsPage } from './pages/TourSearchFlightsPage';
 import { HotToursPage } from './pages/HotToursPage';
 import { ContactsPage } from './pages/ContactsPage';
 import { BecomePartnerPage } from './pages/BecomePartnerPage';
@@ -76,6 +77,7 @@ function App() {
         <Route path="/ski-tours" element={<SkiToursPage />} />
         <Route path="/tour-search" element={<TourSearchPage />} />
         <Route path="/tour-search/hotel/:id" element={<TourSearchHotelPage />} />
+        <Route path="/tour-search/flights/:id" element={<TourSearchFlightsPage />} />
         <Route path="/hot-tours" element={<HotToursPage />} />
         <Route path="/tours/:id" element={<TourDetailPage />} />
         <Route path="/accommodations/:id" element={<AccommodationPage />} />
