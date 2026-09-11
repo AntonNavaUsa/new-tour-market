@@ -27,16 +27,35 @@ export interface TourSearchStatus {
 }
 
 export interface TourSearchResult {
-  id: number;
+  id: number | string;
   name: string;
-  category: number;
-  rating: number;
+  category?: number;
+  stars?: number;
+  rating?: number;
+  reviewsCount?: number;
   price: number;
+  priceOld?: number;
   currency: string;
   picturelink?: string;
-  country?: { name?: string };
-  region?: { name?: string };
+  picture?: string;
+  images?: string[];
+  country?: { id?: number; name?: string };
+  region?: { id?: number; name?: string };
+  subregion?: { id?: number; name?: string };
+  hotel?: {
+    beachLine?: string;
+    beachType?: string;
+    airportDistance?: string;
+    renovationYear?: string | number;
+  };
   tours?: Array<Record<string, unknown>>;
+  hotelcode?: number;
+  tourid?: string | number;
+  operator?: { name?: string };
+  meal?: { name?: string; code?: string };
+  roomType?: string;
+  nights?: number;
+  date?: string;
 }
 
 export enum UserRole {

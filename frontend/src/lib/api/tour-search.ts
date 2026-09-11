@@ -22,6 +22,6 @@ export const tourSearchApi = {
   getStatus: async (searchId: number): Promise<TourSearchStatus> =>
     (await api.get<TourSearchStatus>(`/api/tour-search/search/${searchId}/status`)).data,
 
-  getResults: async (searchId: number): Promise<TourSearchResult[]> =>
-    (await api.get<TourSearchResult[]>(`/api/tour-search/search/${searchId}/results`, { params: { limit: 25 } })).data,
+  getResults: async (searchId: number, limit = 100): Promise<TourSearchResult[]> =>
+    (await api.get<TourSearchResult[]>(`/api/tour-search/search/${searchId}/results`, { params: { limit } })).data,
 };
