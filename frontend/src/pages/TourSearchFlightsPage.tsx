@@ -615,7 +615,8 @@ export function TourSearchFlightsPage() {
                         </div>
 
                         <Link
-                          to={`/booking/${hotel.id}`}
+                          to={`/tour-search/checkout/${hotel.id}`}
+                          state={{ hotel, roomName, offerPrice: finalPrice, form: stateForm }}
                           className="px-6 py-3 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-extrabold rounded-xl shadow-md shadow-orange-500/20 transition-all text-sm"
                         >
                           Выбрать тур
