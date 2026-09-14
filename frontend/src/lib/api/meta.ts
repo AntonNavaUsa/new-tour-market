@@ -1,6 +1,22 @@
 import api from '../axios';
 import type { Location, CardType, TariffType, AdminUserOption, Offer } from '../../types';
 
+export type SiteMenuItem = {
+  id: string;
+  label: string;
+  path: string;
+  visible: boolean;
+  type?: 'link' | 'guide';
+};
+
+export const defaultSiteMenu: SiteMenuItem[] = [
+  { id: 'tours', label: 'Все туры', path: '/hiking-tours#tours', visible: true },
+  { id: 'ski-tours', label: 'Горнолыжные туры', path: '/ski-tours', visible: true },
+  { id: 'tour-search', label: 'Поиск туров', path: '/tour-search', visible: true },
+  { id: 'hot-tours', label: 'Горящие туры', path: '/hot-tours', visible: true },
+  { id: 'guide', label: 'Путеводитель', path: '/guides', visible: true, type: 'guide' },
+];
+
 export const metaApi = {
   getLocations: async (): Promise<Location[]> => {
     const response = await api.get<Location[]>('/api/meta/locations');
@@ -103,7 +119,7 @@ export const metaApi = {
     return response.data;
   },
 
-  updateSiteSettings: async (data: Partial<{ siteName: string; siteDescription: string; adminEmail: string }>): Promise<Record<string, string>> => {
+  updateSiteSettings: async (data: Partial<{ siteName: string; siteDescription: string; adminEmail: string; menuItems: string }>): Promise<Record<string, string>> => {
     const response = await api.patch<Record<string, string>>('/api/admin/settings', data);
     return response.data;
   },

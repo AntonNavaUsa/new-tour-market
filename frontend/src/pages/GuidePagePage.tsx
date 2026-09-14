@@ -44,7 +44,7 @@ export function GuidePagePage() {
   return (
     <div className="container py-10">
       {/* Back */}
-      <Link to="/#tours" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors">
+      <Link to="/hiking-tours#tours" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors">
         <ArrowLeft className="h-4 w-4" />
         На главную
       </Link>

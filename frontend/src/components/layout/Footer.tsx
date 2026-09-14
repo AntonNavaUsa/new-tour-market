@@ -18,22 +18,22 @@ export function Footer() {
             <h4 className="text-sm font-semibold mb-4">Туры</h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link to="/#tours" className="text-muted-foreground hover:text-foreground transition-colors">
+                <Link to="/hiking-tours#tours" className="text-muted-foreground hover:text-foreground transition-colors">
                   Все маршруты
                 </Link>
               </li>
               <li>
-                <Link to="/#hiking" className="text-muted-foreground hover:text-foreground transition-colors">
+                <Link to="/hiking-tours#hiking" className="text-muted-foreground hover:text-foreground transition-colors">
                   Однодневные трекинги
                 </Link>
               </li>
               <li>
-                <Link to="/#pohod" className="text-muted-foreground hover:text-foreground transition-colors">
+                <Link to="/hiking-tours#pohod" className="text-muted-foreground hover:text-foreground transition-colors">
                   Трекинги с ночевками
                 </Link>
               </li>
               <li>
-                <Link to="/#self-guided" className="text-muted-foreground hover:text-foreground transition-colors">
+                <Link to="/hiking-tours#self-guided" className="text-muted-foreground hover:text-foreground transition-colors">
                   Туры без гида
                 </Link>
               </li>

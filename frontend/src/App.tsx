@@ -4,6 +4,7 @@ import { useAuthStore } from './store/authStore';
 import { RootLayout } from './components/layout/RootLayout';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { HomePage } from './pages/HomePage';
+import { LandingPage } from './pages/LandingPage';
 import { ToursPage } from './pages/ToursPage';
 import { TourDetailPage } from './pages/TourDetailPage';
 import { BookingPage } from './pages/BookingPage';
@@ -72,7 +73,8 @@ function App() {
   return (
     <Routes>
       <Route element={<RootLayout />}>
-        <Route path="/" element={<HomePage />} />
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/hiking-tours" element={<HomePage />} />
         <Route path="/tours" element={<ToursPage />} />
         <Route path="/tour-packages" element={<TourPackagesPage />} />
         <Route path="/ski-tours" element={<SkiToursPage />} />

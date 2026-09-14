@@ -34,6 +34,12 @@ interface TourSearchBarProps {
   form: TourSearchForm;
   departures: TourSearchReference[] | undefined;
   countries: TourSearchReference[] | undefined;
+  regions: TourSearchReference[] | undefined;
+  meals: TourSearchReference[] | undefined;
+  hotels: TourSearchReference[] | undefined;
+  isHotelsLoading: boolean;
+  hotelSearch: string;
+  onHotelSearchChange: (value: string) => void;
   availableDates: string[] | undefined;
   isDeparturesLoading: boolean;
   isCountriesLoading: boolean;
@@ -41,6 +47,9 @@ interface TourSearchBarProps {
   onUpdateForm: <K extends keyof TourSearchForm>(key: K, value: TourSearchForm[K]) => void;
   onChangeDeparture: (departureId: number | null) => void;
   onSubmit: () => void;
+  invalidField?: PopoverType;
+  validationNonce?: number;
+  advancedOpen?: boolean;
 }
 
 type PopoverType = 'departure' | 'country' | 'dates' | 'nights' | 'guests' | null;
@@ -65,6 +74,12 @@ export function TourSearchBar({
   form,
   departures,
   countries,
+  regions,
+  meals,
+  hotels,
+  isHotelsLoading,
+  hotelSearch,
+  onHotelSearchChange,
   availableDates,
   isDeparturesLoading,
   isCountriesLoading,
@@ -72,12 +87,24 @@ export function TourSearchBar({
   onUpdateForm,
   onChangeDeparture,
   onSubmit,
+  invalidField,
+  validationNonce,
+  advancedOpen = false,
 }: TourSearchBarProps) {
   const [activePopover, setActivePopover] = useState<PopoverType>(null);
+  const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
 
   // Search filter states inside dropdowns
   const [departureSearch, setDepartureSearch] = useState('');
   const [countrySearch, setCountrySearch] = useState('');
+
+  useEffect(() => {
+    if (invalidField) setActivePopover(invalidField);
+  }, [invalidField, validationNonce]);
+
+  useEffect(() => {
+    if (advancedOpen) setIsAdvancedOpen(true);
+  }, [advancedOpen]);
 
   const availableDatesSet = useMemo(() => {
     if (!availableDates || availableDates.length === 0) return null;
@@ -275,7 +302,9 @@ export function TourSearchBar({
             type="button"
             onClick={() => setActivePopover(activePopover === 'departure' ? null : 'departure')}
             className={`w-full min-h-[72px] flex flex-col justify-center px-4 py-2.5 rounded-2xl transition text-left ${
-              activePopover === 'departure'
+              invalidField === 'departure'
+                ? 'bg-red-50 ring-2 ring-red-400 dark:bg-red-950/30'
+                : activePopover === 'departure'
                 ? 'bg-[#e2ede9] dark:bg-zinc-800'
                 : 'bg-[#edf4f2] dark:bg-zinc-800/60 hover:bg-[#e5efec] dark:hover:bg-zinc-800'
             }`}
@@ -343,7 +372,9 @@ export function TourSearchBar({
             disabled={!form.departureId}
             onClick={() => setActivePopover(activePopover === 'country' ? null : 'country')}
             className={`w-full min-h-[72px] flex flex-col justify-center px-4 py-2.5 rounded-2xl transition text-left disabled:opacity-60 disabled:cursor-not-allowed ${
-              activePopover === 'country'
+              invalidField === 'country'
+                ? 'bg-red-50 ring-2 ring-red-400 dark:bg-red-950/30'
+                : activePopover === 'country'
                 ? 'bg-[#e2ede9] dark:bg-zinc-800'
                 : 'bg-[#edf4f2] dark:bg-zinc-800/60 hover:bg-[#e5efec] dark:hover:bg-zinc-800'
             }`}
@@ -410,7 +441,9 @@ export function TourSearchBar({
             type="button"
             onClick={() => setActivePopover(activePopover === 'dates' ? null : 'dates')}
             className={`w-full min-h-[72px] flex flex-col justify-center px-4 py-2.5 rounded-2xl transition text-left ${
-              activePopover === 'dates'
+              invalidField === 'dates'
+                ? 'bg-red-50 ring-2 ring-red-400 dark:bg-red-950/30'
+                : activePopover === 'dates'
                 ? 'bg-[#e2ede9] dark:bg-zinc-800'
                 : 'bg-[#edf4f2] dark:bg-zinc-800/60 hover:bg-[#e5efec] dark:hover:bg-zinc-800'
             }`}
@@ -516,7 +549,9 @@ export function TourSearchBar({
             type="button"
             onClick={() => setActivePopover(activePopover === 'nights' ? null : 'nights')}
             className={`w-full min-h-[72px] flex flex-col justify-center px-4 py-2.5 rounded-2xl transition text-left ${
-              activePopover === 'nights'
+              invalidField === 'nights'
+                ? 'bg-red-50 ring-2 ring-red-400 dark:bg-red-950/30'
+                : activePopover === 'nights'
                 ? 'bg-[#e2ede9] dark:bg-zinc-800'
                 : 'bg-[#edf4f2] dark:bg-zinc-800/60 hover:bg-[#e5efec] dark:hover:bg-zinc-800'
             }`}
@@ -620,7 +655,9 @@ export function TourSearchBar({
             type="button"
             onClick={() => setActivePopover(activePopover === 'guests' ? null : 'guests')}
             className={`w-full min-h-[72px] flex flex-col justify-center px-4 py-2.5 rounded-2xl transition text-left ${
-              activePopover === 'guests'
+              invalidField === 'guests'
+                ? 'bg-red-50 ring-2 ring-red-400 dark:bg-red-950/30'
+                : activePopover === 'guests'
                 ? 'bg-[#e2ede9] dark:bg-zinc-800'
                 : 'bg-[#edf4f2] dark:bg-zinc-800/60 hover:bg-[#e5efec] dark:hover:bg-zinc-800'
             }`}
@@ -771,6 +808,128 @@ export function TourSearchBar({
             {isSearching ? 'Ищем...' : 'Найти туры'}
           </span>
         </button>
+      </div>
+
+      <div className="mt-2 border-t border-slate-100 pt-2 dark:border-zinc-800">
+        <button
+          type="button"
+          onClick={() => setIsAdvancedOpen((open) => !open)}
+          className="flex w-full items-center justify-between rounded-xl px-2 py-2 text-left text-sm font-semibold text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-zinc-800"
+          aria-expanded={isAdvancedOpen}
+        >
+          <span>Дополнительные параметры</span>
+          {isAdvancedOpen ? <Minus className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+        </button>
+
+        {isAdvancedOpen && <div className="mt-1 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+        <label className="flex min-h-12 flex-col justify-center rounded-2xl bg-slate-50 px-4 py-2 dark:bg-zinc-800/60">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Класс отеля</span>
+          <select
+            value={form.hotelStars ?? ''}
+            onChange={(e) => onUpdateForm('hotelStars', e.target.value ? Number(e.target.value) : null)}
+            className="mt-0.5 w-full bg-transparent text-sm font-semibold text-slate-900 outline-none dark:text-white"
+          >
+            <option value="">Любой класс</option>
+            <option value="5">5 звезд</option>
+            <option value="4">4 звезды</option>
+            <option value="3">3 звезды</option>
+            <option value="2">2 звезды</option>
+            <option value="1">1 звезда</option>
+          </select>
+        </label>
+
+        <label className="flex min-h-12 flex-col justify-center rounded-2xl bg-slate-50 px-4 py-2 dark:bg-zinc-800/60">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Курорт</span>
+          <input
+            type="hidden"
+            value={form.resort}
+            readOnly
+          />
+          <select
+            value={form.resort}
+            onChange={(e) => onUpdateForm('resort', e.target.value)}
+            className="mt-0.5 w-full bg-transparent text-sm font-semibold text-slate-900 outline-none dark:text-white"
+            disabled={!form.countryId || !regions}
+          >
+            <option value="">Любой курорт</option>
+            {(regions ?? []).map((region) => (
+              <option key={region.id} value={String(region.id)}>{region.name}</option>
+            ))}
+          </select>
+        </label>
+
+        <div className="relative flex min-h-12 flex-col justify-center rounded-2xl bg-slate-50 px-4 py-2 dark:bg-zinc-800/60">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Отель</span>
+          <input
+            value={hotelSearch}
+            onFocus={() => {
+              if (form.hotelIds.length > 0) onHotelSearchChange('');
+            }}
+            onChange={(e) => onHotelSearchChange(e.target.value)}
+            placeholder={form.hotelIds.length > 1 ? `Выбрано ${form.hotelIds.length} отеля` : form.hotelName || 'Введите 3 буквы'}
+            className="mt-0.5 w-full bg-transparent text-sm font-semibold text-slate-900 outline-none placeholder:font-normal placeholder:text-slate-400 dark:text-white"
+          />
+          {form.hotelName && !hotelSearch && (
+            <button
+              type="button"
+              title="Очистить выбранные отели"
+              onClick={() => { onUpdateForm('hotelName', ''); onUpdateForm('hotelIds', []); }}
+              className="absolute right-3 bottom-2 text-lg leading-none text-sky-600 hover:text-sky-800"
+            >
+              ×
+            </button>
+          )}
+          {hotelSearch.trim().length >= 3 && (
+            <div className="absolute left-0 right-0 top-full z-50 mt-2 max-h-72 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-2 shadow-xl dark:border-zinc-700 dark:bg-zinc-900">
+              {isHotelsLoading ? (
+                <p className="p-3 text-center text-sm text-slate-500">Ищем отели...</p>
+              ) : hotels && hotels.length > 0 ? (
+                hotels.map((hotel) => {
+                  const selected = form.hotelIds.includes(hotel.id);
+                  return (
+                    <button
+                      key={hotel.id}
+                      type="button"
+                      onClick={() => {
+                        const ids = selected ? form.hotelIds.filter((id) => id !== hotel.id) : [...form.hotelIds, hotel.id];
+                        const names = ids.map((id) => id === hotel.id ? hotel.name : (hotels.find((item) => item.id === id)?.name || ''))
+                          .filter(Boolean);
+                        onUpdateForm('hotelIds', ids);
+                        onUpdateForm('hotelName', names.join(', '));
+                        onHotelSearchChange('');
+                      }}
+                      className="flex w-full items-start gap-3 rounded-xl px-2 py-2 text-left text-sm hover:bg-slate-50 dark:hover:bg-zinc-800"
+                    >
+                      <span className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border ${selected ? 'border-sky-500 bg-sky-500 text-white' : 'border-slate-300'}`}>
+                        {selected ? '✓' : ''}
+                      </span>
+                      <span>{hotel.name}</span>
+                    </button>
+                  );
+                })
+              ) : (
+                <p className="p-3 text-center text-sm text-slate-500">Отели не найдены</p>
+              )}
+            </div>
+          )}
+        </div>
+
+        <label className="flex min-h-12 flex-col justify-center rounded-2xl bg-slate-50 px-4 py-2 dark:bg-zinc-800/60">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Питание</span>
+          <select
+            value={form.meal}
+            onChange={(e) => onUpdateForm('meal', e.target.value)}
+            className="mt-0.5 w-full bg-transparent text-sm font-semibold text-slate-900 outline-none dark:text-white"
+          >
+            <option value="">Любое</option>
+            {(meals ?? []).map((meal) => (
+              <option key={meal.id} value={String(meal.id)}>
+                {meal.fullRussianName || meal.russianName || meal.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        </div>}
       </div>
     </div>
   );

@@ -3,6 +3,8 @@
 export interface TourSearchReference {
   id: number;
   name: string;
+  russianName?: string;
+  fullRussianName?: string;
 }
 
 export interface TourSearchForm {
@@ -17,6 +19,11 @@ export interface TourSearchForm {
   currency: string;
   onlyCharter: boolean;
   onlyDirect: boolean;
+  hotelStars: number | null;
+  resort: string;
+  hotelName: string;
+  hotelIds: number[];
+  meal: string;
 }
 
 export interface TourSearchStatus {
@@ -39,6 +46,8 @@ export interface TourSearchResult {
   picturelink?: string;
   picture?: string;
   images?: string[];
+  photos?: string[];
+  description?: string;
   country?: { id?: number; name?: string };
   region?: { id?: number; name?: string };
   subregion?: { id?: number; name?: string };
@@ -47,10 +56,14 @@ export interface TourSearchResult {
     beachType?: string;
     airportDistance?: string;
     renovationYear?: string | number;
+    description?: string;
+    images?: string[];
+    photos?: string[];
   };
   tours?: Array<Record<string, unknown>>;
   hotelcode?: number;
   tourid?: string | number;
+  tourId?: string | number;
   operator?: { name?: string };
   meal?: { name?: string; code?: string };
   roomType?: string;

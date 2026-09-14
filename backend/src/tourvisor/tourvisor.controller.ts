@@ -37,6 +37,31 @@ export class TourvisorController {
     return this.service.getCurrencies();
   }
 
+  @Get('meals')
+  getMeals() {
+    return this.service.getMeals();
+  }
+
+  @Get('regions')
+  getRegions(@Query() query: ReferenceQueryDto) {
+    return this.service.getRegions(query);
+  }
+
+  @Get('hotels')
+  getHotels(@Query() query: ReferenceQueryDto) {
+    return this.service.getHotels(query);
+  }
+
+  @Get('rooms')
+  getRooms(@Query('ids') ids: string | string[]) {
+    const roomIds = (Array.isArray(ids) ? ids : [ids])
+      .flatMap((value) => value.split(','))
+      .map(Number)
+      .filter((value) => Number.isInteger(value) && value > 0)
+      .slice(0, 30);
+    return this.service.getRooms(roomIds);
+  }
+
   @Post('search')
   startSearch(@Body() query: TourSearchDto) {
     return this.service.startSearch(query);

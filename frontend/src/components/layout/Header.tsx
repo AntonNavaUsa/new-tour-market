@@ -5,6 +5,7 @@ import { Button } from '../ui/button';
 import { User, LogOut, BookOpen, ChevronDown, Settings } from 'lucide-react';
 import { messagesApi } from '../../lib/api/messages';
 import { guidePagesApi } from '../../lib/api/guide-pages';
+import { defaultSiteMenu, metaApi, type SiteMenuItem } from '../../lib/api/meta';
 import { useState, useRef, useEffect } from 'react';
 
 export function Header() {
@@ -29,6 +30,20 @@ export function Header() {
     queryFn: guidePagesApi.list,
     staleTime: 60000,
   });
+
+  const { data: siteSettings } = useQuery({
+    queryKey: ['site-settings'],
+    queryFn: metaApi.getSiteSettings,
+    staleTime: 60000,
+  });
+
+  let menuItems: SiteMenuItem[] = defaultSiteMenu;
+  try {
+    const savedMenu = siteSettings?.menuItems ? JSON.parse(siteSettings.menuItems) : null;
+    if (Array.isArray(savedMenu)) menuItems = savedMenu;
+  } catch {
+    menuItems = defaultSiteMenu;
+  }
 
   // Close dropdowns on outside click
   useEffect(() => {
@@ -73,60 +88,44 @@ export function Header() {
           </Link>
           
           <nav className="hidden md:flex items-center space-x-6 text-sm font-medium">
-            <Link 
-              to="/#tours" 
-              className="transition-colors hover:text-foreground/80 text-foreground"
-            >
-              Все туры
-            </Link>
-            <Link
-              to="/ski-tours"
-              className="transition-colors hover:text-foreground/80 text-foreground"
-            >
-              Горнолыжные туры
-            </Link>
-            <Link
-              to="/tour-search"
-              className="transition-colors hover:text-foreground/80 text-foreground"
-            >
-              Поиск туров
-            </Link>
-            <Link
-              to="/hot-tours"
-              className="transition-colors hover:text-foreground/80 text-foreground"
-            >
-              Горящие туры
-            </Link>
-
-            {/* Путеводитель dropdown */}
-            <div ref={guideRef} className="relative">
-              <button
-                className="flex items-center gap-1 transition-colors hover:text-foreground/80 text-foreground"
-                onClick={() => setGuideOpen((v) => !v)}
+            {menuItems.filter((item) => item.visible).map((item) => item.type === 'guide' || item.id === 'guide' ? (
+              <div key={item.id} ref={guideRef} className="relative">
+                <button
+                  className="flex items-center gap-1 transition-colors hover:text-foreground/80 text-foreground"
+                  onClick={() => setGuideOpen((v) => !v)}
+                >
+                  <BookOpen className="h-3.5 w-3.5" />
+                  {item.label}
+                  <ChevronDown className={`h-3 w-3 transition-transform ${guideOpen ? 'rotate-180' : ''}`} />
+                </button>
+                {guideOpen && (
+                  <div className="absolute top-full left-0 mt-2 w-56 bg-background border rounded-lg shadow-lg py-1 z-50">
+                    {guidePages.length === 0 ? (
+                      <span className="block px-4 py-2 text-sm text-muted-foreground">Нет страниц</span>
+                    ) : (
+                      guidePages.map((p) => (
+                        <Link
+                          key={p.id}
+                          to={`/guides/${p.slug}`}
+                          className="block px-4 py-2 text-sm hover:bg-stone-50 transition-colors"
+                          onClick={() => setGuideOpen(false)}
+                        >
+                          {p.title}
+                        </Link>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <Link
+                key={item.id}
+                to={item.path}
+                className="transition-colors hover:text-foreground/80 text-foreground"
               >
-                <BookOpen className="h-3.5 w-3.5" />
-                Путеводитель
-                <ChevronDown className={`h-3 w-3 transition-transform ${guideOpen ? 'rotate-180' : ''}`} />
-              </button>
-              {guideOpen && (
-                <div className="absolute top-full left-0 mt-2 w-56 bg-background border rounded-lg shadow-lg py-1 z-50">
-                  {guidePages.length === 0 ? (
-                    <span className="block px-4 py-2 text-sm text-muted-foreground">Нет страниц</span>
-                  ) : (
-                    guidePages.map((p) => (
-                      <Link
-                        key={p.id}
-                        to={`/guides/${p.slug}`}
-                        className="block px-4 py-2 text-sm hover:bg-stone-50 transition-colors"
-                        onClick={() => setGuideOpen(false)}
-                      >
-                        {p.title}
-                      </Link>
-                    ))
-                  )}
-                </div>
-              )}
-            </div>
+                {item.label}
+              </Link>
+            ))}
 
             {/* Админ dropdown */}
             {isAuthenticated && user?.role === 'ADMIN' && (

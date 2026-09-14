@@ -502,7 +502,7 @@ export class AppController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   async updateAdminSettings(@Body() body: Record<string, string>) {
-    const allowedKeys = ['siteName', 'siteDescription', 'adminEmail'];
+    const allowedKeys = ['siteName', 'siteDescription', 'adminEmail', 'menuItems'];
     for (const [key, value] of Object.entries(body)) {
       if (!allowedKeys.includes(key)) continue;
       await this.prisma.siteSettings.upsert({

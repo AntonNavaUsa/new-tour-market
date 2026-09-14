@@ -63,6 +63,32 @@ export class TourSearchDto {
   @Type(() => Boolean)
   @IsBoolean()
   onlyDirect = false;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(5)
+  hotelStars?: number;
+
+  @IsOptional()
+  @IsString()
+  resort?: string;
+
+  @IsOptional()
+  @IsString()
+  hotelName?: string;
+
+  @IsOptional()
+  @IsString()
+  meal?: string;
+
+  @IsOptional()
+  @IsArray()
+  @Type(() => Number)
+  @IsInt({ each: true })
+  @Min(1, { each: true })
+  hotelIds?: number[];
 }
 
 export class TourSearchQueryDto extends TourSearchDto {}
@@ -108,6 +134,29 @@ export class ReferenceQueryDto {
   @Type(() => Boolean)
   @IsBoolean()
   onlyDirect = false;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  regionId?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(5)
+  category?: number;
+
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  limit?: number;
 }
 
 export class TourDetailsQueryDto {

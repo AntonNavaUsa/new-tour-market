@@ -59,6 +59,62 @@ interface FlightOffer {
   };
 }
 
+type UnknownRecord = Record<string, unknown>;
+
+function parsePrice(value: unknown, seen = new Set<unknown>()): number | undefined {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string') {
+    const parsed = Number(value.replace(/[^\d.,-]/g, '').replace(',', '.'));
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+  if (!value || typeof value !== 'object' || seen.has(value)) return undefined;
+  seen.add(value);
+  for (const nested of Object.values(value as UnknownRecord)) {
+    const parsed = parsePrice(nested, seen);
+    if (parsed !== undefined) return parsed;
+  }
+  return undefined;
+}
+
+function displayValue(value: unknown): string {
+  if (typeof value === 'string' || typeof value === 'number') return String(value).trim();
+  if (!value || typeof value !== 'object') return '';
+  for (const key of ['name', 'title', 'label', 'value', 'text']) {
+    const nested = (value as UnknownRecord)[key];
+    if (typeof nested === 'string' || typeof nested === 'number') return String(nested).trim();
+  }
+  return '';
+}
+
+function extractPackagePrices(source: unknown, roomName: string): number[] {
+  const matched: number[] = [];
+  const all: number[] = [];
+  const visit = (value: unknown, key = '') => {
+    if (Array.isArray(value)) {
+      value.forEach((item) => visit(item, key));
+      return;
+    }
+    if (!value || typeof value !== 'object') return;
+    const record = value as UnknownRecord;
+    const priceValue = ['price', 'priceValue', 'amount', 'cost', 'totalPrice', 'tourPrice']
+      .map((priceKey) => Object.entries(record).find(([key]) => key.toLowerCase() === priceKey.toLowerCase())?.[1])
+      .find((candidate) => candidate !== undefined);
+    const price = parsePrice(priceValue);
+    if (price !== undefined && /tour|offer|rate|tariff|package/i.test(key)) {
+      all.push(price);
+      const roomValue = ['roomName', 'roomType', 'room', 'roomname', 'category']
+        .map((roomKey) => displayValue(Object.entries(record).find(([key]) => key.toLowerCase() === roomKey.toLowerCase())?.[1]))
+        .find(Boolean);
+      if (!roomName || !roomValue || roomValue.toLowerCase().includes(roomName.toLowerCase()) || roomName.toLowerCase().includes(roomValue.toLowerCase())) {
+        matched.push(price);
+      }
+    }
+    Object.entries(record).forEach(([entryKey, entryValue]) => visit(entryValue, entryKey));
+  };
+  visit(source);
+  return [...new Set(matched.length > 0 ? matched : all)];
+}
+
 const MOCK_FLIGHT_OFFERS: FlightOffer[] = [
   {
     id: 'offer-1',
@@ -215,10 +271,28 @@ const MOCK_FLIGHT_OFFERS: FlightOffer[] = [
 export function TourSearchFlightsPage() {
   const location = useLocation();
 
-  // Retrieve state passed from previous page or sessionStorage
+  // React Router state is unavailable in a new tab, so also restore the selected package.
   const stateHotel = location.state?.hotel as TourSearchResult | undefined;
   const stateRoomName = location.state?.roomName as string | undefined;
   const stateForm = location.state?.form as TourSearchForm | undefined;
+  const storedPackage = (() => {
+    try {
+      const hotel = localStorage.getItem('selected_tour_hotel');
+      const room = localStorage.getItem('selected_tour_room');
+      const roomName = localStorage.getItem('selected_tour_room_name');
+      const form = localStorage.getItem('selected_tour_form');
+      return {
+        hotel: hotel ? JSON.parse(hotel) as TourSearchResult : undefined,
+        room: room ? JSON.parse(room) as { name?: string; price?: number } : undefined,
+        roomName: roomName || undefined,
+        form: form ? JSON.parse(form) as TourSearchForm : undefined,
+      };
+    } catch {
+      return {};
+    }
+  })();
+  const selectedHotel = stateHotel ?? storedPackage.hotel;
+  const selectedForm = stateForm ?? storedPackage.form;
 
   const [copiedShare, setCopiedShare] = useState(false);
   const [indivTransfer, setIndivTransfer] = useState<Record<string, boolean>>({});
@@ -229,7 +303,7 @@ export function TourSearchFlightsPage() {
   const [filterDirect, setFilterDirect] = useState(false);
 
   const hotel = useMemo(() => {
-    if (stateHotel) return stateHotel;
+    if (selectedHotel) return selectedHotel;
     return {
       id: '1',
       name: 'Side Yesiloz Hotel',
@@ -239,10 +313,12 @@ export function TourSearchFlightsPage() {
       region: { name: 'Сиде' },
       picturelink: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80',
     };
-  }, [stateHotel]);
+  }, [selectedHotel]);
 
-  const roomName = stateRoomName || 'Номер эконом-класса';
-  const totalGuests = stateForm ? stateForm.adults + stateForm.childs.length : 2;
+  const roomName = stateRoomName || storedPackage.room?.name || storedPackage.roomName || 'Выбранный номер';
+  const selectedRoomPrice = storedPackage.room?.price;
+  const packagePrices = extractPackagePrices(hotel, roomName);
+  const totalGuests = selectedForm ? selectedForm.adults + selectedForm.childs.length : 2;
 
   const handleShare = () => {
     navigator.clipboard?.writeText(window.location.href);
@@ -308,7 +384,13 @@ export function TourSearchFlightsPage() {
                 <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
                   {roomName}
                 </h3>
-                <ChevronRight className="h-4 w-4 text-slate-400" />
+                {selectedRoomPrice !== undefined ? (
+                  <span className="text-sm font-extrabold text-orange-600 dark:text-orange-400">
+                    {selectedRoomPrice.toLocaleString('ru-RU')} ₽
+                  </span>
+                ) : (
+                  <ChevronRight className="h-4 w-4 text-slate-400" />
+                )}
               </div>
 
               <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-slate-600 dark:text-slate-300">
@@ -442,7 +524,8 @@ export function TourSearchFlightsPage() {
           <div className="space-y-4">
             {MOCK_FLIGHT_OFFERS.map((offer) => {
               const isIndiv = !!indivTransfer[offer.id];
-              const finalPrice = isIndiv ? offer.price + 11252 : offer.price;
+              const packagePrice = packagePrices[MOCK_FLIGHT_OFFERS.indexOf(offer)] ?? (packagePrices.length === 0 && !selectedHotel ? offer.price : undefined);
+              const finalPrice = packagePrice === undefined ? undefined : isIndiv ? packagePrice + 11252 : packagePrice;
 
               return (
                 <div
@@ -610,13 +693,13 @@ export function TourSearchFlightsPage() {
                       <div className="flex items-center justify-between pt-2">
                         <div>
                           <span className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-                            {finalPrice.toLocaleString('ru-RU')} ₽
+                            {finalPrice !== undefined ? `${finalPrice.toLocaleString('ru-RU')} ₽` : 'Цена уточняется'}
                           </span>
                         </div>
 
                         <Link
                           to={`/tour-search/checkout/${hotel.id}`}
-                          state={{ hotel, roomName, offerPrice: finalPrice, form: stateForm }}
+                          state={{ hotel, roomName, offerPrice: finalPrice, form: selectedForm }}
                           className="px-6 py-3 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-extrabold rounded-xl shadow-md shadow-orange-500/20 transition-all text-sm"
                         >
                           Выбрать тур

@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useLocation, useNavigate, useParams, Link } from 'react-router-dom';
 import {
   Star,
@@ -15,6 +16,7 @@ import {
   Info,
   Bath,
 } from 'lucide-react';
+import { tourSearchApi } from '../lib/api';
 import type { TourSearchResult, TourSearchForm } from '../types';
 
 interface RoomOption {
@@ -30,6 +32,129 @@ interface RoomOption {
   services: string[];
   internet: string[];
   bathroom: string[];
+}
+
+type UnknownRecord = Record<string, unknown>;
+
+function firstValue(source: UnknownRecord, keys: string[]): unknown {
+  const wanted = new Set(keys.map((key) => key.toLowerCase()));
+  for (const [key, value] of Object.entries(source)) {
+    if (wanted.has(key.toLowerCase()) && value !== null && value !== undefined && value !== '') return value;
+  }
+  return undefined;
+}
+
+function nestedValue(source: unknown, keys: string[], seen = new Set<unknown>()): unknown {
+  if (!source || typeof source !== 'object' || seen.has(source)) return undefined;
+  seen.add(source);
+  const wanted = new Set(keys.map((key) => key.toLowerCase()));
+  const record = source as UnknownRecord;
+  for (const [key, value] of Object.entries(record)) {
+    if (wanted.has(key.toLowerCase()) && value !== null && value !== undefined && value !== '') return value;
+  }
+  for (const value of Object.values(record)) {
+    const result = nestedValue(value, keys, seen);
+    if (result !== undefined) return result;
+  }
+  return undefined;
+}
+
+function toDisplayText(value: unknown, fallback = ''): string {
+  if (typeof value === 'string' || typeof value === 'number') return String(value).trim();
+  if (value && typeof value === 'object') {
+    const nested = nestedValue(value, ['name', 'title', 'label', 'value', 'text', 'description']);
+    if (nested !== undefined && nested !== value) return toDisplayText(nested, fallback);
+  }
+  return fallback;
+}
+
+function toNumber(value: unknown): number | undefined {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string') {
+    const parsed = Number(value.replace(/[^\d.,-]/g, '').replace(',', '.'));
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+  if (value && typeof value === 'object') {
+    return toNumber(nestedValue(value, ['amount', 'value', 'price', 'cost', 'total', 'sum']));
+  }
+  return undefined;
+}
+
+function toTextList(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.flatMap((item) => typeof item === 'string' ? [item] : item && typeof item === 'object' ? Object.values(item).filter((entry): entry is string => typeof entry === 'string') : []);
+  }
+  if (typeof value === 'string') return value.split(/[,;|]/).map((item) => item.trim()).filter(Boolean);
+  return [];
+}
+
+function extractRoomPhotos(source: UnknownRecord): string[] {
+  const photos: string[] = [];
+  const visit = (value: unknown, key?: string) => {
+    if (typeof value === 'string' && key && /photo|image|picture|gallery|url|link/i.test(key) && /^https?:\/\//i.test(value)) {
+      photos.push(value);
+    } else if (Array.isArray(value)) {
+      value.forEach((item) => visit(item, key));
+    } else if (value && typeof value === 'object') {
+      Object.entries(value).forEach(([entryKey, entryValue]) => visit(entryValue, entryKey));
+    }
+  };
+  visit(source);
+  return [...new Set(photos)];
+}
+
+function getRoomCandidates(source: UnknownRecord): UnknownRecord[] {
+  const candidates: UnknownRecord[] = [];
+  const visit = (value: unknown, key?: string) => {
+    if (Array.isArray(value)) {
+      if (key && /tour|offer|room|rate|tariff/i.test(key)) {
+        value.forEach((item) => {
+          if (item && typeof item === 'object' && !Array.isArray(item)) candidates.push(item as UnknownRecord);
+        });
+      }
+      value.forEach((item) => visit(item, key));
+    } else if (value && typeof value === 'object') {
+      Object.entries(value).forEach(([entryKey, entryValue]) => visit(entryValue, entryKey));
+    }
+  };
+  visit(source);
+  return candidates;
+}
+
+function createRoomOptions(source: UnknownRecord): RoomOption[] {
+  const grouped = new Map<string, RoomOption>();
+  getRoomCandidates(source).forEach((candidate, index) => {
+    const roomValue = firstValue(candidate, ['roomName', 'roomType', 'room', 'roomname']);
+    const name = toDisplayText(roomValue) || toDisplayText(firstValue(candidate, ['name', 'category']));
+    const price = toNumber(firstValue(candidate, ['price', 'priceValue', 'amount', 'cost', 'totalPrice', 'tourPrice']));
+    if (!name || price === undefined) return;
+    const photos = extractRoomPhotos(candidate);
+    const features = toTextList(firstValue(candidate, ['features', 'amenities', 'facilities']));
+    const mealName = toDisplayText(firstValue(candidate, ['mealName', 'meal', 'nutrition', 'board']));
+    const roomId = toNumber(firstValue(candidate, ['roomId', 'roomID']));
+    const option: RoomOption = {
+      id: roomId ? String(roomId) : `room-${index}`,
+      name,
+      price,
+      priceOld: toNumber(firstValue(candidate, ['priceOld', 'oldPrice', 'previousPrice'])),
+      size: toDisplayText(firstValue(candidate, ['size', 'area', 'roomArea'])),
+      features,
+      thumbnails: photos,
+      mealName,
+      roomCountText: toDisplayText(firstValue(candidate, ['description', 'roomDescription', 'details']), 'Описание номера временно отсутствует.'),
+      services: toTextList(firstValue(candidate, ['services', 'amenities'])),
+      internet: toTextList(firstValue(candidate, ['internet', 'wifi'])),
+      bathroom: toTextList(firstValue(candidate, ['bathroom', 'bathroomFacilities'])),
+    };
+    const groupKey = roomId ? `id:${roomId}` : `name:${name.toLowerCase().replace(/\s+/g, ' ').trim()}`;
+    const existing = grouped.get(groupKey);
+    if (!existing || option.price < existing.price) {
+      grouped.set(groupKey, option);
+    } else {
+      existing.thumbnails = [...new Set([...existing.thumbnails, ...option.thumbnails])];
+    }
+  });
+  return [...grouped.values()];
 }
 
 const ROOM_OPTIONS: RoomOption[] = [
@@ -156,6 +281,20 @@ const DEFAULT_GALLERY = [
   'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=1200&q=80',
 ];
 
+function findHotelText(source: Record<string, unknown>, keys: string[]): string | undefined {
+  const wantedKeys = new Set(keys.map((key) => key.toLowerCase()));
+  const visit = (value: unknown): string | undefined => {
+    if (!value || typeof value !== 'object') return undefined;
+    for (const [key, child] of Object.entries(value)) {
+      if (wantedKeys.has(key.toLowerCase()) && typeof child === 'string' && child.trim()) return child;
+      const nested = visit(child);
+      if (nested) return nested;
+    }
+    return undefined;
+  };
+  return visit(source);
+}
+
 export function TourSearchHotelPage() {
   const { id } = useParams<{ id: string }>();
   const location = useLocation();
@@ -164,10 +303,40 @@ export function TourSearchHotelPage() {
   // Retrieve state passed from search page if available
   const stateHotel = location.state?.hotel as TourSearchResult | undefined;
   const stateForm = location.state?.form as TourSearchForm | undefined;
+  const storedSearch = (() => {
+    if (stateHotel || !id) return undefined;
+    try {
+      const raw = localStorage.getItem(`tour-search-hotel-${id}`);
+      return raw ? JSON.parse(raw) as { hotel?: TourSearchResult; form?: TourSearchForm } : undefined;
+    } catch {
+      return undefined;
+    }
+  })();
+  const selectedHotel = stateHotel ?? storedSearch?.hotel;
+  const selectedForm = stateForm ?? storedSearch?.form;
+
+  const tourIdValue = selectedHotel?.tourid ?? selectedHotel?.tourId;
+  const tourId = tourIdValue !== undefined && Number.isFinite(Number(tourIdValue)) ? Number(tourIdValue) : undefined;
+  const tourDetailsQuery = useQuery({
+    queryKey: ['tour-search', 'tour-details', tourId],
+    queryFn: () => tourSearchApi.getTour(tourId!, selectedForm?.currency ?? 'RUB'),
+    enabled: Number.isFinite(tourId),
+  });
 
   // Fallback default mock hotel if accessed directly by URL
   const hotel: TourSearchResult = useMemo(() => {
-    if (stateHotel) return stateHotel;
+    if (selectedHotel) {
+      const details = tourDetailsQuery.data;
+      if (!details) return selectedHotel;
+      return {
+        ...selectedHotel,
+        ...details,
+        hotel: {
+          ...selectedHotel.hotel,
+          ...(typeof details.hotel === 'object' && details.hotel !== null ? details.hotel : {}),
+        },
+      } as TourSearchResult;
+    }
     return {
       id: id || '1',
       name: 'Side Yesiloz Hotel',
@@ -187,14 +356,85 @@ export function TourSearchHotelPage() {
       nights: 7,
       date: '11.05.2026',
     };
-  }, [stateHotel, id]);
+  }, [selectedHotel, tourDetailsQuery.data, id]);
+
+  const hotelDetails = hotel as Record<string, unknown>;
+
+  const realPhotos = useMemo(() => {
+    const imageKeys = new Set(['images', 'photos', 'pictures', 'gallery', 'photogallery', 'photoGallery']);
+    const urls: string[] = [];
+    const visit = (value: unknown, key?: string) => {
+      if (typeof value === 'string') {
+        if (key && imageKeys.has(key.toLowerCase()) && /^https?:\/\//i.test(value)) urls.push(value);
+        return;
+      }
+      if (Array.isArray(value)) {
+        value.forEach((item) => visit(item, key));
+        return;
+      }
+      if (!value || typeof value !== 'object') return;
+      Object.entries(value).forEach(([entryKey, entryValue]) => {
+        if (['url', 'src', 'link', 'picturelink', 'picture'].includes(entryKey.toLowerCase()) && typeof entryValue === 'string') {
+          urls.push(entryValue);
+        } else {
+          visit(entryValue, entryKey);
+        }
+      });
+    };
+    visit(hotelDetails);
+    return [...new Set(urls)];
+  }, [hotelDetails]);
+
+  const hotelDescription = useMemo(() => {
+    const descriptionKeys = new Set(['description', 'desc', 'hoteldescription', 'hotel_description']);
+    const visit = (value: unknown, key?: string): string | undefined => {
+      if (typeof value === 'string' && key && descriptionKeys.has(key.toLowerCase()) && value.trim()) return value;
+      if (!value || typeof value !== 'object') return undefined;
+      for (const [entryKey, entryValue] of Object.entries(value)) {
+        const result = visit(entryValue, entryKey);
+        if (result) return result;
+      }
+      return undefined;
+    };
+    return visit(hotelDetails);
+  }, [hotelDetails]);
+
+  const parsedRoomOptions = useMemo(() => createRoomOptions(hotelDetails), [hotelDetails]);
+  const roomIds = useMemo(
+    () => parsedRoomOptions.map((room) => Number(room.id)).filter((id) => Number.isInteger(id) && id > 0).slice(0, 30),
+    [parsedRoomOptions],
+  );
+  const roomsQuery = useQuery({
+    queryKey: ['tour-search', 'rooms', roomIds],
+    queryFn: () => tourSearchApi.getRooms(roomIds),
+    enabled: roomIds.length > 0,
+    staleTime: 5 * 60 * 1000,
+  });
+  const roomOptions = useMemo(() => {
+    const detailsById = new Map(
+      (roomsQuery.data ?? []).map((room) => [String(toNumber(firstValue(room, ['id']))), room]),
+    );
+    return parsedRoomOptions.map((room) => {
+      const details = detailsById.get(room.id);
+      if (!details) return room;
+      const detailsPhotos = extractRoomPhotos(details);
+      return {
+        ...room,
+        name: toDisplayText(firstValue(details, ['name']), room.name),
+        size: toDisplayText(firstValue(details, ['area', 'size']), room.size),
+        thumbnails: [...new Set([...detailsPhotos, ...room.thumbnails])],
+        roomCountText: toDisplayText(firstValue(details, ['description', 'comment', 'viewDescription']), room.roomCountText),
+        services: toTextList(firstValue(details, ['services'])).length > 0 ? toTextList(firstValue(details, ['services'])) : room.services,
+      };
+    });
+  }, [parsedRoomOptions, roomsQuery.data]);
 
   // Gallery state
   const photos = useMemo(() => {
-    if (hotel.images && hotel.images.length >= 5) return hotel.images;
-    if (hotel.picturelink) return [hotel.picturelink, ...DEFAULT_GALLERY.slice(1)];
+    if (realPhotos.length > 0) return realPhotos;
+    if (hotel.picturelink) return [hotel.picturelink];
     return DEFAULT_GALLERY;
-  }, [hotel]);
+  }, [hotel.picturelink, realPhotos]);
 
   const [activePhotoIndex, setActivePhotoIndex] = useState<number | null>(null);
   const [isFavorite, setIsFavorite] = useState(false);
@@ -210,7 +450,7 @@ export function TourSearchHotelPage() {
   const [agreeData, setConsultAgreeData] = useState(true);
   const [consultSubmitted, setConsultSubmitted] = useState(false);
 
-  const totalGuests = stateForm ? stateForm.adults + stateForm.childs.length : 4;
+  const totalGuests = selectedForm ? selectedForm.adults + selectedForm.childs.length : 4;
 
   const handleConsultSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -252,14 +492,14 @@ export function TourSearchHotelPage() {
 
                 {/* RATING BADGE */}
                 <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-3 py-0.5 text-xs font-bold text-white shadow-sm">
-                  <span>{hotel.rating || 7.7}</span>
+                  <span>{hotel.rating ?? '—'}</span>
                   <span>•</span>
                   <span>Хорошо</span>
                 </div>
 
                 {/* REVIEWS COUNT */}
                 <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer">
-                  {hotel.reviewsCount || 102} отзыва
+                  {hotel.reviewsCount != null ? `${hotel.reviewsCount} отзывов` : 'Отзывы отсутствуют'}
                 </span>
               </div>
 
@@ -353,6 +593,22 @@ export function TourSearchHotelPage() {
           </div>
         </section>
 
+        {hotelDescription ? (
+          <section className="mb-10 rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+            <h2 className="text-xl font-extrabold text-slate-900 dark:text-white">Об отеле</h2>
+            <p className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-600 dark:text-slate-300">
+              {hotelDescription}
+            </p>
+          </section>
+        ) : (
+          <section className="mb-10 rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+            <h2 className="text-xl font-extrabold text-slate-900 dark:text-white">Об отеле</h2>
+            <p className="mt-3 text-sm leading-7 text-slate-500 dark:text-slate-400">
+              Описание отеля временно отсутствует. Ведётся добавление информации.
+            </p>
+          </section>
+        )}
+
         {/* 4 KEY INFO CARDS GRID */}
         <section className="mb-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* CARD 1: ПЛЯЖ */}
@@ -439,7 +695,7 @@ export function TourSearchHotelPage() {
 
               <div className="text-xs text-slate-600 dark:text-slate-300">
                 <span className="font-bold block text-slate-800 dark:text-slate-200 mb-0.5">От аэропорта до отеля:</span>
-                <span>Antalya • 66.0 км, ≈1 ч. 2 мин.</span>
+                <span>{findHotelText(hotelDetails, ['airportDistance', 'airport_distance']) || 'Информация временно отсутствует'}</span>
               </div>
             </div>
           </div>
@@ -459,7 +715,7 @@ export function TourSearchHotelPage() {
                   Бассейны и горки
                 </span>
                 <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
-                  2 бассейна, есть детский, 4 горки
+                  {findHotelText(hotelDetails, ['pools', 'pool', 'waterpark', 'waterPark']) || 'Информация временно отсутствует'}
                 </p>
               </div>
               <ChevronRight className="h-5 w-5 text-slate-400 shrink-0 mt-1" />
@@ -472,7 +728,7 @@ export function TourSearchHotelPage() {
                   Рестораны и бары
                 </span>
                 <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
-                  Бар у бассейна, бар на территории
+                  {findHotelText(hotelDetails, ['restaurants', 'bars', 'restaurantsAndBars']) || 'Информация временно отсутствует'}
                 </p>
               </div>
               <ChevronRight className="h-5 w-5 text-slate-400 shrink-0 mt-1" />
@@ -485,7 +741,7 @@ export function TourSearchHotelPage() {
                   Для детей
                 </span>
                 <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
-                  Детский клуб, от 4 до 12 лет
+                  {findHotelText(hotelDetails, ['children', 'kids', 'childrenFacilities']) || 'Информация временно отсутствует'}
                 </p>
               </div>
               <ChevronRight className="h-5 w-5 text-slate-400 shrink-0 mt-1" />
@@ -498,7 +754,7 @@ export function TourSearchHotelPage() {
                   Развлечения и спорт
                 </span>
                 <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
-                  Игровая комната, организация экскурсий, настольные игры
+                  {findHotelText(hotelDetails, ['entertainment', 'sport', 'activities']) || 'Информация временно отсутствует'}
                 </p>
               </div>
               <ChevronRight className="h-5 w-5 text-slate-400 shrink-0 mt-1" />
@@ -511,7 +767,7 @@ export function TourSearchHotelPage() {
                   Дополнительные услуги
                 </span>
                 <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
-                  Маникюр, массаж рук, пилинг для тела, спа-лаундж
+                  {findHotelText(hotelDetails, ['services', 'additionalServices']) || 'Информация временно отсутствует'}
                 </p>
               </div>
               <ChevronRight className="h-5 w-5 text-slate-400 shrink-0 mt-1" />
@@ -524,7 +780,7 @@ export function TourSearchHotelPage() {
                   Об отеле
                 </span>
                 <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
-                  231 номер, 4 этажа, год строительства 2007, ремонт в 2023
+                  {findHotelText(hotelDetails, ['hotelInfo', 'hotelInformation', 'facts']) || 'Информация временно отсутствует'}
                 </p>
               </div>
               <ChevronRight className="h-5 w-5 text-slate-400 shrink-0 mt-1" />
@@ -549,7 +805,11 @@ export function TourSearchHotelPage() {
           </div>
 
           <div className="space-y-4">
-            {ROOM_OPTIONS.map((room) => (
+            {roomOptions.length === 0 ? (
+              <p className="rounded-2xl bg-slate-50 p-5 text-sm text-slate-500 dark:bg-zinc-800/50 dark:text-slate-400">
+                Номера и цены для выбранного объекта временно отсутствуют.
+              </p>
+            ) : roomOptions.map((room) => (
               <div
                 key={room.id}
                 className="group flex flex-col md:flex-row items-start md:items-center justify-between gap-6 p-5 rounded-2xl border border-slate-200/80 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-800/30 hover:bg-slate-50 dark:hover:bg-zinc-800/60 transition shadow-sm"
@@ -641,10 +901,11 @@ export function TourSearchHotelPage() {
                     rel="noopener noreferrer"
                     onClick={() => {
                       // Pass state via sessionStorage before opening new tab
-                      sessionStorage.setItem('selected_tour_hotel', JSON.stringify(hotel));
-                      sessionStorage.setItem('selected_tour_room_name', room.name);
-                      if (stateForm) {
-                        sessionStorage.setItem('selected_tour_form', JSON.stringify(stateForm));
+                      localStorage.setItem('selected_tour_hotel', JSON.stringify(hotel));
+                      localStorage.setItem('selected_tour_room', JSON.stringify(room));
+                      localStorage.setItem('selected_tour_room_name', room.name);
+                      if (selectedForm) {
+                        localStorage.setItem('selected_tour_form', JSON.stringify(selectedForm));
                       }
                     }}
                     className="px-6 py-2.5 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white font-bold rounded-xl shadow-sm text-sm transition inline-flex items-center gap-1"
@@ -1005,10 +1266,11 @@ export function TourSearchHotelPage() {
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => {
-                  sessionStorage.setItem('selected_tour_hotel', JSON.stringify(hotel));
-                  sessionStorage.setItem('selected_tour_room_name', selectedModalRoom.name);
-                  if (stateForm) {
-                    sessionStorage.setItem('selected_tour_form', JSON.stringify(stateForm));
+                  localStorage.setItem('selected_tour_hotel', JSON.stringify(hotel));
+                  localStorage.setItem('selected_tour_room', JSON.stringify(selectedModalRoom));
+                  localStorage.setItem('selected_tour_room_name', selectedModalRoom.name);
+                  if (selectedForm) {
+                    localStorage.setItem('selected_tour_form', JSON.stringify(selectedForm));
                   }
                 }}
                 className="px-8 py-3 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl shadow-md text-sm transition"

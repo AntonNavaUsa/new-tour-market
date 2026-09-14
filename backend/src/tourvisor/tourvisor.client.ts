@@ -9,10 +9,15 @@ import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class TourvisorClient {
+  private static readonly REFERENCE_CACHE_TTL_MS = 5 * 60 * 1000;
+  private static readonly RATE_LIMIT_COOLDOWN_MS = 60 * 1000;
   private readonly logger = new Logger(TourvisorClient.name);
   private readonly baseUrl: string;
   private readonly token: string;
   private readonly timeoutMs: number;
+  private readonly referenceCache = new Map<string, { expiresAt: number; value: unknown }>();
+  private readonly pendingRequests = new Map<string, Promise<unknown>>();
+  private readonly rateLimitedUntil = new Map<string, number>();
 
   constructor(private readonly config: ConfigService) {
     this.baseUrl = (this.config.get<string>('TOURVISOR_API_BASE_URL') || 'https://api.tourvisor.ru/search/api/v1').replace(/\/$/, '');
@@ -35,6 +40,46 @@ export class TourvisorClient {
         url.searchParams.set(key, String(value));
       }
     }
+
+    const cacheKey = url.toString();
+    const isReferenceRequest = ['/departures', '/countries', '/arrivals', '/tours/dates', '/currencies', '/meals', '/regions', '/hotels'].includes(path);
+    if (isReferenceRequest) {
+      const blockedUntil = this.rateLimitedUntil.get(cacheKey);
+      if (blockedUntil && blockedUntil > Date.now()) {
+        throw new HttpException('Tourvisor rate limit cooldown is active', HttpStatus.TOO_MANY_REQUESTS);
+      }
+      if (blockedUntil) this.rateLimitedUntil.delete(cacheKey);
+
+      const cached = this.referenceCache.get(cacheKey);
+      if (cached && cached.expiresAt > Date.now()) return cached.value as T;
+      if (cached) this.referenceCache.delete(cacheKey);
+
+      const pending = this.pendingRequests.get(cacheKey);
+      if (pending) return pending as Promise<T>;
+
+      const request = this.fetch<T>(url);
+      this.pendingRequests.set(cacheKey, request);
+      try {
+        const value = await request;
+        this.referenceCache.set(cacheKey, {
+          expiresAt: Date.now() + TourvisorClient.REFERENCE_CACHE_TTL_MS,
+          value,
+        });
+        return value;
+      } catch (error) {
+        if (error instanceof HttpException && error.getStatus() === HttpStatus.TOO_MANY_REQUESTS) {
+          this.rateLimitedUntil.set(cacheKey, Date.now() + TourvisorClient.RATE_LIMIT_COOLDOWN_MS);
+        }
+        throw error;
+      } finally {
+        this.pendingRequests.delete(cacheKey);
+      }
+    }
+
+    return this.fetch<T>(url);
+  }
+
+  private async fetch<T>(url: URL): Promise<T> {
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
@@ -59,7 +104,7 @@ export class TourvisorClient {
       }
 
       const reason = await response.text().catch(() => '');
-      this.logger.error(`Tourvisor request failed (${response.status}): ${reason || response.statusText}`);
+      this.logger.error(`Tourvisor request failed (${response.status}) ${url.toString()}: ${reason || response.statusText}`);
       throw new HttpException(
         `Tourvisor request failed: ${reason || response.statusText}`,
         response.status >= 400 && response.status < 500 ? response.status : HttpStatus.BAD_GATEWAY,

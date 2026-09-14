@@ -1,6 +1,6 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useMutation } from '@tanstack/react-query';
+import { useEffect, useRef, useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import {
   Star,
   Heart,
@@ -12,23 +12,10 @@ import {
 } from 'lucide-react';
 import { tourSearchApi } from '../lib/api';
 import { TourSearchBar } from '../components/TourSearchBar';
+import { useTourSearchForm } from '../lib/useTourSearchForm';
 import type { TourSearchForm, TourSearchResult, TourSearchStatus } from '../types';
 
 const PAGE_SIZE = 18;
-
-const initialForm: TourSearchForm = {
-  departureId: null,
-  countryId: null,
-  dateFrom: '',
-  dateTo: '',
-  nightsFrom: 7,
-  nightsTo: 10,
-  adults: 2,
-  childs: [],
-  currency: 'RUB',
-  onlyCharter: false,
-  onlyDirect: false,
-};
 
 function HotelTourCard({ result, form }: { result: TourSearchResult; form: TourSearchForm }) {
   const imageUrl = result.picturelink || result.picture || result.images?.[0];
@@ -40,9 +27,9 @@ function HotelTourCard({ result, form }: { result: TourSearchResult; form: TourS
   const totalGuests = form.adults + form.childs.length;
 
   return (
-    <article className="group relative flex flex-col overflow-hidden rounded-3xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl dark:hover:shadow-zinc-900/50">
+    <article className="group relative flex h-full min-h-[540px] flex-col overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl dark:border-zinc-800 dark:bg-zinc-900 dark:hover:shadow-zinc-900/50">
       {/* CARD IMAGE HEADER */}
-      <div className="relative h-52 w-full overflow-hidden bg-slate-100 dark:bg-zinc-800">
+      <div className="relative h-52 min-h-52 w-full shrink-0 overflow-hidden bg-slate-100 dark:bg-zinc-800">
         {imageUrl ? (
           <img
             src={imageUrl}
@@ -88,19 +75,19 @@ function HotelTourCard({ result, form }: { result: TourSearchResult; form: TourS
       </div>
 
       {/* CARD BODY */}
-      <div className="flex flex-1 flex-col justify-between p-5 space-y-4">
+      <div className="flex flex-1 flex-col justify-between space-y-4 p-5">
         <div>
           <Link
             to={`/tour-search/hotel/${result.id}`}
             state={{ hotel: result, form }}
             className="block"
           >
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white line-clamp-2 leading-snug group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">
+            <h3 className="line-clamp-2 min-h-[3.25rem] text-lg font-bold leading-snug text-slate-900 transition-colors group-hover:text-orange-600 dark:text-white dark:group-hover:text-orange-400">
               {hotelName}
             </h3>
           </Link>
 
-          <div className="mt-2.5 flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+          <div className="mt-2.5 min-h-7 flex flex-wrap content-start items-start gap-2 text-xs text-slate-500 dark:text-slate-400">
             {result.meal?.name && (
               <span className="rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 px-2.5 py-1 font-medium">
                 {result.meal.name}
@@ -115,7 +102,7 @@ function HotelTourCard({ result, form }: { result: TourSearchResult; form: TourS
         </div>
 
         {/* CARD FOOTER */}
-        <div className="pt-3 border-t border-slate-100 dark:border-zinc-800/80 flex flex-col space-y-3">
+          <div className="flex min-h-[92px] flex-col justify-end space-y-3 border-t border-slate-100 pt-3 dark:border-zinc-800/80">
           <div className="flex items-baseline justify-between">
             <span className="text-xs text-slate-400 font-medium">1 номер, {totalGuests} {totalGuests === 1 ? 'гость' : 'гостей'}</span>
             <div className="text-right">
@@ -129,6 +116,11 @@ function HotelTourCard({ result, form }: { result: TourSearchResult; form: TourS
           <Link
             to={`/tour-search/hotel/${result.id}`}
             state={{ hotel: result, form }}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => {
+              localStorage.setItem(`tour-search-hotel-${result.id}`, JSON.stringify({ hotel: result, form }));
+            }}
             className="w-full py-3 px-4 bg-orange-500 hover:bg-orange-600 active:scale-[0.99] text-white font-bold rounded-2xl shadow-md shadow-orange-500/20 transition-all flex items-center justify-center gap-2 text-sm"
           >
             <span>Показать туры</span>
@@ -141,28 +133,17 @@ function HotelTourCard({ result, form }: { result: TourSearchResult; form: TourS
 }
 
 export function TourSearchPage() {
-  const [form, setForm] = useState<TourSearchForm>(initialForm);
+  const location = useLocation();
+  const initialFormFromNavigation = location.state?.form as TourSearchForm | undefined;
+  const searchForm = useTourSearchForm(initialFormFromNavigation);
+  const { form } = searchForm;
+  const autoSubmitHandled = useRef(false);
   const [searchId, setSearchId] = useState<number | null>(null);
   const [status, setStatus] = useState<TourSearchStatus | null>(null);
   const [results, setResults] = useState<TourSearchResult[]>([]);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-
-  const departuresQuery = useQuery({
-    queryKey: ['tour-search', 'departures'],
-    queryFn: tourSearchApi.getDepartures,
-  });
-  const countriesQuery = useQuery({
-    queryKey: ['tour-search', 'countries', form.departureId],
-    queryFn: () => tourSearchApi.getCountries(form.departureId!),
-    enabled: form.departureId !== null,
-  });
-  const datesQuery = useQuery({
-    queryKey: ['tour-search', 'dates', form.departureId, form.countryId],
-    queryFn: () => tourSearchApi.getDates(form.departureId!, form.countryId!),
-    enabled: form.departureId !== null && form.countryId !== null,
-  });
 
   const searchMutation = useMutation({
     mutationFn: tourSearchApi.startSearch,
@@ -190,7 +171,7 @@ export function TourSearchPage() {
         ]);
         if (cancelled) return;
         setStatus(nextStatus);
-        setResults(nextResults);
+        setResults(Array.isArray(nextResults) ? nextResults : []);
         const isCompleted = ['done', 'complete', 'finished', 'completed'].includes(nextStatus.status.toLowerCase());
         if (!isCompleted) {
           timer = setTimeout(poll, 3000);
@@ -207,33 +188,35 @@ export function TourSearchPage() {
     };
   }, [searchId, visibleCount]);
 
-  const updateForm = <K extends keyof TourSearchForm>(key: K, value: TourSearchForm[K]) => {
+  const updateSearchState = () => {
     setSearchId(null);
     setStatus(null);
     setResults([]);
     setVisibleCount(PAGE_SIZE);
-    setForm((current) => ({ ...current, [key]: value }));
+  };
+
+  const updateForm = <K extends keyof TourSearchForm>(key: K, value: TourSearchForm[K]) => {
+    updateSearchState();
+    searchForm.updateForm(key, value);
   };
 
   const changeDeparture = (departureId: number | null) => {
-    setSearchId(null);
-    setStatus(null);
-    setResults([]);
-    setVisibleCount(PAGE_SIZE);
-    setForm({ ...initialForm, departureId });
+    updateSearchState();
+    searchForm.changeDeparture(departureId);
   };
 
   const submit = () => {
-    if (!form.departureId || !form.countryId || !form.dateFrom || !form.dateTo) {
-      setErrorMessage('Выберите город вылета, страну и диапазон дат.');
-      return;
-    }
-    if (form.nightsFrom > form.nightsTo || form.nightsTo - form.nightsFrom > 10) {
-      setErrorMessage('Диапазон ночей должен быть от 1 до 10 ночей.');
-      return;
-    }
-    searchMutation.mutate(form);
+    if (searchForm.validate()) searchMutation.mutate(form);
   };
+
+  useEffect(() => {
+    if (!location.state?.autoSubmit || autoSubmitHandled.current) return;
+    autoSubmitHandled.current = true;
+    if (initialFormFromNavigation) {
+      searchMutation.mutate(initialFormFromNavigation);
+    }
+    window.history.replaceState({}, document.title, window.location.pathname);
+  }, [initialFormFromNavigation, location.pathname, location.state, searchMutation]);
 
   const handleLoadMore = async () => {
     if (!searchId) return;
@@ -242,7 +225,7 @@ export function TourSearchPage() {
     try {
       if (nextCount > results.length) {
         const freshResults = await tourSearchApi.getResults(searchId, Math.max(nextCount, 100));
-        setResults(freshResults);
+        setResults(Array.isArray(freshResults) ? freshResults : []);
       }
       setVisibleCount(nextCount);
     } catch {
@@ -254,10 +237,12 @@ export function TourSearchPage() {
 
   const isSearching = searchMutation.isPending || (searchId !== null && (!status || status.progress < 100) && results.length === 0);
   const isFinished = status ? ['done', 'complete', 'finished', 'completed'].includes(status.status.toLowerCase()) : false;
-  const displayedResults = results.slice(0, visibleCount);
+  const filteredResults = results;
+
+  const displayedResults = filteredResults.slice(0, visibleCount);
 
   // Show "Load More" button if there are more results available in array or if search is still ongoing
-  const hasMore = visibleCount < results.length || (!isFinished && results.length > 0);
+  const hasMore = visibleCount < filteredResults.length || (!isFinished && results.length > 0);
 
   return (
     <main className="min-h-[calc(100vh-4rem)] bg-gradient-to-b from-indigo-100 via-background to-background px-4 py-10 sm:py-16" aria-label="Поиск туров">
@@ -271,15 +256,24 @@ export function TourSearchPage() {
         <section aria-label="Параметры поиска туров">
           <TourSearchBar
             form={form}
-            departures={departuresQuery.data}
-            countries={countriesQuery.data}
-            availableDates={datesQuery.data}
-            isDeparturesLoading={departuresQuery.isLoading}
-            isCountriesLoading={countriesQuery.isLoading}
+            departures={searchForm.departures}
+            countries={searchForm.countries}
+            regions={searchForm.regions}
+            meals={searchForm.meals}
+            hotels={searchForm.hotels}
+            isHotelsLoading={searchForm.isHotelsLoading}
+            hotelSearch={searchForm.hotelSearch}
+            onHotelSearchChange={searchForm.setHotelSearch}
+            availableDates={searchForm.availableDates}
+            isDeparturesLoading={searchForm.isDeparturesLoading}
+            isCountriesLoading={searchForm.isCountriesLoading}
             isSearching={isSearching}
             onUpdateForm={updateForm}
             onChangeDeparture={changeDeparture}
             onSubmit={submit}
+            invalidField={searchForm.invalidField}
+            validationNonce={searchForm.validationNonce}
+            advancedOpen={isSearching || Boolean(searchId)}
           />
 
           {errorMessage && (
@@ -296,7 +290,7 @@ export function TourSearchPage() {
                 Результаты поиска
                 {results.length > 0 && (
                   <span className="ml-3 text-sm font-normal text-slate-500 dark:text-slate-400">
-                    (найдено {results.length})
+                    (найдено {filteredResults.length}{filteredResults.length !== results.length ? ` из ${results.length}` : ''})
                   </span>
                 )}
               </h2>
@@ -312,6 +306,10 @@ export function TourSearchPage() {
               <div className="rounded-3xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-12 text-center text-slate-500 shadow-sm flex flex-col items-center justify-center space-y-3">
                 <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
                 <p className="text-base font-medium text-slate-700 dark:text-slate-300">Ищем подходящие предложения туроператоров...</p>
+              </div>
+            ) : filteredResults.length === 0 ? (
+              <div className="rounded-3xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-12 text-center text-slate-500 shadow-sm">
+                <p className="text-base font-medium text-slate-700 dark:text-slate-300">По выбранным фильтрам туры не найдены.</p>
               </div>
             ) : (
               <>
@@ -341,11 +339,11 @@ export function TourSearchPage() {
                       <span>
                         {isLoadingMore
                           ? 'Загрузка туров...'
-                          : `Показать еще ${Math.min(PAGE_SIZE, Math.max(0, results.length - visibleCount) || PAGE_SIZE)} туров`}
+                          : `Показать еще ${Math.min(PAGE_SIZE, Math.max(0, filteredResults.length - visibleCount) || PAGE_SIZE)} туров`}
                       </span>
                     </button>
                     <span className="text-xs text-slate-400 font-medium">
-                      Показано {displayedResults.length} из {results.length} найденных туров
+                      Показано {displayedResults.length} из {filteredResults.length} найденных туров
                     </span>
                   </div>
                 )}
