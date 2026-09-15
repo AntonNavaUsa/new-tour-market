@@ -502,9 +502,12 @@ export class AppController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   async updateAdminSettings(@Body() body: Record<string, string>) {
-    const allowedKeys = ['siteName', 'siteDescription', 'adminEmail', 'menuItems'];
+    const allowedKeys = ['siteName', 'siteDescription', 'adminEmail', 'menuItems', 'tourProvider'];
     for (const [key, value] of Object.entries(body)) {
       if (!allowedKeys.includes(key)) continue;
+      if (key === 'tourProvider' && !['tourvisor', 'sletat'].includes(value)) {
+        throw new BadRequestException('Недопустимый поставщик API туров');
+      }
       await this.prisma.siteSettings.upsert({
         where: { key },
         update: { value: String(value) },

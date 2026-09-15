@@ -119,7 +119,7 @@ export const metaApi = {
     return response.data;
   },
 
-  updateSiteSettings: async (data: Partial<{ siteName: string; siteDescription: string; adminEmail: string; menuItems: string }>): Promise<Record<string, string>> => {
+  updateSiteSettings: async (data: Partial<{ siteName: string; siteDescription: string; adminEmail: string; menuItems: string; tourProvider: 'tourvisor' | 'sletat' }>): Promise<Record<string, string>> => {
     const response = await api.patch<Record<string, string>>('/api/admin/settings', data);
     return response.data;
   },

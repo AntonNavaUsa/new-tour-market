@@ -18,6 +18,7 @@ export function AdminSiteSettingsPage() {
   const [siteName, setSiteName] = useState('');
   const [siteDescription, setSiteDescription] = useState('');
   const [adminEmail, setAdminEmail] = useState('');
+  const [tourProvider, setTourProvider] = useState<'tourvisor' | 'sletat'>('tourvisor');
   const [menuItems, setMenuItems] = useState<SiteMenuItem[]>(defaultSiteMenu);
 
   const { data, isLoading } = useQuery({
@@ -30,6 +31,7 @@ export function AdminSiteSettingsPage() {
       setSiteName(data.siteName ?? '');
       setSiteDescription(data.siteDescription ?? '');
       setAdminEmail(data.adminEmail ?? '');
+      setTourProvider(data.tourProvider === 'sletat' ? 'sletat' : 'tourvisor');
       try {
         const savedMenu = data.menuItems ? JSON.parse(data.menuItems) : null;
         if (Array.isArray(savedMenu)) {
@@ -44,7 +46,7 @@ export function AdminSiteSettingsPage() {
 
   const mutation = useMutation({
     mutationFn: () =>
-      metaApi.updateSiteSettings({ siteName, siteDescription, adminEmail }),
+      metaApi.updateSiteSettings({ siteName, siteDescription, adminEmail, tourProvider }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['admin-site-settings'] });
       await queryClient.invalidateQueries({ queryKey: ['site-settings'] });
@@ -179,6 +181,22 @@ export function AdminSiteSettingsPage() {
                 />
                 <p className="text-xs text-muted-foreground">
                   На этот адрес приходят уведомления о новых заказах и оплатах
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="tourProvider">Поставщик API туров</Label>
+                <select
+                  id="tourProvider"
+                  value={tourProvider}
+                  onChange={(e) => setTourProvider(e.target.value as 'tourvisor' | 'sletat')}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                >
+                  <option value="tourvisor">Tourvisor</option>
+                  <option value="sletat">Слетать.ру</option>
+                </select>
+                <p className="text-xs text-muted-foreground">
+                  Лицензия Слетать.ру подключена к szntravel.ru. Для запуска нужны логин и пароль в окружении backend.
                 </p>
               </div>
 

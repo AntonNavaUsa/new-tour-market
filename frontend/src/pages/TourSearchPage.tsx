@@ -172,7 +172,7 @@ export function TourSearchPage() {
         if (cancelled) return;
         setStatus(nextStatus);
         setResults(Array.isArray(nextResults) ? nextResults : []);
-        const isCompleted = ['done', 'complete', 'finished', 'completed'].includes(nextStatus.status.toLowerCase());
+        const isCompleted = ['done', 'complete', 'finished', 'completed', 'timeout'].includes(nextStatus.status.toLowerCase());
         if (!isCompleted) {
           timer = setTimeout(poll, 3000);
         }
@@ -236,7 +236,7 @@ export function TourSearchPage() {
   };
 
   const isSearching = searchMutation.isPending || (searchId !== null && (!status || status.progress < 100) && results.length === 0);
-  const isFinished = status ? ['done', 'complete', 'finished', 'completed'].includes(status.status.toLowerCase()) : false;
+  const isFinished = status ? ['done', 'complete', 'finished', 'completed', 'timeout'].includes(status.status.toLowerCase()) : false;
   const filteredResults = results;
 
   const displayedResults = filteredResults.slice(0, visibleCount);

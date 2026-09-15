@@ -1,5 +1,7 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, ServiceUnavailableException } from '@nestjs/common';
 import { TourvisorClient } from './tourvisor.client';
+import { PrismaService } from '../prisma/prisma.service';
+import { SletatProvider } from './sletat.provider';
 import {
   ReferenceQueryDto,
   TourDetailsQueryDto,
@@ -8,15 +10,26 @@ import {
 
 @Injectable()
 export class TourvisorService {
-  constructor(private readonly client: TourvisorClient) {}
+  constructor(
+    private readonly client: TourvisorClient,
+    private readonly prisma: PrismaService,
+    private readonly sletat: SletatProvider,
+  ) {}
 
-  getDepartures(query: ReferenceQueryDto) {
+  private async selectedProvider() {
+    const setting = await this.prisma.siteSettings.findUnique({ where: { key: 'tourProvider' } });
+    return setting?.value || 'tourvisor';
+  }
+
+  async getDepartures(query: ReferenceQueryDto) {
+    if (await this.selectedProvider() === 'sletat') return this.sletat.getDepartures();
     return this.client.get('/departures', {
       departureCountryId: query.departureCountryId,
     });
   }
 
-  getCountries(query: ReferenceQueryDto) {
+  async getCountries(query: ReferenceQueryDto) {
+    if (await this.selectedProvider() === 'sletat') return this.sletat.getCountries(query);
     return this.client.get('/countries', {
       departureId: query.departureId,
       onlyCharter: query.onlyCharter,
@@ -24,7 +37,8 @@ export class TourvisorService {
     });
   }
 
-  getArrivals(query: ReferenceQueryDto) {
+  async getArrivals(query: ReferenceQueryDto) {
+    if (await this.selectedProvider() === 'sletat') return [];
     if (!query.departureId) {
       throw new BadRequestException('departureId is required');
     }
@@ -36,7 +50,8 @@ export class TourvisorService {
     });
   }
 
-  getDates(query: ReferenceQueryDto) {
+  async getDates(query: ReferenceQueryDto) {
+    if (await this.selectedProvider() === 'sletat') return this.sletat.getDates(query);
     if (!query.departureId || !query.countryId) {
       throw new BadRequestException('departureId and countryId are required');
     }
@@ -48,15 +63,18 @@ export class TourvisorService {
     });
   }
 
-  getCurrencies() {
+  async getCurrencies() {
+    if (await this.selectedProvider() === 'sletat') return [{ id: 5, name: 'RUB' }];
     return this.client.get('/currencies');
   }
 
-  getMeals() {
+  async getMeals() {
+    if (await this.selectedProvider() === 'sletat') return this.sletat.getMeals();
     return this.client.get('/meals');
   }
 
-  getRegions(query: ReferenceQueryDto) {
+  async getRegions(query: ReferenceQueryDto) {
+    if (await this.selectedProvider() === 'sletat') return this.sletat.getRegions(query);
     if (!query.countryId) {
       throw new BadRequestException('countryId is required');
     }
@@ -64,6 +82,7 @@ export class TourvisorService {
   }
 
   async getHotels(query: ReferenceQueryDto) {
+    if (await this.selectedProvider() === 'sletat') return this.sletat.getHotels(query);
     if (!query.countryId) {
       throw new BadRequestException('countryId is required');
     }
@@ -78,11 +97,13 @@ export class TourvisorService {
     return hotels.filter((hotel) => hotel.name?.toLowerCase().includes(nameQuery));
   }
 
-  getRooms(ids: number[]) {
+  async getRooms(ids: number[]) {
+    if (await this.selectedProvider() === 'sletat') return [];
     return this.client.get('/rooms', { ids });
   }
 
   async startSearch(search: TourSearchDto) {
+    if (await this.selectedProvider() === 'sletat') return this.sletat.startSearch(search);
     if (search.dateFrom > search.dateTo) {
       throw new BadRequestException('dateFrom must be before dateTo');
     }
@@ -131,19 +152,23 @@ export class TourvisorService {
     });
   }
 
-  getStatus(searchId: number, operatorStatus: boolean) {
+  async getStatus(searchId: number, operatorStatus: boolean) {
+    if (await this.selectedProvider() === 'sletat') return this.sletat.getStatus(searchId);
     return this.client.get(`/tours/search/${searchId}/status`, { operatorStatus });
   }
 
-  getResults(searchId: number, limit: number) {
+  async getResults(searchId: number, limit: number) {
+    if (await this.selectedProvider() === 'sletat') return this.sletat.getResults(searchId, limit);
     return this.client.get(`/tours/search/${searchId}`, { limit });
   }
 
-  getTour(tourId: number, query: TourDetailsQueryDto) {
+  async getTour(tourId: number, query: TourDetailsQueryDto) {
+    if (await this.selectedProvider() === 'sletat') return this.sletat.getTour(tourId, query);
     return this.client.get(`/tours/${tourId}`, { currency: query.currency });
   }
 
-  getFlights(tourId: number, query: TourDetailsQueryDto) {
+  async getFlights(tourId: number, query: TourDetailsQueryDto) {
+    if (await this.selectedProvider() === 'sletat') return this.sletat.getFlights(tourId, query);
     return this.client.get(`/tours/${tourId}/flights`, { currency: query.currency });
   }
 }
