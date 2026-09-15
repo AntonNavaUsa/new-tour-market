@@ -220,6 +220,55 @@ export function TourSearchBar({
     );
   }, [countries, countrySearch]);
 
+  const topCountryMeta: Record<string, { flag: string; visa: string }> = {
+    Турция: { flag: '🇹🇷', visa: 'без визы' },
+    Россия: { flag: '🇷🇺', visa: 'без визы' },
+    Египет: { flag: '🇪🇬', visa: 'без визы' },
+    ОАЭ: { flag: '🇦🇪', visa: 'без визы' },
+    Таиланд: { flag: '🇹🇭', visa: 'без визы' },
+    Вьетнам: { flag: '🇻🇳', visa: 'без визы' },
+    Китай: { flag: '🇨🇳', visa: 'без визы' },
+    Абхазия: { flag: '🇦🇧', visa: 'без визы' },
+    Мальдивы: { flag: '🇲🇻', visa: 'без визы' },
+    Тунис: { flag: '🇹🇳', visa: 'без визы' },
+    Узбекистан: { flag: '🇺🇿', visa: 'без визы' },
+  };
+
+  const topCountries = Object.keys(topCountryMeta)
+    .map((name) => filteredCountries.find((country) => country.name === name))
+    .filter((country): country is TourSearchReference => Boolean(country));
+  const topCountryIds = new Set(topCountries.map((country) => country.id));
+  const otherCountries = filteredCountries.filter((country) => !topCountryIds.has(country.id));
+
+  const renderCountryOption = (item: TourSearchReference, isTop = false) => {
+    const isSelected = item.id === form.countryId;
+    const meta = topCountryMeta[item.name];
+
+    return (
+      <button
+        key={item.id}
+        type="button"
+        onClick={() => {
+          onUpdateForm('countryId', item.id);
+          setActivePopover(null);
+          setCountrySearch('');
+        }}
+        className={`w-full rounded-xl px-3 py-2 text-left text-sm transition flex items-center justify-between font-medium ${
+          isSelected
+            ? 'bg-orange-50 text-orange-600 dark:bg-orange-950/40 dark:text-orange-400 font-semibold'
+            : 'text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-zinc-800'
+        }`}
+      >
+        <span className="flex min-w-0 items-center gap-2">
+          {isTop && meta && <span className="shrink-0 text-xl leading-none" aria-hidden="true">{meta.flag}</span>}
+          <span className="min-w-0 truncate">{item.name}</span>
+          {isTop && meta && <span className="shrink-0 text-xs font-normal text-emerald-600 dark:text-emerald-400">{meta.visa}</span>}
+        </span>
+        {isSelected && <Check className="h-4 w-4 shrink-0 text-orange-500" />}
+      </button>
+    );
+  };
+
   // Calendar Months calculation
   const month1 = viewMonth;
   const month2 = addMonths(viewMonth, 1);
@@ -407,28 +456,30 @@ export function TourSearchBar({
                 {filteredCountries.length === 0 ? (
                   <p className="p-3 text-center text-xs text-slate-400">Страна не найдена</p>
                 ) : (
-                  filteredCountries.map((item) => {
-                    const isSelected = item.id === form.countryId;
-                    return (
-                      <button
-                        key={item.id}
-                        type="button"
-                        onClick={() => {
-                          onUpdateForm('countryId', item.id);
-                          setActivePopover(null);
-                          setCountrySearch('');
-                        }}
-                        className={`w-full text-left px-3 py-2 text-sm rounded-xl transition flex items-center justify-between font-medium ${
-                          isSelected
-                            ? 'bg-orange-50 text-orange-600 dark:bg-orange-950/40 dark:text-orange-400 font-semibold'
-                            : 'hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-700 dark:text-slate-200'
-                        }`}
-                      >
-                        <span className="truncate">{item.name}</span>
-                        {isSelected && <Check className="h-4 w-4 shrink-0 text-orange-500" />}
-                      </button>
-                    );
-                  })
+                  <>
+                    {topCountries.length > 0 && (
+                      <section aria-label="Топовые направления" className="pb-2">
+                        <h3 className="px-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                          Топовые направления
+                        </h3>
+                        <div className="space-y-0.5">
+                          {topCountries.map((item) => renderCountryOption(item, true))}
+                        </div>
+                      </section>
+                    )}
+                    {otherCountries.length > 0 && (
+                      <section aria-label="Все направления" className={topCountries.length > 0 ? 'border-t border-slate-100 pt-2 dark:border-zinc-800' : ''}>
+                        {topCountries.length > 0 && (
+                          <h3 className="px-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                            Все направления
+                          </h3>
+                        )}
+                        <div className="space-y-0.5">
+                          {otherCountries.map((item) => renderCountryOption(item))}
+                        </div>
+                      </section>
+                    )}
+                  </>
                 )}
               </div>
             </div>
