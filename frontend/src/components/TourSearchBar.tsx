@@ -28,7 +28,8 @@ import {
   startOfDay,
 } from 'date-fns';
 import { ru } from 'date-fns/locale/ru';
-import ReactCountryFlag from 'react-country-flag';
+import * as CountryFlags from 'country-flag-icons/react/3x2';
+import type { ComponentType, SVGProps } from 'react';
 import type { TourSearchForm, TourSearchReference } from '../types';
 
 interface TourSearchBarProps {
@@ -274,10 +275,15 @@ export function TourSearchBar({
     Таиланд: { visa: 'без визы' },
     Вьетнам: { visa: 'без визы' },
     Китай: { visa: 'без визы' },
-    Абхазия: { visa: 'без визы' },
     Мальдивы: { visa: 'без визы' },
     Тунис: { visa: 'без визы' },
     Узбекистан: { visa: 'без визы' },
+  };
+
+  const getCountryFlag = (countryName: string): ComponentType<SVGProps<SVGSVGElement>> | undefined => {
+    const code = countryCodeByName[countryName];
+    if (!code || code === 'AB') return undefined;
+    return (CountryFlags as Record<string, ComponentType<SVGProps<SVGSVGElement>>>)[code];
   };
 
   const topCountries = Object.keys(topCountryMeta)
@@ -289,6 +295,7 @@ export function TourSearchBar({
   const renderCountryOption = (item: TourSearchReference, isTop = false) => {
     const isSelected = item.id === form.countryId;
     const meta = topCountryMeta[item.name];
+    const Flag = getCountryFlag(item.name);
 
     return (
       <button
@@ -306,14 +313,10 @@ export function TourSearchBar({
         }`}
       >
         <span className="flex min-w-0 items-center gap-2">
-          {countryCodeByName[item.name] && (
-            <ReactCountryFlag
-              countryCode={countryCodeByName[item.name]}
-              svg
-              title={item.name}
+          {isTop && Flag && (
+            <Flag
               aria-label={`Флаг: ${item.name}`}
-              className="shrink-0 rounded-sm object-cover"
-              style={{ width: '1.35rem', height: '1rem' }}
+              className="h-4 w-6 shrink-0 rounded-sm object-cover"
             />
           )}
           <span className="min-w-0 truncate">{item.name}</span>
