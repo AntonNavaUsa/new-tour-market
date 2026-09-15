@@ -62,6 +62,10 @@ services:
       TOURVISOR_API_BASE_URL: ${TOURVISOR_API_BASE_URL:-https://api.tourvisor.ru/search/api/v1}
       TOURVISOR_JWT_TOKEN: ${TOURVISOR_JWT_TOKEN}
       TOURVISOR_TIMEOUT_MS: ${TOURVISOR_TIMEOUT_MS:-15000}
+      SLETAT_API_BASE_URL: ${SLETAT_API_BASE_URL:-https://module.sletat.ru/Main.svc}
+      SLETAT_LOGIN: ${SLETAT_LOGIN}
+      SLETAT_PASSWORD: ${SLETAT_PASSWORD}
+      SLETAT_TIMEOUT_MS: ${SLETAT_TIMEOUT_MS:-30000}
       NODE_ENV: production
     ports:
       - "127.0.0.1:3010:3000"
