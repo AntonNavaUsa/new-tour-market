@@ -295,9 +295,9 @@ export function TourSearchBar({
 
   return (
     <div ref={barRef} className="relative rounded-[28px] bg-white dark:bg-zinc-900 p-2 sm:p-3 shadow-xl shadow-indigo-200/40 dark:shadow-none border border-slate-100 dark:border-zinc-800">
-      <div className="grid gap-2 grid-cols-1 sm:grid-cols-2 md:grid-cols-[1.1fr_1.1fr_1.35fr_1fr_1fr_auto]">
+      <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1.1fr)_minmax(0,1.35fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
         {/* FIELD 1: ОТКУДА */}
-        <div className="relative">
+        <div className="relative min-w-0">
           <button
             type="button"
             onClick={() => setActivePopover(activePopover === 'departure' ? null : 'departure')}
@@ -366,7 +366,7 @@ export function TourSearchBar({
         </div>
 
         {/* FIELD 2: КУДА */}
-        <div className="relative">
+        <div className="relative min-w-0">
           <button
             type="button"
             disabled={!form.departureId}
@@ -436,7 +436,7 @@ export function TourSearchBar({
         </div>
 
         {/* FIELD 3: ДАТА ВЫЛЕТА */}
-        <div className="relative">
+        <div className="relative min-w-0">
           <button
             type="button"
             onClick={() => setActivePopover(activePopover === 'dates' ? null : 'dates')}
@@ -462,7 +462,7 @@ export function TourSearchBar({
 
           {/* DROPDOWN: ДАТА ВЫЛЕТА (CALENDAR) */}
           {activePopover === 'dates' && (
-            <div className="absolute top-full mt-2 left-0 z-50 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-2xl rounded-3xl p-4 sm:p-5 w-[calc(100vw-2rem)] max-w-[620px]">
+            <div className="absolute left-1/2 top-full z-50 mt-2 w-[calc(100vw-2rem)] max-w-[620px] -translate-x-1/2 rounded-3xl border border-slate-200 bg-white p-4 shadow-2xl dark:border-zinc-800 dark:bg-zinc-900 sm:left-0 sm:w-[calc(100vw-2rem)] sm:translate-x-0 sm:p-5 lg:left-0 lg:w-[620px]">
               <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-100 dark:border-zinc-800">
                 <button
                   type="button"
@@ -544,7 +544,7 @@ export function TourSearchBar({
         </div>
 
         {/* FIELD 4: КОЛ-ВО НОЧЕЙ */}
-        <div className="relative">
+        <div className="relative min-w-0">
           <button
             type="button"
             onClick={() => setActivePopover(activePopover === 'nights' ? null : 'nights')}
@@ -650,7 +650,7 @@ export function TourSearchBar({
         </div>
 
         {/* FIELD 5: КТО ЕДЕТ */}
-        <div className="relative">
+        <div className="relative min-w-0">
           <button
             type="button"
             onClick={() => setActivePopover(activePopover === 'guests' ? null : 'guests')}
@@ -801,7 +801,7 @@ export function TourSearchBar({
             onSubmit();
           }}
           disabled={isSearching}
-          className="min-h-[72px] bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 active:scale-[0.98] text-white font-bold rounded-2xl px-6 py-3 shadow-lg shadow-orange-500/25 transition-all flex items-center justify-center gap-2 text-base shrink-0 disabled:cursor-not-allowed disabled:opacity-70"
+          className="min-h-[72px] min-w-0 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 px-4 py-3 text-base font-bold text-white shadow-lg shadow-orange-500/25 transition-all hover:from-orange-600 hover:to-amber-600 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70 sm:px-6 lg:shrink-0"
         >
           {isSearching ? <Loader2 className="h-5 w-5 animate-spin" /> : <Search className="h-5 w-5" />}
           <span className="whitespace-nowrap">
