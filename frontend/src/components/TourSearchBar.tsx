@@ -28,6 +28,7 @@ import {
   startOfDay,
 } from 'date-fns';
 import { ru } from 'date-fns/locale/ru';
+import ReactCountryFlag from 'react-country-flag';
 import type { TourSearchForm, TourSearchReference } from '../types';
 
 interface TourSearchBarProps {
@@ -220,18 +221,63 @@ export function TourSearchBar({
     );
   }, [countries, countrySearch]);
 
-  const topCountryMeta: Record<string, { flag: string; visa: string }> = {
-    Турция: { flag: '🇹🇷', visa: 'без визы' },
-    Россия: { flag: '🇷🇺', visa: 'без визы' },
-    Египет: { flag: '🇪🇬', visa: 'без визы' },
-    ОАЭ: { flag: '🇦🇪', visa: 'без визы' },
-    Таиланд: { flag: '🇹🇭', visa: 'без визы' },
-    Вьетнам: { flag: '🇻🇳', visa: 'без визы' },
-    Китай: { flag: '🇨🇳', visa: 'без визы' },
-    Абхазия: { flag: '🇦🇧', visa: 'без визы' },
-    Мальдивы: { flag: '🇲🇻', visa: 'без визы' },
-    Тунис: { flag: '🇹🇳', visa: 'без визы' },
-    Узбекистан: { flag: '🇺🇿', visa: 'без визы' },
+  const countryCodeByName: Record<string, string> = {
+    Россия: 'RU',
+    Турция: 'TR',
+    Египет: 'EG',
+    'ОАЭ': 'AE',
+    Таиланд: 'TH',
+    Вьетнам: 'VN',
+    Китай: 'CN',
+    Абхазия: 'AB',
+    Мальдивы: 'MV',
+    Тунис: 'TN',
+    Узбекистан: 'UZ',
+    Греция: 'GR',
+    Индия: 'IN',
+    Индонезия: 'ID',
+    Испания: 'ES',
+    Италия: 'IT',
+    Кипр: 'CY',
+    Куба: 'CU',
+    Мексика: 'MX',
+    Болгария: 'BG',
+    Черногория: 'ME',
+    Хорватия: 'HR',
+    Марокко: 'MA',
+    Австрия: 'AT',
+    Франция: 'FR',
+    'Шри-Ланка': 'LK',
+    Филиппины: 'PH',
+    Сейшелы: 'SC',
+    Маврикий: 'MU',
+    Иордания: 'JO',
+    Израиль: 'IL',
+    Армения: 'AM',
+    Азербайджан: 'AZ',
+    Казахстан: 'KZ',
+    Беларусь: 'BY',
+    Сербия: 'RS',
+    Португалия: 'PT',
+    Танзания: 'TZ',
+    Катар: 'QA',
+    Бахрейн: 'BH',
+    Оман: 'OM',
+    Грузия: 'GE',
+  };
+
+  const topCountryMeta: Record<string, { visa: string }> = {
+    Турция: { visa: 'без визы' },
+    Россия: { visa: 'без визы' },
+    Египет: { visa: 'без визы' },
+    'ОАЭ': { visa: 'без визы' },
+    Таиланд: { visa: 'без визы' },
+    Вьетнам: { visa: 'без визы' },
+    Китай: { visa: 'без визы' },
+    Абхазия: { visa: 'без визы' },
+    Мальдивы: { visa: 'без визы' },
+    Тунис: { visa: 'без визы' },
+    Узбекистан: { visa: 'без визы' },
   };
 
   const topCountries = Object.keys(topCountryMeta)
@@ -260,7 +306,16 @@ export function TourSearchBar({
         }`}
       >
         <span className="flex min-w-0 items-center gap-2">
-          {isTop && meta && <span className="shrink-0 text-xl leading-none" aria-hidden="true">{meta.flag}</span>}
+          {countryCodeByName[item.name] && (
+            <ReactCountryFlag
+              countryCode={countryCodeByName[item.name]}
+              svg
+              title={item.name}
+              aria-label={`Флаг: ${item.name}`}
+              className="shrink-0 rounded-sm object-cover"
+              style={{ width: '1.35rem', height: '1rem' }}
+            />
+          )}
           <span className="min-w-0 truncate">{item.name}</span>
           {isTop && meta && <span className="shrink-0 text-xs font-normal text-emerald-600 dark:text-emerald-400">{meta.visa}</span>}
         </span>

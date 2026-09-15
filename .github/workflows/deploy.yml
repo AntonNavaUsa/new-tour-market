@@ -42,13 +42,20 @@ jobs:
             git fetch origin main
             git reset --hard origin/main
 
-            # Записать .env.prod из секрета (если секрет задан)
-            if [ -n "$ENV_PROD_CONTENT" ]; then
-              echo "$ENV_PROD_CONTENT" > "$APP_DIR/.env.prod"
-              echo ".env.prod updated from secret"
-            elif [ ! -f "$APP_DIR/.env.prod" ]; then
-              echo "ERROR: $APP_DIR/.env.prod not found and ENV_PROD secret is empty!"
-              exit 1
+            # Создать .env.prod из секрета только при первом деплое.
+            # Существующий файл содержит ручные production-настройки и не должен
+            # перезаписываться при каждом git push.
+            if [ ! -f "$APP_DIR/.env.prod" ]; then
+              if [ -n "$ENV_PROD_CONTENT" ]; then
+                echo "$ENV_PROD_CONTENT" > "$APP_DIR/.env.prod"
+                chmod 600 "$APP_DIR/.env.prod"
+                echo ".env.prod created from secret"
+              else
+                echo "ERROR: $APP_DIR/.env.prod not found and ENV_PROD secret is empty!"
+                exit 1
+              fi
+            else
+              echo "Using existing .env.prod; production environment was preserved"
             fi
 
             # Поднять контейнеры
