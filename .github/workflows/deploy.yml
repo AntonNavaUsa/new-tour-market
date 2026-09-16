@@ -60,7 +60,9 @@ jobs:
 
             # Поднять контейнеры
             echo "Building and starting containers..."
-            docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build --remove-orphans
+            # This compose project owns only Travelio. The shared reverse
+            # proxy and its TLS volumes are managed by the infrastructure project.
+            docker compose -p travelio -f docker-compose.prod.yml --env-file .env.prod up -d --build
 
             # Убрать старые образы
             docker image prune -f

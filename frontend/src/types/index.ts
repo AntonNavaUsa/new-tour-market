@@ -3,11 +3,20 @@
 export interface TourSearchReference {
   id: number;
   name: string;
+}
+
+export interface TourSearchMealReference {
+  id: string;
+  name: string;
+  description?: string;
+  codes?: string[];
+  sourceIds?: number[];
   russianName?: string;
   fullRussianName?: string;
 }
 
 export interface TourSearchForm {
+  searchMode: 'tours' | 'hotels';
   departureId: number | null;
   countryId: number | null;
   dateFrom: string;
@@ -55,6 +64,7 @@ export interface TourSearchResult {
     beachLine?: string;
     beachType?: string;
     airportDistance?: string;
+    wifi?: string;
     renovationYear?: string | number;
     description?: string;
     images?: string[];
@@ -62,6 +72,9 @@ export interface TourSearchResult {
   };
   tours?: Array<Record<string, unknown>>;
   hotelcode?: number;
+  sletatOfferId?: number | string;
+  sletatSourceId?: number | string;
+  sletatRequestId?: number | string;
   tourid?: string | number;
   tourId?: string | number;
   operator?: { name?: string };
@@ -69,6 +82,9 @@ export interface TourSearchResult {
   roomType?: string;
   nights?: number;
   date?: string;
+  discountPercent?: number;
+  benefits?: string[];
+  offersCount?: number;
 }
 
 export enum UserRole {

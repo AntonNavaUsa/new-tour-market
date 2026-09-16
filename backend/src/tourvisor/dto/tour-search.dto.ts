@@ -3,6 +3,7 @@ import {
   IsArray,
   IsBoolean,
   IsDateString,
+  IsIn,
   IsInt,
   IsOptional,
   IsString,
@@ -11,6 +12,10 @@ import {
 } from 'class-validator';
 
 export class TourSearchDto {
+  @IsOptional()
+  @IsIn(['tours', 'hotels'])
+  searchMode?: 'tours' | 'hotels';
+
   @Type(() => Number)
   @IsInt()
   @Min(1)
@@ -162,4 +167,12 @@ export class ReferenceQueryDto {
 export class TourDetailsQueryDto {
   @IsString()
   currency!: string;
+
+  @IsOptional()
+  @IsString()
+  sourceId?: string;
+
+  @IsOptional()
+  @IsString()
+  requestId?: string;
 }

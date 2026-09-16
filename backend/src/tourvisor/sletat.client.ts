@@ -42,39 +42,47 @@ export class SletatClient {
       url.searchParams.set(key, Array.isArray(value) ? value.join(',') : String(value));
     }
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
+    for (let attempt = 1; attempt <= 3; attempt += 1) {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
 
-    try {
-      const response = await fetch(url.toString(), {
-        headers: { Accept: 'application/json' },
-        signal: controller.signal,
-      });
-      const payload = await response.json().catch(() => undefined) as SletatResponse | undefined;
+      try {
+        const response = await fetch(url.toString(), {
+          headers: { Accept: 'application/json' },
+          signal: controller.signal,
+        });
+        const payload = await response.json().catch(() => undefined) as SletatResponse | undefined;
 
-      if (!response.ok) {
-        throw new HttpException(`Слетать.ру вернул ошибку ${response.status}`, response.status >= 500 ? HttpStatus.BAD_GATEWAY : response.status);
-      }
-      if (payload?.isError) {
-        throw new BadGatewayException(payload.errorMessage || `Ошибка метода ${method} Слетать.ру`);
-      }
-
-      if (payload && typeof payload === 'object') {
-        const resultKey = Object.keys(payload).find((key) => key.endsWith('Result'));
-        const result = resultKey ? (payload as Record<string, unknown>)[resultKey] : payload;
-        if (result && typeof result === 'object' && 'Data' in result) {
-          return (result as Record<string, unknown>).Data as T;
+        if (!response.ok) {
+          throw new HttpException(`Слетать.ру вернул ошибку ${response.status}`, response.status >= 500 ? HttpStatus.BAD_GATEWAY : response.status);
         }
-        return result as T;
-      }
+        if (payload?.isError) {
+          throw new BadGatewayException(payload.errorMessage || `Ошибка метода ${method} Слетать.ру`);
+        }
 
-      return payload as T;
-    } catch (error) {
-      if (error instanceof HttpException) throw error;
-      this.logger.error(`Sletat request failed: ${method}: ${(error as Error)?.message || error}`);
-      throw new BadGatewayException('Слетать.ру временно недоступен');
-    } finally {
-      clearTimeout(timeout);
+        if (payload && typeof payload === 'object') {
+          const resultKey = Object.keys(payload).find((key) => key.endsWith('Result'));
+          const result = resultKey ? (payload as Record<string, unknown>)[resultKey] : payload;
+          if (result && typeof result === 'object' && 'Data' in result) {
+            return (result as Record<string, unknown>).Data as T;
+          }
+          return result as T;
+        }
+
+        return payload as T;
+      } catch (error) {
+        if (error instanceof HttpException) throw error;
+        const message = (error as Error)?.message || String(error);
+        if (attempt === 3) {
+          this.logger.error(`Sletat request failed: ${method}: ${message}`);
+          throw new BadGatewayException('Слетать.ру временно недоступен');
+        }
+        await new Promise((resolve) => setTimeout(resolve, attempt * 500));
+      } finally {
+        clearTimeout(timeout);
+      }
     }
+
+    throw new BadGatewayException('Слетать.ру временно недоступен');
   }
 }

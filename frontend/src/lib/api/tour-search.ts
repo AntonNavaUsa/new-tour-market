@@ -4,6 +4,7 @@ import type {
   TourSearchReference,
   TourSearchStatus,
   TourSearchResult,
+  TourSearchMealReference,
 } from '../../types';
 
 const toNumber = (value: unknown): number | undefined => {
@@ -130,10 +131,20 @@ export const normalizeTourSearchResult = (raw: unknown): TourSearchResult => {
     '';
 
   const hotelDescription = readString(hotel, 'description');
+  const hotelBeachLine = readString(hotel, 'beachLine') || readString(source, 'beachLine');
+  const hotelBeachType = readString(hotel, 'beachType') || readString(source, 'beachType');
+  const hotelAirportDistance = readString(hotel, 'airportDistance') || readString(source, 'airportDistance');
+  const hotelWifi = readString(hotel, 'wifi') || readString(source, 'wifi');
   const hotelImages = Array.isArray(hotel['images']) ? toStringArray(hotel['images']) : [];
   const hotelPhotos = Array.isArray(hotel['photos']) ? toStringArray(hotel['photos']) : [];
   const operatorValue = source['operator'];
   const operatorRecord = operatorValue && typeof operatorValue === 'object' ? (operatorValue as Record<string, unknown>) : undefined;
+  const reviewsValue =
+    toNumber(source['reviewsCount']) ??
+    toNumber(source['reviewCount']) ??
+    toNumber(source['reviews']) ??
+    toNumber(hotel['reviewsCount']) ??
+    toNumber(hotel['reviewCount']);
 
   return {
     id: (source['id'] ?? source['tourid'] ?? source['tourId'] ?? source['hotelcode'] ?? hotel['id'] ?? 0) as string | number,
@@ -141,7 +152,7 @@ export const normalizeTourSearchResult = (raw: unknown): TourSearchResult => {
     category: toNumber(source['category']) ?? toNumber(source['stars']) ?? 4,
     stars: toNumber(source['stars']) ?? toNumber(source['category']) ?? 4,
     rating: toNumber(source['rating']) ?? 4.5,
-    reviewsCount: toNumber(source['reviewsCount']),
+    reviewsCount: reviewsValue,
     price: maybePrice,
     priceOld: toNumber(source['priceOld']) ?? toNumber(source['oldPrice']) ?? undefined,
     currency: typeof source['currency'] === 'string' && source['currency'] ? source['currency'] : 'RUB',
@@ -153,18 +164,27 @@ export const normalizeTourSearchResult = (raw: unknown): TourSearchResult => {
     country: maybeCountryName ? { name: maybeCountryName } : { name: '' },
     region: maybeRegionName ? { name: maybeRegionName } : { name: '' },
     hotel: {
+      beachLine: hotelBeachLine || undefined,
+      beachType: hotelBeachType || undefined,
+      airportDistance: hotelAirportDistance || undefined,
+      wifi: hotelWifi || undefined,
       description: hotelDescription || undefined,
       images: hotelImages,
       photos: hotelPhotos,
     },
     hotelcode: toNumber(source['hotelcode']) ?? toNumber(hotel['id']),
-    tourid: source['tourid'] ?? source['tourId'] ?? source['id'],
-    tourId: source['tourId'] ?? source['tourid'] ?? source['id'],
+    sletatOfferId: (source['sletatOfferId'] ?? source['offerId']) as string | number | undefined,
+    sletatSourceId: (source['sletatSourceId'] ?? source['sourceId']) as string | number | undefined,
+    sletatRequestId: (source['sletatRequestId'] ?? source['requestId']) as string | number | undefined,
+    tourid: (source['tourid'] ?? source['tourId'] ?? source['id']) as string | number,
+    tourId: (source['tourId'] ?? source['tourid'] ?? source['id']) as string | number,
     operator: operatorRecord ? { name: typeof operatorRecord['name'] === 'string' ? operatorRecord['name'] : undefined } : undefined,
     meal: mealName ? { name: mealName } : undefined,
     roomType,
     nights: toNumber(source['nights']),
     date: typeof source['date'] === 'string' ? source['date'] : undefined,
+    discountPercent: toNumber(source['discountPercent']) ?? toNumber(source['discount']) ?? undefined,
+    benefits: Array.isArray(source['benefits']) ? toStringArray(source['benefits']) : [],
   };
 };
 
@@ -182,18 +202,44 @@ export const normalizeTourSearchResults = (payload: unknown): TourSearchResult[]
   return [];
 };
 
+async function getCachedReferenceList<T>(key: string, request: () => Promise<T[]>): Promise<T[]> {
+  const cacheKey = `travelio-tour-search-reference:${key}`;
+  const maxAge = 24 * 60 * 60 * 1000;
+  try {
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      const parsed = JSON.parse(cached) as { savedAt?: number; value?: T[] };
+      if (parsed.savedAt && Array.isArray(parsed.value) && Date.now() - parsed.savedAt < maxAge) return parsed.value;
+    }
+  } catch {
+    // Ignore unavailable or malformed browser storage and use the API.
+  }
+
+  const value = await request();
+  try {
+    localStorage.setItem(cacheKey, JSON.stringify({ savedAt: Date.now(), value }));
+  } catch {
+    // Ignore storage quota and private browsing restrictions.
+  }
+  return value;
+}
+
 export const tourSearchApi = {
   getDepartures: async (): Promise<TourSearchReference[]> =>
-    (await api.get<TourSearchReference[]>('/api/tour-search/departures', { params: { departureCountryId: 1 } })).data,
+    getCachedReferenceList('departures', async () =>
+      (await api.get<TourSearchReference[]>('/api/tour-search/departures', { params: { departureCountryId: 1 } })).data,
+    ),
 
   getCountries: async (departureId: number): Promise<TourSearchReference[]> =>
-    (await api.get<TourSearchReference[]>('/api/tour-search/countries', { params: { departureId } })).data,
+    getCachedReferenceList(`countries:${departureId}`, async () =>
+      (await api.get<TourSearchReference[]>('/api/tour-search/countries', { params: { departureId } })).data,
+    ),
 
   getDates: async (departureId: number, countryId: number): Promise<string[]> =>
     (await api.get<string[]>('/api/tour-search/dates', { params: { departureId, countryId } })).data,
 
-  getMeals: async (): Promise<TourSearchReference[]> =>
-    (await api.get<TourSearchReference[]>('/api/tour-search/meals')).data,
+  getMeals: async (): Promise<TourSearchMealReference[]> =>
+    (await api.get<TourSearchMealReference[]>('/api/tour-search/meals')).data,
 
   getRegions: async (countryId: number): Promise<TourSearchReference[]> =>
     (await api.get<TourSearchReference[]>('/api/tour-search/regions', { params: { countryId } })).data,
@@ -215,6 +261,6 @@ export const tourSearchApi = {
     return normalizeTourSearchResults(data);
   },
 
-  getTour: async (tourId: number, currency = 'RUB'): Promise<Record<string, unknown>> =>
-    (await api.get<Record<string, unknown>>(`/api/tour-search/tours/${tourId}`, { params: { currency } })).data,
+  getTour: async (tourId: number, currency = 'RUB', params: { sourceId?: string | number; requestId?: string | number } = {}): Promise<Record<string, unknown>> =>
+    (await api.get<Record<string, unknown>>(`/api/tour-search/tours/${tourId}`, { params: { currency, ...params } })).data,
 };

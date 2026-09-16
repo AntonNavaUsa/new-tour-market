@@ -32,7 +32,9 @@ fi
 # Build and start containers
 echo "Building and starting containers..."
 cd "$APP_DIR"
-docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+# This compose project owns only Travelio. Never recreate the shared reverse
+# proxy or prune containers/volumes owned by another site.
+docker compose -p travelio -f docker-compose.prod.yml --env-file .env.prod up -d --build
 
 # Apply DB schema changes
 echo "Applying database migrations..."

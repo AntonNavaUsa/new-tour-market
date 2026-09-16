@@ -10,6 +10,7 @@ const SEARCH_FORM_STORAGE_KEY = 'travelio-tour-search-form';
 
 export function createInitialTourSearchForm(): TourSearchForm {
   return {
+    searchMode: 'tours',
     departureId: null,
     countryId: null,
     dateFrom: format(addDays(new Date(), 4), 'yyyy-MM-dd'),
@@ -41,7 +42,8 @@ function readSavedForm(): TourSearchForm | undefined {
       ...createInitialTourSearchForm(),
       ...parsed,
       childs: parsed.childs,
-      meal: parsed.meal && /^\d+$/.test(parsed.meal) ? parsed.meal : '',
+      meal: typeof parsed.meal === 'string' && parsed.meal ? parsed.meal : '',
+      searchMode: parsed.searchMode === 'hotels' ? 'hotels' : 'tours',
     } as TourSearchForm;
   } catch {
     return undefined;
@@ -52,7 +54,8 @@ function normalizeForm(form: TourSearchForm): TourSearchForm {
   return {
     ...createInitialTourSearchForm(),
     ...form,
-    meal: form.meal && /^\d+$/.test(form.meal) ? form.meal : '',
+    meal: form.meal || '',
+    searchMode: form.searchMode === 'hotels' ? 'hotels' : 'tours',
   };
 }
 
@@ -79,11 +82,17 @@ export function useTourSearchForm(initialForm?: TourSearchForm) {
   const departuresQuery = useQuery({
     queryKey: ['tour-search', 'departures'],
     queryFn: tourSearchApi.getDepartures,
+    staleTime: 24 * 60 * 60 * 1000,
+    gcTime: 24 * 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
   const countriesQuery = useQuery({
     queryKey: ['tour-search', 'countries', form.departureId],
     queryFn: () => tourSearchApi.getCountries(form.departureId!),
     enabled: form.departureId !== null,
+    staleTime: 24 * 60 * 60 * 1000,
+    gcTime: 24 * 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
   const datesQuery = useQuery({
     queryKey: ['tour-search', 'dates', form.departureId, form.countryId],

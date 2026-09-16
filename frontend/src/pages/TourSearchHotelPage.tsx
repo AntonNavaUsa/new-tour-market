@@ -157,130 +157,6 @@ function createRoomOptions(source: UnknownRecord): RoomOption[] {
   return [...grouped.values()];
 }
 
-const ROOM_OPTIONS: RoomOption[] = [
-  {
-    id: 'economy',
-    name: 'Номер эконом-класса',
-    price: 199898,
-    priceOld: 235000,
-    size: '22 м²',
-    features: ['22 м²', 'Кондиционер', 'Без балкона'],
-    thumbnails: [
-      'https://images.unsplash.com/photo-1618773928121-c32242e63f39?auto=format&fit=crop&w=600&q=80',
-      'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=600&q=80',
-      'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=600&q=80',
-    ],
-    mealName: 'Всё включено (All Inclusive)',
-    roomCountText:
-      '40 номеров. В номере: Wi-Fi - платно (3$/день, 10$/неделя, 15$/2 недели), сейф - платно (2$/сутки), балкона нет. Некоторые номера расположены на минус первом этаже и имеют вид в коридор.',
-    services: [
-      'Телевизор',
-      'Мини-бар',
-      'Телефон',
-      'Уборка в номере - ежедневно',
-      'Мини-бар: пустой. Заполнение по запросу',
-      'Смена белья - 2 раза в неделю',
-      'Смена белья - 3 раза в неделю',
-      'Покрытие пола - ламинат',
-      'Сейф',
-      'Отопление',
-      'Пляжные полотенца',
-      'Смена полотенец',
-      'Мини-бар: вода при заселении',
-      'Смена белья',
-    ],
-    internet: ['Wi-Fi', 'Платный Wi-Fi'],
-    bathroom: [
-      'Фен',
-      'Ванная комната в номере',
-      'Ванна или душ',
-      'Душ',
-      'Полотенца',
-      'Туалетно-косметические принадлежности',
-      'Туалетная бумага',
-      'Туалет',
-    ],
-  },
-  {
-    id: 'standard',
-    name: 'Стандартный номер с балконом',
-    price: 210425,
-    size: '26 м²',
-    features: ['26 м²', 'Кондиционер', 'Балкон', 'Вид во двор'],
-    thumbnails: [
-      'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=600&q=80',
-      'https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=600&q=80',
-    ],
-    mealName: 'Всё включено (All Inclusive)',
-    roomCountText:
-      '120 номеров. Уютные стандартные номера с балконом. В номере есть все необходимые удобства для комфортного отдыха.',
-    services: [
-      'Телевизор с плоским экраном',
-      'Балкон',
-      'Кондиционер',
-      'Мини-бар (вода при заезде)',
-      'Телефон',
-      'Уборка в номере - ежедневно',
-      'Смена белья - 3 раза в неделю',
-      'Покрытие пола - ламинат',
-      'Сейф',
-      'Пляжные полотенца',
-    ],
-    internet: ['Wi-Fi в номере'],
-    bathroom: [
-      'Фен',
-      'Душевая кабина',
-      'Набор полотенец',
-      'Туалетно-косметические принадлежности',
-      'Тапочки',
-    ],
-  },
-  {
-    id: 'family',
-    name: '2-комнатный семейный номер',
-    price: 245000,
-    priceOld: 270000,
-    size: '42 м²',
-    features: ['42 м²', '2 комнаты', 'Кондиционер', 'Балкон'],
-    thumbnails: [
-      'https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=600&q=80',
-      'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=600&q=80',
-      'https://images.unsplash.com/photo-1595526114035-0d45ed16cfbf?auto=format&fit=crop&w=600&q=80',
-    ],
-    mealName: 'Ультра всё включено (UAI)',
-    roomCountText:
-      '35 номеров. Просторный семейный номер с двумя изолированными спальнями и балконом. Отличный выбор для отдыха всей семьёй.',
-    services: [
-      '2 телевизора',
-      '2 изолированные комнаты',
-      'Балкон с видом на сад',
-      'Мини-бар пополняется ежедневно',
-      'Ежедневная уборка',
-      'Халаты и тапочки',
-      'Чайный набор и электрочайник',
-      'Бесплатный сейф',
-    ],
-    internet: ['Бесплатный Wi-Fi'],
-    bathroom: [
-      'Просторная ванная комната',
-      'Фен',
-      'Ванна и душ',
-      'Премиум косметика',
-      'Комплект халатов и полотенец',
-    ],
-  },
-];
-
-// Default gallery fallback images if tour item has limited photos
-const DEFAULT_GALLERY = [
-  'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80',
-  'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1618773928121-c32242e63f39?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=1200&q=80',
-];
-
 function findHotelText(source: Record<string, unknown>, keys: string[]): string | undefined {
   const wantedKeys = new Set(keys.map((key) => key.toLowerCase()));
   const visit = (value: unknown): string | undefined => {
@@ -295,6 +171,55 @@ function findHotelText(source: Record<string, unknown>, keys: string[]): string 
   return visit(source);
 }
 
+// Every search offer is one hotel + room + meal + operator + flight combination.
+// Group offers by room type and keep the cheapest one per type so the hotel page shows "от <price>" per room.
+function buildRoomOptionsFromOffers(offers: TourSearchResult[]): RoomOption[] {
+  const grouped = new Map<string, RoomOption & { offersCount: number }>();
+
+  offers.forEach((offer, index) => {
+    if (!offer.price || offer.price <= 0) return;
+    const name = (offer.roomType || '').trim() || 'Стандартное размещение';
+    const key = name.toLowerCase();
+    const features = [
+      offer.meal?.name,
+      offer.nights ? `${offer.nights} ${offer.nights === 1 ? 'ночь' : offer.nights < 5 ? 'ночи' : 'ночей'}` : undefined,
+      offer.operator?.name,
+    ].filter((value): value is string => Boolean(value && value.trim()));
+    const thumbnails = [offer.picturelink, offer.picture, ...(offer.images ?? [])].filter((value): value is string => Boolean(value));
+
+    const existing = grouped.get(key);
+    if (!existing || offer.price < existing.price) {
+      grouped.set(key, {
+        id: String(offer.sletatOfferId ?? offer.tourid ?? offer.id ?? index),
+        name,
+        price: offer.price,
+        priceOld: offer.priceOld,
+        size: '',
+        features,
+        thumbnails: [...new Set(thumbnails)],
+        mealName: offer.meal?.name || '',
+        roomCountText: offer.operator?.name ? `Туроператор: ${offer.operator.name}` : '',
+        services: [],
+        internet: [],
+        bathroom: [],
+        offersCount: (existing?.offersCount ?? 0) + 1,
+      });
+    } else {
+      existing.offersCount += 1;
+      existing.thumbnails = [...new Set([...existing.thumbnails, ...thumbnails])];
+    }
+  });
+
+  return [...grouped.values()]
+    .map(({ offersCount, ...room }) => ({
+      ...room,
+      roomCountText: offersCount > 1
+        ? `${room.roomCountText ? `${room.roomCountText} • ` : ''}${offersCount} предложений от туроператоров`
+        : (room.roomCountText || 'Цена по данным поиска Слетать.ру.'),
+    }))
+    .sort((a, b) => a.price - b.price);
+}
+
 export function TourSearchHotelPage() {
   const { id } = useParams<{ id: string }>();
   const location = useLocation();
@@ -302,29 +227,33 @@ export function TourSearchHotelPage() {
 
   // Retrieve state passed from search page if available
   const stateHotel = location.state?.hotel as TourSearchResult | undefined;
+  const stateOffers = location.state?.offers as TourSearchResult[] | undefined;
   const stateForm = location.state?.form as TourSearchForm | undefined;
   const storedSearch = (() => {
     if (stateHotel || !id) return undefined;
     try {
       const raw = localStorage.getItem(`tour-search-hotel-${id}`);
-      return raw ? JSON.parse(raw) as { hotel?: TourSearchResult; form?: TourSearchForm } : undefined;
+      return raw ? JSON.parse(raw) as { hotel?: TourSearchResult; offers?: TourSearchResult[]; form?: TourSearchForm } : undefined;
     } catch {
       return undefined;
     }
   })();
   const selectedHotel = stateHotel ?? storedSearch?.hotel;
+  const selectedOffers = stateOffers ?? storedSearch?.offers ?? (selectedHotel ? [selectedHotel] : []);
   const selectedForm = stateForm ?? storedSearch?.form;
 
   const tourIdValue = selectedHotel?.tourid ?? selectedHotel?.tourId;
   const tourId = tourIdValue !== undefined && Number.isFinite(Number(tourIdValue)) ? Number(tourIdValue) : undefined;
   const tourDetailsQuery = useQuery({
     queryKey: ['tour-search', 'tour-details', tourId],
-    queryFn: () => tourSearchApi.getTour(tourId!, selectedForm?.currency ?? 'RUB'),
+    queryFn: () => tourSearchApi.getTour(tourId!, selectedForm?.currency ?? 'RUB', {
+      sourceId: selectedHotel?.sletatSourceId,
+      requestId: selectedHotel?.sletatRequestId,
+    }),
     enabled: Number.isFinite(tourId),
   });
 
-  // Fallback default mock hotel if accessed directly by URL
-  const hotel: TourSearchResult = useMemo(() => {
+  const hotel = useMemo<TourSearchResult | undefined>(() => {
     if (selectedHotel) {
       const details = tourDetailsQuery.data;
       if (!details) return selectedHotel;
@@ -337,35 +266,22 @@ export function TourSearchHotelPage() {
         },
       } as TourSearchResult;
     }
-    return {
-      id: id || '1',
-      name: 'Side Yesiloz Hotel',
-      stars: 4,
-      category: 4,
-      rating: 7.7,
-      reviewsCount: 102,
-      price: 199898,
-      priceOld: 235000,
-      currency: 'RUB',
-      picturelink: DEFAULT_GALLERY[0],
-      images: DEFAULT_GALLERY,
-      country: { name: 'Турция' },
-      region: { name: 'Сиде' },
-      meal: { name: 'Всё включено (All Inclusive)' },
-      roomType: '2-комнатный семейный номер',
-      nights: 7,
-      date: '11.05.2026',
-    };
+    return undefined;
   }, [selectedHotel, tourDetailsQuery.data, id]);
 
-  const hotelDetails = hotel as Record<string, unknown>;
+  const hotelDetails = (hotel ?? {}) as Record<string, unknown>;
 
   const realPhotos = useMemo(() => {
-    const imageKeys = new Set(['images', 'photos', 'pictures', 'gallery', 'photogallery', 'photoGallery']);
+    // Sletat field names vary (images/photos/gallery/hotelPhotos/mainPhoto/...), so match by
+    // substring on the key, by generic url/src fields inside photo objects, and by extension as fallback.
+    const imageKeyPattern = /photo|image|pictur|gallery|\bpic(s)?\b/i;
+    const genericUrlKeyPattern = /^(url|src|link)$/i;
+    const imageUrlPattern = /^https?:\/\/\S+\.(jpe?g|png|webp|gif|bmp)(\?\S*)?$/i;
     const urls: string[] = [];
     const visit = (value: unknown, key?: string) => {
       if (typeof value === 'string') {
-        if (key && imageKeys.has(key.toLowerCase()) && /^https?:\/\//i.test(value)) urls.push(value);
+        if (!/^https?:\/\//i.test(value)) return;
+        if ((key && (imageKeyPattern.test(key) || genericUrlKeyPattern.test(key))) || imageUrlPattern.test(value)) urls.push(value);
         return;
       }
       if (Array.isArray(value)) {
@@ -373,17 +289,12 @@ export function TourSearchHotelPage() {
         return;
       }
       if (!value || typeof value !== 'object') return;
-      Object.entries(value).forEach(([entryKey, entryValue]) => {
-        if (['url', 'src', 'link', 'picturelink', 'picture'].includes(entryKey.toLowerCase()) && typeof entryValue === 'string') {
-          urls.push(entryValue);
-        } else {
-          visit(entryValue, entryKey);
-        }
-      });
+      Object.entries(value).forEach(([entryKey, entryValue]) => visit(entryValue, entryKey));
     };
     visit(hotelDetails);
+    selectedOffers.forEach((offer) => visit(offer));
     return [...new Set(urls)];
-  }, [hotelDetails]);
+  }, [hotelDetails, selectedOffers]);
 
   const hotelDescription = useMemo(() => {
     const descriptionKeys = new Set(['description', 'desc', 'hoteldescription', 'hotel_description']);
@@ -410,7 +321,7 @@ export function TourSearchHotelPage() {
     enabled: roomIds.length > 0,
     staleTime: 5 * 60 * 1000,
   });
-  const roomOptions = useMemo(() => {
+  const apiRoomOptions = useMemo(() => {
     const detailsById = new Map(
       (roomsQuery.data ?? []).map((room) => [String(toNumber(firstValue(room, ['id']))), room]),
     );
@@ -429,12 +340,17 @@ export function TourSearchHotelPage() {
     });
   }, [parsedRoomOptions, roomsQuery.data]);
 
+  // Prefer room variants built from the actual search offers (all rooms/operators/flights for this hotel),
+  // falling back to the ActualizePrice-derived details when no offers were passed to this page.
+  const searchRoomOptions = useMemo(() => buildRoomOptionsFromOffers(selectedOffers), [selectedOffers]);
+  const roomOptions = searchRoomOptions.length > 0 ? searchRoomOptions : apiRoomOptions;
+
   // Gallery state
   const photos = useMemo(() => {
     if (realPhotos.length > 0) return realPhotos;
-    if (hotel.picturelink) return [hotel.picturelink];
-    return DEFAULT_GALLERY;
-  }, [hotel.picturelink, realPhotos]);
+    if (hotel?.picturelink) return [hotel.picturelink];
+    return [];
+  }, [hotel?.picturelink, realPhotos]);
 
   const [activePhotoIndex, setActivePhotoIndex] = useState<number | null>(null);
   const [isFavorite, setIsFavorite] = useState(false);
@@ -457,6 +373,22 @@ export function TourSearchHotelPage() {
     if (!consultName || !consultPhone) return;
     setConsultSubmitted(true);
   };
+
+  if (!hotel) {
+    return (
+      <main className="min-h-screen bg-slate-50 px-4 py-16 dark:bg-zinc-950">
+        <div className="mx-auto max-w-xl rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+          <h1 className="text-xl font-bold text-slate-900 dark:text-white">Данные отеля недоступны</h1>
+          <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
+            Откройте страницу из результатов поиска. Sletat не вернул детали этого предложения.
+          </p>
+          <button type="button" onClick={() => navigate(-1)} className="mt-6 rounded-xl bg-orange-500 px-5 py-3 text-sm font-bold text-white">
+            Вернуться к поиску
+          </button>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-slate-50 dark:bg-zinc-950 pb-20 pt-6">
@@ -505,16 +437,11 @@ export function TourSearchHotelPage() {
 
               {/* TAGS / BADGES BELOW TITLE */}
               <div className="mt-3 flex flex-wrap items-center gap-2">
-                <span className="rounded-lg bg-slate-200/80 dark:bg-zinc-800 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Обновлен в 2023
-                </span>
-                <span className="rounded-lg bg-slate-200/80 dark:bg-zinc-800 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  2-комнатные семейные номера
-                </span>
-                <span className="rounded-lg bg-blue-50 dark:bg-blue-950/50 px-2.5 py-1 text-xs font-semibold text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900 flex items-center gap-1">
-                  <Sparkles className="h-3 w-3 text-blue-500" />
-                  Виза не нужна
-                </span>
+                {findHotelText(hotelDetails, ['renovationYear', 'renovated', 'renovation']) && (
+                  <span className="rounded-lg bg-slate-200/80 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:bg-zinc-800 dark:text-slate-300">
+                    Реновация: {findHotelText(hotelDetails, ['renovationYear', 'renovated', 'renovation'])}
+                  </span>
+                )}
               </div>
             </div>
 
@@ -537,12 +464,12 @@ export function TourSearchHotelPage() {
         </header>
 
         {/* PHOTO ALBUM GRID */}
-        <section className="mb-10 overflow-hidden rounded-3xl bg-slate-200 dark:bg-zinc-900 p-1 shadow-lg">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-1.5 h-[340px] sm:h-[420px]">
+        {photos.length > 0 && <section className="mb-10 overflow-hidden rounded-3xl bg-slate-200 dark:bg-zinc-900 p-1 shadow-lg">
+          <div className="grid grid-cols-1 gap-1.5 md:grid-cols-4">
             {/* MAIN BIG PHOTO (2 COLUMNS) */}
             <div
               onClick={() => setActivePhotoIndex(0)}
-              className="group relative md:col-span-2 h-full cursor-pointer overflow-hidden rounded-2xl bg-slate-300 dark:bg-zinc-800"
+              className="group relative h-[340px] cursor-pointer overflow-hidden rounded-2xl bg-slate-300 dark:bg-zinc-800 sm:h-[420px] md:col-span-2"
             >
               <img
                 src={photos[0]}
@@ -555,13 +482,13 @@ export function TourSearchHotelPage() {
               </span>
             </div>
 
-            {/* SMALL PHOTOS GRID (2 COLUMNS) */}
-            <div className="hidden md:grid md:col-span-2 grid-cols-2 gap-1.5 h-full">
-              {photos.slice(1, 4).map((img, idx) => (
+            {/* ALL OTHER PHOTOS */}
+            <div className="grid grid-cols-2 gap-1.5 md:col-span-2 sm:grid-cols-3 md:max-h-[420px] md:overflow-y-auto">
+              {photos.slice(1).map((img, idx) => (
                 <div
                   key={idx}
                   onClick={() => setActivePhotoIndex(idx + 1)}
-                  className="group relative h-full cursor-pointer overflow-hidden rounded-2xl bg-slate-300 dark:bg-zinc-800"
+                  className="group relative aspect-[4/3] cursor-pointer overflow-hidden rounded-2xl bg-slate-300 dark:bg-zinc-800"
                 >
                   <img
                     src={img}
@@ -571,27 +498,9 @@ export function TourSearchHotelPage() {
                   <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors" />
                 </div>
               ))}
-
-              {/* 4TH PHOTO WITH OVERLAY (VIEW ALL) */}
-              <div
-                onClick={() => setActivePhotoIndex(4)}
-                className="group relative h-full cursor-pointer overflow-hidden rounded-2xl bg-slate-300 dark:bg-zinc-800"
-              >
-                <img
-                  src={photos[4] || photos[0]}
-                  alt={`${hotel.name} - еще фото`}
-                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] transition-colors group-hover:bg-black/70 flex flex-col items-center justify-center text-white text-center p-2">
-                  <span className="text-xl font-extrabold tracking-tight">156 фото</span>
-                  <span className="text-xs font-semibold underline underline-offset-4 mt-0.5 opacity-90">
-                    Смотреть все
-                  </span>
-                </div>
-              </div>
             </div>
           </div>
-        </section>
+        </section>}
 
         {hotelDescription ? (
           <section className="mb-10 rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
@@ -621,10 +530,8 @@ export function TourSearchHotelPage() {
                 <span>Пляж</span>
               </div>
               <ul className="text-xs text-slate-600 dark:text-slate-300 space-y-1.5 leading-relaxed">
-                <li>• 3-я линия, 1100 метров до пляжа, песчаный, оборудованный</li>
-                <li>• Вход в воду: пологий песчаный</li>
-                <li>• Путь к пляжу: предоставляется бесплатный транспорт, вниз по лестнице или тропинке</li>
-                <li>• Принадлежит отелю</li>
+                {toTextList(firstValue(hotelDetails, ['beach', 'beachDescription', 'beachInfo', 'beachDetails', 'beachType', 'beachLine'])).map((item) => <li key={item}>• {item}</li>)}
+                {toTextList(firstValue(hotelDetails, ['beach', 'beachDescription', 'beachInfo', 'beachDetails', 'beachType', 'beachLine'])).length === 0 && <li>• Информация о пляже отсутствует в ответе API</li>}
               </ul>
             </div>
             <button type="button" className="mt-4 text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline text-left inline-flex items-center gap-1">
@@ -643,7 +550,7 @@ export function TourSearchHotelPage() {
                 <span>Wi-Fi и удобства</span>
               </div>
               <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                Платный Wi-Fi по всей территории отеля. Доступен в номерах и общественных зонах.
+                {findHotelText(hotelDetails, ['wifi', 'wiFi', 'internet', 'internetAccess']) || 'Информация о Wi-Fi отсутствует в ответе API.'}
               </p>
             </div>
             <button type="button" className="mt-4 text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline text-left inline-flex items-center gap-1">
@@ -662,9 +569,8 @@ export function TourSearchHotelPage() {
                 <span>Условия заселения</span>
               </div>
               <ul className="text-xs text-slate-600 dark:text-slate-300 space-y-1.5 leading-relaxed">
-                <li>• Заселение с 14:00</li>
-                <li>• Выезд до 12:00</li>
-                <li>• В номер не заселяют мужчин без женщин</li>
+                {toTextList(firstValue(hotelDetails, ['checkIn', 'checkInTime', 'checkOut', 'checkOutTime', 'checkInConditions', 'accommodationConditions'])).map((item) => <li key={item}>• {item}</li>)}
+                {toTextList(firstValue(hotelDetails, ['checkIn', 'checkInTime', 'checkOut', 'checkOutTime', 'checkInConditions', 'accommodationConditions'])).length === 0 && <li>• Условия заселения отсутствуют в ответе API</li>}
               </ul>
             </div>
             <button type="button" className="mt-4 text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline text-left inline-flex items-center gap-1">
@@ -1069,7 +975,7 @@ export function TourSearchHotelPage() {
                 </span>
               )}
               <span className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-                от {hotel.price?.toLocaleString('ru-RU') || '199 898'} ₽
+                {hotel.price ? `от ${hotel.price.toLocaleString('ru-RU')} ₽` : 'Цена отсутствует'}
               </span>
             </div>
           </div>

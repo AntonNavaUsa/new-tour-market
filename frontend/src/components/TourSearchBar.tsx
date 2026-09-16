@@ -30,14 +30,14 @@ import {
 import { ru } from 'date-fns/locale/ru';
 import * as CountryFlags from 'country-flag-icons/react/3x2';
 import type { ComponentType, SVGProps } from 'react';
-import type { TourSearchForm, TourSearchReference } from '../types';
+import type { TourSearchForm, TourSearchReference, TourSearchMealReference } from '../types';
 
 interface TourSearchBarProps {
   form: TourSearchForm;
   departures: TourSearchReference[] | undefined;
   countries: TourSearchReference[] | undefined;
   regions: TourSearchReference[] | undefined;
-  meals: TourSearchReference[] | undefined;
+  meals: TourSearchMealReference[] | undefined;
   hotels: TourSearchReference[] | undefined;
   isHotelsLoading: boolean;
   hotelSearch: string;
@@ -401,7 +401,36 @@ export function TourSearchBar({
   };
 
   return (
-    <div ref={barRef} className="relative rounded-[28px] bg-white dark:bg-zinc-900 p-2 sm:p-3 shadow-xl shadow-indigo-200/40 dark:shadow-none border border-slate-100 dark:border-zinc-800">
+    <div className="relative">
+      {/* SEARCH MODE: ТУРЫ / ОТЕЛИ */}
+      <div className="mb-2 flex items-center gap-1 px-1">
+        <div className="inline-flex rounded-2xl bg-slate-100 p-1 dark:bg-zinc-800">
+          <button
+            type="button"
+            onClick={() => onUpdateForm('searchMode', 'tours')}
+            className={`rounded-xl px-4 py-1.5 text-sm font-semibold transition ${
+              form.searchMode !== 'hotels'
+                ? 'bg-white text-slate-900 shadow-sm dark:bg-zinc-900 dark:text-white'
+                : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
+            }`}
+          >
+            Туры
+          </button>
+          <button
+            type="button"
+            onClick={() => onUpdateForm('searchMode', 'hotels')}
+            className={`rounded-xl px-4 py-1.5 text-sm font-semibold transition ${
+              form.searchMode === 'hotels'
+                ? 'bg-white text-slate-900 shadow-sm dark:bg-zinc-900 dark:text-white'
+                : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
+            }`}
+          >
+            Отели
+          </button>
+        </div>
+      </div>
+
+      <div ref={barRef} className="relative rounded-[28px] bg-white dark:bg-zinc-900 p-2 sm:p-3 shadow-xl shadow-indigo-200/40 dark:shadow-none border border-slate-100 dark:border-zinc-800">
       <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1.1fr)_minmax(0,1.35fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
         {/* FIELD 1: ОТКУДА */}
         <div className="relative min-w-0">
@@ -1033,12 +1062,13 @@ export function TourSearchBar({
             <option value="">Любое</option>
             {(meals ?? []).map((meal) => (
               <option key={meal.id} value={String(meal.id)}>
-                {meal.fullRussianName || meal.russianName || meal.name}
+                {meal.fullRussianName || meal.russianName || meal.name}{meal.description ? ` — ${meal.description}` : ''}
               </option>
             ))}
           </select>
         </label>
         </div>}
+      </div>
       </div>
     </div>
   );
